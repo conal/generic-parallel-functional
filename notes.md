@@ -377,21 +377,21 @@ type family LPow h n where
 Note the similarity between the `RVec` and `RPow` type family instances and the following definitions of multiplication and exponentiation on Peano numbers (with RHS parenthesizes for emphasis):
 
 ``` haskell
-m * 0     = 0
-m * (1+n) = m + (m * n)
+m * 0      = 0
+m * (1+n)  = m + (m * n)
 
-m ^ 0 = 1
-m ^ (1+n) = m * (m ^ n)
+m ^ 0      = 1
+m ^ (1+n)  = m * (m ^ n)
 ```
 
 Likewise, the type family instances for `LVec` and `LPow` are analogous to the following equivalent definitions of Peano multiplication and exponentiation:
 
 ``` haskell
-m * 0     = 0
-m * (n+1) = (m * n) + n
+m * 0      = 0
+m * (n+1)  = (m * n) + n
 
-m ^ 0 = 1
-m ^ (n+1) = (m ^ n) * m
+m ^ 0      = 1
+m ^ (n+1)  = (m ^ n) * m
 ```
 
 [Something about tries and logarithms, or "Naperian functors".]
@@ -408,20 +408,20 @@ It's easy to define a composition-balanced type as well:
 
 ``` haskell
 type family Bush n where
-  Bush Z     = Pair
-  Bush (S n) = Bush n :.: Bush n
+  Bush Z      = Pair
+  Bush (S n)  = Bush n :.: Bush n
 ```
 
 There's nothing special about `Pair` or *binary* composition here.
 We could easily generalize to `RPow (Bush n) m` or `LPow (Bush n) m`.
+
+Whereas each `RPow Pair n` and `LPow Pair n` holds $2^n$ elements, each statically shaped `Bush n` hold $2^2^n$ elements.
 
 Our "bush" type is adapted from an example of nested data types [cite "Nested Datatypes"] that has a less regular shape:
 
 ``` haskell
 data Bush a = NilB | ConsB a (Bush (Bush a))
 ```
-
-Where values of type `RPow Pair n a` and `LPow Pair n a` have $2^n$ elements each, values of the statically shaped type `Bush n a` have $2^2^n$ elements.
 
 Bushes are to trees as trees are to vectors, in the following sense.
 Functor product is associative up to isomorphism.
@@ -431,6 +431,83 @@ Shifting perspective, where `RPow f` and `LPow f` are fully right- and left-asso
 Many other variations are possible, but the `Bush` definition above will suffice for this paper.
 
 ## Parallel scan
+
+Given $a_0,\ldots,a_{n-1}$, the "prefix sum" is a sequence $b_0,\ldots,b_n$ such that
+
+$$b_k = \sum\limits_{0 \le i < k}{a_i}$$
+
+More generally, given any associative operation $\oplus$, the "prefix scan" is defined by
+
+$$b_k = \bigoplus\limits_{0 \le i < k}{a_i}$$
+
+with $b_0$ being the identity for $\oplus$.
+(One can define a similar operation if we assume semigroup---lacking identity element---rather than monoid, but the development is more straightforward with identity.)
+
+Parallel scan has surprising broad applications, including the following, taken from a longer list in \href{http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.128.6230}{\emph{Prefix
+Sums and Their Applications}}:
+
+*   Adding multi-precision numbers
+*   Polynomial evaluation
+*   Solving recurrences
+*   Sorting
+*   Solving tridiagonal linear systems
+*   Lexical analysis
+*   Regular expression search
+*   Labeling components in two dimensional images
+
+Scans may be "prefix" (from the left, as above) or or "suffix" (from the right).
+We will just develop prefix scan, but generic suffix scan works out in the same way.
+
+Note that $a_k$ does \emph{not} influence $b_k$ and as such.
+Often scans are classified as "exclusive" as above or "inclusive", where $a_k$ does contribute to $b_k$.
+Note also that there is one more output than input, which is atypical in parallel computing, perhaps because they're often performed in place.
+As we will see below, the choice exclusive+total above makes for a more elegant generic decomposition.
+
+The standard list prefix scans in Haskell, `scanl` and `scanr` also yield one more output than input, which is possible for lists.
+For other data types, such as trees and especially perfect ones, there may not be a place to stash the extra value.
+For a generic scan applying to many different data types, we can simply form a product, so that scanning maps `f a` to `f a :* a`.
+[Note use of infix product throughout the paper.]
+The extra summary value is the fold over the whole input structure.
+Thus, we have the following class for left-scannable functors:
+
+``` haskell
+class Functor f => LScan f where
+  lscan :: Monoid a => f a -> f a :* a
+```
+
+[Maybe rename to "`LScannable`".]
+
+[Maybe remove the `Functor` superclass, which I think just serves convenience.] 
+
+When `f` is in `Traversable`, there is simple and general specification using operations from the standard Haskell libraries:
+
+``` haskell
+lscan == swap . mapAccumL (\ acc a -> (acc <> a,acc)) mempty
+```
+
+where
+
+``` haskell
+mapAccumL :: Traversable t => (b -> a -> b :* c) -> b -> t a -> b :* t c
+```
+
+Although all of the example types in this paper are indeed in `Traversable`, using this `lscan` specification as an implementation results in an entirely sequential implementation, since data dependencies are *linearly* threaded through the whole computation.
+
+Rather than defining `LScan` instances for all of our data types, the idea of generic programming is to define instances only for the small set of fundamental functor combinators and then automatically compose instances for other types via the generic encodings (derived automatically when possible).
+To do so, provide a default signature and definition for functors with such encodings:
+
+``` haskell
+class Functor f => LScan f where
+  lscan :: Monoid a => f a -> f a :* a
+  default lscan  ::  (Generic1 f, LScan (Rep1 f))
+                 =>  Monoid a => f a -> f a :* a
+  lscan = first to1 . lscan . from1
+```
+
+Once we define `LScan` instances for our six fundamental combinators and given `Generic1` instances (defined automatically or manually) for a functor `Foo`, one can simply write `instance LScan Foo`.
+For our statically shaped vector, tree, and bush functors, we can use the GADT definitions with their manually defined `Generic1` instances, exploiting the `lscan` default, or we can use the type family versions without the need for the encoding (`from1`) and decoding (`to1`) steps.
+
+### Easy instances
 
 ## FFT
 
