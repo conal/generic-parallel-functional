@@ -212,6 +212,8 @@ instance Traversable f => Traversable (Tree f) where ...
 
 This generalization covers "list-ary" (rose) trees and even "tree-ary" trees.
 
+With this functor-parametrized tree type, we can reconstruct $n$-ary trees as `Tree (Vec n)`.
+
 Just as there are both left- and right-growing lists, trees come in two flavors as well.
 The forms above are all "top-down", in the sense that successive unwrappings of branch nodes reveal subtrees moving from the top downward.
 (No unwrapping for the top level, one unwrapping for the collection of next-to-top subtrees, another for the collection of next level down, etc.)
@@ -334,7 +336,7 @@ instance Generic1 (LPow f n) => Generic1 (LPow f (S n)) where
   to1 (Comp1 ts) = B ts
 ```
 
-These statically shaped data types have `Functor`, `Foldable`, and `Traversable` instances exactly matching the dynamically shaped versions given above.
+We can then give these statically shaped data types `Functor`, `Foldable`, and `Traversable` instances exactly matching the dynamically shaped versions given above.
 In addition, they have `Applicative` and `Monad` instances, left as an exercise for the reader.
 [Maybe provide and mention homomorphisms with the function instances as well as the trie (representable functor) connection.]
 
@@ -394,7 +396,39 @@ m ^ (n+1) = (m ^ n) * m
 
 [Something about tries and logarithms, or "Naperian functors".]
 
+Because these type-family-based definitions are expressed in terms of existing generic building blocks, we directly inherit many existing class instances rather than having to define them.
+A downside is that we *cannot* provide them, which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
+
 ### Top-down and bottom-up bushes
+
+In contrast to vectors, our tree types are perfectly balanced, as is helpful in obtaining naturally parallel algorithms.
+From another perspective, however, they are quite imbalanced.
+The functor composition operator is used fully left-associated for `LPow` and fully right-associated for `RPow` (hence the names).
+It's easy to define a composition-balanced type as well:
+
+``` haskell
+type family Bush n where
+  Bush Z     = Pair
+  Bush (S n) = Bush n :.: Bush n
+```
+
+There's nothing special about `Pair` or *binary* composition here.
+We could easily generalize to `RPow (Bush n) m` or `LPow (Bush n) m`.
+
+Our "bush" type is adapted from an example of nested data types [cite "Nested Datatypes"] that has a less regular shape:
+
+``` haskell
+data Bush a = NilB | ConsB a (Bush (Bush a))
+```
+
+Where values of type `RPow Pair n a` and `LPow Pair n a` have $2^n$ elements each, values of the statically shaped type `Bush n a` have $2^2^n$ elements.
+
+Bushes are to trees as trees are to vectors, in the following sense.
+Functor product is associative up to isomorphism.
+Where `RVec` and `LVec` choose fully right or left associated products, `RPow f` and `LPow f` form perfectly and recursively balanced products.
+Likewise, functor composition is associative up to isomorphism.
+Shifting perspective, where `RPow f` and `LPow f` are fully right- and left-associated compositions, `Bush f` forms balanced compositions.
+Many other variations are possible, but the `Bush` definition above will suffice for this paper.
 
 ## Parallel scan
 
