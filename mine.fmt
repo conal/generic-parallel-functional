@@ -1,15 +1,18 @@
 % -*- text -*-
 %% Misc lhs2TeX directives
 
-
 %% spaces (in 18ths of a quad): \, = 3, \: = 4, \; = 5, \! = -3
 
+%format :*: = " \pmb{\times} "
+%format :+: = " \pmb{+} "
+%format :.: = " \pmb{\circ} "
 
-%format liftA1
-%format liftA2
-%format liftA3
-%format liftAn = liftA "_n"
-
+%format from1
+%format to1
+%format Generic1
+%format U1
+%format Par1
+%format Comp1
 
 %% optional double-dollar spelling, to avoid $ confusing emacs latex-mode.
 %format <$$> = <$>
