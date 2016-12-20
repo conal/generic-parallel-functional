@@ -1,0 +1,147 @@
+\newcommand\nc\newcommand
+\nc\rnc\renewcommand
+
+\usepackage{epsfig}
+\usepackage{latexsym}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\nc\out[1]{}
+
+\nc\noteOut[2]{\note{#1}\out{#2}}
+
+% While working, use these defs
+\nc\note[1]{{\em [#1]}}
+\nc\notefoot[1]{\footnote{\note{#1}}}
+% But for the submission, use these
+%% \nc\note\out
+%% \nc\notefoot\out
+
+\nc\todo[1]{\note{To do: #1}}
+
+\nc\figlabel[1]{\label{fig:#1}}
+\nc\figref[1]{Figure~\ref{fig:#1}}
+
+\nc\seclabel[1]{\label{sec:#1}}
+\nc\secref[1]{Section~\ref{sec:#1}}
+\nc\secreftwo[2]{Sections~\ref{sec:#1} and~\ref{sec:#2}}
+
+\nc\appref[1]{Appendix~\ref{sec:#1}}
+
+
+%% The name \secdef is already taken
+\nc\sectiondef[1]{\section{#1}\seclabel{#1}}
+\nc\subsectiondef[1]{\subsection{#1}\seclabel{#1}}
+\nc\subsubsectiondef[1]{\subsubsection{#1}\seclabel{#1}}
+
+
+\nc\needcite{\note{ref}}
+
+% \nc\myurl\texttt
+
+
+% http://cs.wlu.edu/~necaise/refs/latex2e/env-floats.3.html#lnfigure
+
+% Arguments: env, label, caption, body
+\nc\figdefG[4]{\begin{#1}[tbp]
+#4
+\caption{#3}
+\figlabel{#2}
+\end{#1}}
+
+% Arguments: label, caption, body
+\nc\figdef{\figdefG{figure}}
+\nc\figdefwide{\figdefG{figure*}}
+
+%% \nc\figdef[3]{\begin{figure}
+%% \centering
+%% \frame{#3}
+%% \caption{#2}
+%% \figlabel{#1}
+%% \end{figure}}
+
+%% \nc\figdefwide[3]{\begin{figure*}
+%% \centering
+%% \frame{#3}
+%% \caption{#2}
+%% \figlabel{#1}
+%% \end{figure*}}
+
+% Arguments: label, caption, body
+\nc\figrefdef[3]{\figref{#1}\figdef{#1}{#2}{#3}}
+
+\nc\figrefdefwide[3]{\figref{#1}\figdefwide{#1}{#2}{#3}}
+
+
+% Image format: PNG or JPEG?  JPEG lets us shrink the files, at some cost
+% in fidelity.  Png is much slower to process even when the files are
+% smaller.  I guess there's some conversion process going on.
+% JPEG compressed at 35x, the figures are smaller and faster to
+% process than png.  The eps files are huge (about 80x). 
+% Since PNG is lossless, keep the master figures in that format and convert.
+
+
+\nc\picext{png}
+%\nc\picext{jpg}
+%\nc\picext{eps}
+%\nc\picext{tif}
+
+\nc\picfile[1]{pictures/\picext/#1.\picext}
+
+\nc\pict[1]{\includegraphics[width=3.2in]{\picfile{#1}}}
+
+\nc\picframe[1]{\frame{\pict{#1}}}
+\nc\picframewide[1]{\frame{\includegraphics[width=6in]{\picfile{#1}}}}
+
+\nc\picdef[2]{\figdef{#1}{#2}{\centering \picframe{#1}}}
+\nc\picdefwide[2]{\figdefwide{#1}{#2}{\picframewide{#1}}}
+
+%% \nc\picdef[2]{\begin{figure}
+%% \centering
+%% \frame{\includegraphics[width=2.7in]{\picfile{#1}}}
+%% \caption{#2}
+%% \label{fig:#1}
+%% \end{figure}}
+
+\nc\picrefdef[2]{\picdef{#1}{#2}\figref{#1}}
+\nc\picrefdefwide[2]{\figref{#1}\picdefwide{#1}{#2}}
+
+\nc\figneeded[1]{\figdef{needed}{#1}}
+
+\nc\symTwo[1]{\mathbin{#1\!\!\!#1}}
+\nc\symThree[1]{\mathbin{#1\!\!\!#1\!\!\!#1}}
+
+
+%%% Specific for this paper
+
+%% semantic brackets
+\nc\lb{[\![}
+\nc\rb{]\!]}
+\nc\db[1]{\lb#1\rb}
+
+\nc\lbb{\langle\!\langle}
+\nc\rbb{\rangle\!\rangle}
+\nc\dbb[1]{\lbb#1\rbb}
+
+
+
+\nc\magnitude[1]{| #1 |}
+\nc\setOf[1]{\{ #1 \}}
+
+\nc\muSub[1]{\mu_{#1}}
+
+% Hyper-strict functions
+% \nc\hto{\mathop{{\to}^{\!H}}}
+\nc\hto{\mathop{\stackrel{H}{\to}}}
+
+% Strict functions
+\nc\sto{\mathop{\stackrel{S}{\to}}}
+
+
+%% From http://compgeom.cs.uiuc.edu/~jeffe/pubs/tex/jeffe.sty
+% ---- FRENCH ----
+\nc\naive{na\"{\i}ve}
+\nc\Naive{Na\"{\i}ve}
+
+\nc\prim[1]{#1'}
+
