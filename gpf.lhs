@@ -214,7 +214,7 @@ data TTree f a = TLeaf a | TBranch (f (TDTree a))
 data BTree f a = BLeaf a | BBranch (BTree (f a))
 \end{code}
 
-Bottom-up trees (|LTree|) are a canonical example of ``nested'' or ``non-regular'' data types, requiring polymorphic recursion \note{citations}.
+Bottom-up trees (|LTree|) are a canonical example of ``nested'' or ``non-regular'' data types, requiring polymorphic recursion \cite{Bird1998}.
 
 \subsection{Statically shaped variations}
 
@@ -364,7 +364,7 @@ There's nothing special about |Pair| or \emph{binary} composition here. We could
 
 Whereas each |RPow Pair n| and |LPow Pair n| holds $2^n$ elements, each statically shaped |Bush n| hold $2^{2^n}$ elements.
 
-Our ``bush'' type is adapted from an example of nested data types \note{cite ``Nested Datatypes''} that has a less regular shape:
+Our ``bush'' type is adapted from an example of nested data types that has a less regular shape:
 \begin{code}
 data Bush a = NilB | ConsB a (Bush (Bush a))
 \end{code}
@@ -442,6 +442,44 @@ class Functor f => LScan f where
 Once we define |LScan| instances for our six fundamental combinators and given |Generic1| instances (defined automatically or manually) for a functor |Foo|, one can simply write |instance LScan Foo|. For our statically shaped vector, tree, and bush functors, we can use the GADT definitions with their manually defined |Generic1| instances, exploiting the |lscan| default, or we can use the type family versions without the need for the encoding (|from1|) and decoding (|to1|) steps.
 
 \subsection{Easy instances}
+
+Four of the six needed generic |LScan| instances are easily handled:
+\begin{code}
+instance LScan V1    where lscan = \ SPC case
+
+instance LScan U1    where lscan U1 = (U1, mempty)
+
+instance LScan Par1  where lscan (Par1 a) = (Par1 mempty, a)
+
+instance (LScan f, LScan g) => LScan (f :+: g) where
+  lscan (L1  fa  ) = first L1  (lscan fa  )
+  lscan (R1  ga  ) = first R1  (lscan ga  )
+\end{code}
+Comments:
+\begin{itemize}
+\item Since there are no values of type |V1 a|, a complete case expression needs no clauses.
+\note{|LambdaCase| and |EmptyCase| extensions.}
+\item An empty structure can only generate another empty structure with a summary value of |mempty|.
+\item For a singleton value |Par1 a|, the combination of values before the first and only one is |mempty|, and the summary is the single values |a|.
+\item For a sum, scan whichever structure is present and re-tag.
+\end{itemize}
+
+With these easy instances out of the way, we have only two left to define: product and composition.
+
+\subsection{Product}
+
+Suppose we have linear scans of size, as in \figrefdef{two-scans}{Two scans}{
+\vspace{-2ex}
+\wfig{2.0in}{lsums-lv5}
+\vspace{-5ex}
+\wfig{3.3in}{lsums-lv11}
+}.
+In these pictures (of which there are many more below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|).
+As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
+We will see later how these individual scans arise from particular functors |f| and |g| (of sizes five and eleven respectively), but for now take them as given.
+To understand |lscan| on functor products, consider how to combine the scans of |f| and |g| into scan for |f :*: g|.
+
+\subsection{Composition}
 
 \section{FFT}
 

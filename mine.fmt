@@ -10,9 +10,12 @@
 %format from1
 %format to1
 %format Generic1
+%format V1
 %format U1
 %format Par1
 %format Comp1
+%format L1
+%format R1
 
 %% optional double-dollar spelling, to avoid $ confusing emacs latex-mode.
 %format <$$> = <$>
@@ -20,189 +23,16 @@
 %format <$> = "\mathbin{<\!\!\!\$\!\!\!>}"
 %format <*> = "\mathbin{<\!\!\!*\!\!\!>}"
 
-
-%%format ==> = "\mathbin{=\!=\!\!>}"
-%% %format ==> = "\Rightarrow"
-%format ==> = "\Longrightarrow"
-%format <==> = "\Longleftrightarrow"
-%format <== = " \Longleftarrow "
+%% %format <*> = "\circledast"
 
 %% \usepackage{amssymb}
 
 %% hack: add missing space, e.g., before "{" in data type decl
 %format SPC = "\ "
 
-%% assuming visiblecomments,was \quad-{}- 
-%% \renewcommand{\onelinecomment}{-{}- }
-
-%% %format * = " \times "
-
-%% %format instanceS = instance"\!\!\!\;_{\mathbf{sem}}"
-%% %format instanceS = instance"\!\!\!\;_{\mathbf{S}}"
-%format instanceS = "\mathbf{instance_{sem}}"
-
-%format R = " \mathbb{R} "
-%format R2 = R "^2"
-%format R3 = R "^3"
-
-% %format :->: = "\mathop{{\to}_{M}}"
-% %format :->: = "\mathop{{\to}^{M}}"
-% %format :->: = "\mathop{\stackrel{M}{\to}}"
-% %format :->: = "\mathop{\to \!\!\!\! \to}"
-%format :->: = "\twoheadrightarrow"
-
-
-%%%%%%%%%%%%%%%%
-
-
-%format Cat = "{\cal C}"
-%format Mod = "{\cal M}"
-
-%format ModSub (t) = "{\cal M}_{" t "}"
-%format ModOf = Mod
-
-%format (ModOf (t)) = "\db{" t "}"
-
-%format e1
-%format e2
-%format e3
-
-%format instanceS = "\mathbf{instance_{sem}}"
-
-%format :. = .
-
-%format magnitude (x) = "\magnitude{" x "}"
-%format setOf (x) = "\setOf{" x "}"
-
-%format abstract = "\mathbf{abstract}"
-
-%format unionWith = "\Conid{union\!With}"
-
-
 %format mempty = "\emptyset"
 %format `mappend` = " \oplus "
 %format mappend = "(\oplus)"
 
-%format <==> = "\Longleftrightarrow"
-
-
-%format <*> = "\mathbin{<\!\!\!*\!\!\!>}"
-
-% %format <*> = "\mathbin{\bigcirc \!\!\!\!\!\!\: \ast \;}"
-
-%format <*> = "\circledast"
-
-%format liftA2
-%format liftA3
-%format liftAn = liftA "_n"
-
-
-% Got from Andres L:
-\newcommand{\calculationcomments}{%
-  \let\onelinecomment=\onelinecommentchars
-  \def\commentbegin{\quad\{ }%
-  \def\commentend{\}}%
-}
-\calculationcomments
-
-%format *** = "\symThree{*}"
-%format &&& = "\symThree{\&}"
-%format >>> = "\symThree{>}"
-
-%format memo2
-%format =~= = "\cong"
-%format `lessDef` = "\sqsubseteq"
-%format lessDef = "(\sqsubseteq)"
-
-%% %format anon = " \_"
-%% %format konst = \ "\ " _ ->
-
-% Hyper-strict
-%format ::-> = "\hto"
-
-%format Lambda = "\Conid{Lambda}"
-
-% experimental
-% %format mu (e) = "\db{" e "}"
-
-%format (mu (e)) = "\db{" e "}"
-
-% lhs2TeX bug (?): parens get dropped from "(mu e x)".
-
-% workaround: use mu2 instead of mu
-%format mu2 (e) arg = "\db{" e "} \," arg
-
-% instead, I'm using "((mu e) x)" in the text (suggested by andres loeh).
-
-% %format muinv = mu "^{-1}"
-
-%format (muinv (e)) = "\db{" e "}^{-1}"
-
-%format (mu' (e)) = "\dbb{" e "}"
-
-% %format mux = "\muSub{x}"
-
-
-%format (musub (t) (e)) = "\db{" e "}_{\stackrel{}{" t "}}"
-
-%format (muh (f)) = "\db{" f "}_{\stackrel{}{h}}"
-
-%format (muhg (f)) = "\db{" f "}_{\stackrel{}{h \circ g}}"
-
-% lhs2TeX does allow defining parameterized formats in terms of others.
-
-% %format (mux (f)) = "\db{" f "}^x"
-
-%format (mux (f)) = "\db{" f "}^{\stackrel{}{x}}"
-
-
-%format a1
-%format a2
-%format an = "a_n"
-
-%format b1
-%format b2
-%format bn = "b_n"
-
-%format e1
-%format e2
-%format en = "e_n"
-
-%format `op` = " \odot "
-%format op = " (\odot) "
-
-%% %format `op'` = " \hat{\odot} "
-%% %format op' = " (\hat{\odot}) "
-
-%% %format `op''` = " \breve{\odot} "
-%% %format op'' = " (\breve{\odot}) "
-
-%% %format `op''` = " \Hat{\Hat{\odot}} "
-%% %format op'' = " (\Hat{\Hat{\odot}}) "
-
-%format `op'` = " \circleddash "
-%format op' = " (\circleddash) "
-
-%format `op''` = " \boxdot "
-%format op'' = " (\boxdot) "
-
-%format cfoldl  = mu
-%format cfoldlc = mu
-
-
-%format zip = " (\star) "
-%format `zip` = " \star "
-
-%format *** = " \times "
-
-%format SPACE = "\ "
-
-%format (inverse (f)) = f "^{-1}"
-
-
-%format zipp = "\Varid{zip}"
-%format `zipp` = "\mathbin{`\Varid{combL}`}"
-
-%format unionL = union "_L"
-
-%format =~ = "\cong "
+%% %format *** = "\symThree{*}"
+%% %format &&& = "\symThree{\&}"

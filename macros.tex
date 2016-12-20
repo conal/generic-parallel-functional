@@ -81,20 +81,25 @@
 % Since PNG is lossless, keep the master figures in that format and convert.
 
 
-\nc\picext{png}
+\nc\picext{pdf}
 %\nc\picext{jpg}
 %\nc\picext{eps}
 %\nc\picext{tif}
 
-\nc\picfile[1]{pictures/\picext/#1.\picext}
+\nc\wpicture[2]{\includegraphics[width=#1]{figures/#2}}
 
-\nc\pict[1]{\includegraphics[width=3.2in]{\picfile{#1}}}
+\nc\wfig[2]{
+\begin{center}
+\wpicture{#1}{#2}
+\end{center}
+}
+\nc\fig[1]{\wfig{4in}{#1}}
 
-\nc\picframe[1]{\frame{\pict{#1}}}
-\nc\picframewide[1]{\frame{\includegraphics[width=6in]{\picfile{#1}}}}
+%% \nc\picframe[1]{\frame{\pict{#1}}}
+%% \nc\picframewide[1]{\frame{\includegraphics[width=6in]{\picfile{#1}}}}
 
-\nc\picdef[2]{\figdef{#1}{#2}{\centering \picframe{#1}}}
-\nc\picdefwide[2]{\figdefwide{#1}{#2}{\picframewide{#1}}}
+%% \nc\picdef[2]{\figdef{#1}{#2}{\centering \picframe{#1}}}
+%% \nc\picdefwide[2]{\figdefwide{#1}{#2}{\picframewide{#1}}}
 
 %% \nc\picdef[2]{\begin{figure}
 %% \centering
@@ -103,45 +108,8 @@
 %% \label{fig:#1}
 %% \end{figure}}
 
-\nc\picrefdef[2]{\picdef{#1}{#2}\figref{#1}}
-\nc\picrefdefwide[2]{\figref{#1}\picdefwide{#1}{#2}}
+%% \nc\picrefdef[2]{\picdef{#1}{#2}\figref{#1}}
+%% \nc\picrefdefwide[2]{\figref{#1}\picdefwide{#1}{#2}}
 
 \nc\figneeded[1]{\figdef{needed}{#1}}
-
-\nc\symTwo[1]{\mathbin{#1\!\!\!#1}}
-\nc\symThree[1]{\mathbin{#1\!\!\!#1\!\!\!#1}}
-
-
-%%% Specific for this paper
-
-%% semantic brackets
-\nc\lb{[\![}
-\nc\rb{]\!]}
-\nc\db[1]{\lb#1\rb}
-
-\nc\lbb{\langle\!\langle}
-\nc\rbb{\rangle\!\rangle}
-\nc\dbb[1]{\lbb#1\rbb}
-
-
-
-\nc\magnitude[1]{| #1 |}
-\nc\setOf[1]{\{ #1 \}}
-
-\nc\muSub[1]{\mu_{#1}}
-
-% Hyper-strict functions
-% \nc\hto{\mathop{{\to}^{\!H}}}
-\nc\hto{\mathop{\stackrel{H}{\to}}}
-
-% Strict functions
-\nc\sto{\mathop{\stackrel{S}{\to}}}
-
-
-%% From http://compgeom.cs.uiuc.edu/~jeffe/pubs/tex/jeffe.sty
-% ---- FRENCH ----
-\nc\naive{na\"{\i}ve}
-\nc\Naive{Na\"{\i}ve}
-
-\nc\prim[1]{#1'}
 
