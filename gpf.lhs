@@ -351,7 +351,7 @@ m ^ (n+1)  = (m ^ n) * m
 
 Because these type-family-based definitions are expressed in terms of existing generic building blocks, we directly inherit many existing class instances rather than having to define them. A downside is that we \emph{cannot} provide them, which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
 
-\subsection{Top-down and bottom-up bushes}
+\subsection{Top-down and bottom-up bushes}\seclabel{bushes}
 
 In contrast to vectors, our tree types are perfectly balanced, as is helpful in obtaining naturally parallel algorithms. From another perspective, however, they are quite imbalanced. The functor composition operator is used fully left-associated for |LPow| and fully right-associated for |RPow| (hence the names). It's easy to define a composition-balanced type as well:
 \begin{code}
@@ -572,7 +572,18 @@ We have already seen |Pair :.: LVec N8| as |LVec N8 :*: LVec N8| in \figref{lsum
 The reverse composition leads to quite a different computation shape, as \circuitrefdef{lsums-lv8-p}{|LVec N8 :.: Pair|}{23}{8} shows.
 Yet another factoring appears in \circuitrefdef{lsums-lv4olv4}{|LVec N4 :.: LVec N4|}{25}{6}.
 
+Now let's see how functor exponentiation fares in its left- and right-associated form.
+We just saw the equivalent of |RPow (LVec N4) N2| (and |LPow (LVec N4) N2|) as \figref{lsums-lv4olv4}.
+\circuitdef{lsums-rb4}{|RPow (LVec N4) N2|}{33}{4}
+\circuitdef{lsums-lb4}{|LPow (LVec N4) N2|}{27}{6}
+\figreftwo{lsums-rb4}{lsums-lb4} show |RPow Pair N4| and |LPow Pair N4| (top-down and bottom-up perfect binary leaf trees of depth four).
 
+Finally, consider the |Bush| type from \secref{bushes}.
+Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bushes of depth zero through three.
+\circuitdef{lsums-bush0}{|Bush N0|}{2}{1}
+\circuitdef{lsums-bush1}{|Bush N1|}{5}{2}
+\circuitdef{lsums-bush2}{|Bush N2|}{30}{5}
+\circuitdef{lsums-bush3}{|Bush N3|}{719}{10}
 
 \subsection{Complexity analysis}
 

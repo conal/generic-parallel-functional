@@ -26,11 +26,6 @@ pdfs: $(pdfs)
 see: $(targ).pdf
 	${showpdf} $(targ).pdf
 
-bib: $(targ).tex bib.bib
-	bibtex   $(targ)
-	pdflatex $(targ)
-	pdflatex $(targ)
-
 SHELL = bash
 
 clean:

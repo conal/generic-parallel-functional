@@ -116,7 +116,12 @@
 
 \nc\picrefdeftwo[4]{\picdef{#1}{#2} \picdef{#3}{#4} \figreftwo{#1}{#3}}
 
-\nc\circuitrefdef[4]{\picdef{#1}{#2 (\emph{W=#3, D=#4})}}
+\nc\stats[2]{(\emph{W=#2, D=#2})}
+
+\nc\circuitdef[4]{\picdef{#1}{#2 \stats{#3}{#4}}}
+%% \nc\circuitdefwide[4]{\picdefwide{#1}{#2 \stats{#3}{#4}}}
+
+\nc\circuitrefdef[4]{\circuitdef{#1}{#2}{#3}{#4} \figref{#1}}
 
 \nc\figneeded[1]{\figdef{needed}{#1}}
 
