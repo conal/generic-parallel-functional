@@ -17,8 +17,11 @@
 %format L1
 %format R1
 
+%format NOP = "{}"
+
 %% optional double-dollar spelling, to avoid $ confusing emacs latex-mode.
 %format <$$> = <$>
+%format <#> = <$>
 
 %format <$> = "\mathbin{<\!\!\!\$\!\!\!>}"
 %format <*> = "\mathbin{<\!\!\!*\!\!\!>}"
@@ -31,6 +34,7 @@
 %format SPC = "\ "
 
 %format mempty = "\emptyset"
+%format <> = " \oplus "
 %format `mappend` = " \oplus "
 %format mappend = "(\oplus)"
 

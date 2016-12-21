@@ -11,7 +11,7 @@ default: $(targ).pdf
 
 # $(short).lhs includes tcm.lhs, so use this modified rule
 
-%.tex: %.lhs macros.tex mine.fmt Makefile
+%.tex: %.lhs macros.tex mine.fmt pdfs Makefile
 	lhs2TeX -o $*.tex $*.lhs
 
 showpdf=skim

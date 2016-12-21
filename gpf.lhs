@@ -216,9 +216,7 @@ data BTree f a = BLeaf a | BBranch (BTree (f a))
 
 Bottom-up trees (|LTree|) are a canonical example of ``nested'' or ``non-regular'' data types, requiring polymorphic recursion \cite{Bird1998}.
 
-\subsection{Statically shaped variations}
-
-\note{As GADTs and as type families.}
+\subsection{Statically shaped variations}\seclabel{statically-shaped-types}
 
 Some algorithms work only on collections of a limited size. For instance, the most common parallel scan and FFT algorithms are limited to arrays of size $2^n$, while the more general (not just binary) Cooley-Tukey FFT algorithms require composite size, i.e., $m \cdot n$ for integers $m, n \ge 2$. In array-based algorithms, these restrictions can be realized in one of two ways:
 
@@ -439,6 +437,10 @@ class Functor f => LScan f where
   lscan = first to1 . lscan . from1
 \end{code}
 
+As an example of a sequential (non-parallel) scan, see \picrefdef{lsums-lv8}{Linear scan example}.
+In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|).
+As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
+
 Once we define |LScan| instances for our six fundamental combinators and given |Generic1| instances (defined automatically or manually) for a functor |Foo|, one can simply write |instance LScan Foo|. For our statically shaped vector, tree, and bush functors, we can use the GADT definitions with their manually defined |Generic1| instances, exploiting the |lscan| default, or we can use the type family versions without the need for the encoding (|from1|) and decoding (|to1|) steps.
 
 \subsection{Easy instances}
@@ -474,12 +476,87 @@ Suppose we have linear scans of size, as in \figrefdef{two-scans}{Two scans}{
 \vspace{-5ex}
 \wfig{3.3in}{lsums-lv11}
 }.
-In these pictures (of which there are many more below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|).
-As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
 We will see later how these individual scans arise from particular functors |f| and |g| (of sizes five and eleven respectively), but for now take them as given.
 To understand |lscan| on functor products, consider how to combine the scans of |f| and |g| into scan for |f :*: g|.
 
+Because we are left-scanning every prefix of |f| is also a prefix of |f :*: g|, so the |lscan| results for |f| are also correct results for |f :*: g|.
+The prefixes of |g|, are not prefixes of |f :*: g|, however, since each is missing all of |f|.
+The prefix \emph{sums}, therefore, are lacking the sum of all of |f|, which corresponds to the last output of the |lscan| result for |f|.
+All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| result, as shown in \picrefdef{lsums-lv5xlv11-highlight}{Product scan}.
+
+The product instance:
+\begin{code}
+instance (LScan f, LScan g) => LScan (f :*: g) where
+  lscan (fa :*: ga) = (fa' :*: ((fx <> NOP) <#> ga'), fx <> gx)
+   where
+     (fa'  , fx)  = lscan fa
+     (ga'  , gx)  = lscan ga
+\end{code}
+
+We now have enough functionality for scanning vectors using either the GADT or type family definitions from \secref{statically-shaped-types}.
+\picrefdef{lsums-rv8-no-hash-no-opt}{scan for |RVec N8|, unoptimized} shows |lscan| for |RVec N8| (\emph{right} vector of length 8).
+There are also some zero additions that can be easily optimized away, resulting in \picrefdef{lsums-rv8}{scan for |RVec N8|, optimized}.
+
+The combination of left scan and right vector is particularly unfortunate, as it involves quadratic work and linear depth.
+\note{Define ``work'' and ``depth'' earlier.}
+The source of quadratic work is the product instance's \emph{right} adjustment combined with the right-associated shape of |RVec|.
+Each single element (left) is used to adjust the entire suffix (right), requiring linear work at each step, adding up to quadratic.
+
+In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \picrefdeftwo{lsums-lv8-no-hash-no-opt}{scan for |LVec N8|, unoptimized}{lsums-lv8}{scan for |LVec N8|, optimized}.
+
+Performing a suffix/right scan on a \emph{left} vector also leads to quadratic work, reduced by linear by switching to right vectors.
+
+Although work is greatly reduced (from quadratic to linear), depth remains at linear.
+The reason is that unbalanced data types lead to unbalanced parallelism.
+Both |RVec| and |LVec| are ``parallel'' in a degenerate sense, but we only get to perform small computations in parallel with large one (more apparent in \figreftwo{lsums-rv8-no-hash-no-opt}{lsums-lv8-no-hash-no-opt}), so that the result is essentially sequential.
+
+To get a more parallelism, we could replace a type like |LVec N16| with a isomorphic product such as |LVec N5 :*: LVec N11|, resulting in \figref{lsums-lv5xlv11}, reducing depth from 15 to 11.
+More generally, scan on |LVec m :*: LVec n| has depth |max (m-1) (n-1) + 1 = max m n|.
+For an ideal partition adding up to |p|, we'll want |m = n = p/2|.
+For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \picrefdef{lsums-lv8xlv8}{|lscan| on |LVec N8 :*: LVec N8|}.
+
+Can we do better?
+Not as a single product, but we can as more than one product, as shown in
+\picrefdeftwo{lsums-lv5-5-6-l}{|(LVec N5 :*: LVec N5) :*: LVec N6|}{lsums-lv5-5-6-r}{|LVec N5 :*: (LVec N5 :*: LVec N6)|}.
+Again, the more balance, the better.
+
 \subsection{Composition}
+
+We now come to the last of our six functor combinators, namely composition, i.e., a structure of structures.
+Suppose we have a triple of quadruples, i.e., |LVec N3 :.: LVec N4|.
+We know how to scan each of the quadruples, as in \figrefdef{triple-scan}{triple scan}{
+\vspace{-3ex}
+\wfig{2.5in}{lsums-lv4}
+\vspace{-3ex}
+\wfig{2.5in}{lsums-lv4}
+\vspace{-3ex}
+\wfig{2.5in}{lsums-lv4}
+}.
+How can we combine the results of each scan into the scan |LVec N3 :.: LVec N4|?
+We already know the answer, since this composite type is essentially |(LVec N4 :*: LVec N4) :*: LVec N4|, the scan for which is determined by the |Par1| and product instances and is shown in \picrefdef{lsums-lv3olv4-highlight}{Scan for |LVec N3 :.: LVec N4|}.
+
+Let's reflect on this example as we did with binary products above.
+The prefixes of the first quadruple are all prefixes of the composite structure, so their prefix sums are prefix sums of the composite and so are used as they are.
+For every following quadruple, the prefix sums are lacking the sum of all elements from the earlier quadruples and so must be adjusted accordingly, as emphasized in the figure.
+
+Now we get to the surprising heart of generic parallel scan!
+Observe that the sums of elements from earlier quadruples are computed entirely from the final summary results from each quadruple.
+We end up needing the sum of every \emph{prefix} of the triple of summaries, and so we are computing not just three prefix scans over |LVec N4| but also \emph{one additional scan} over |LVec N3|.
+Moreover, the apparent inconsistency of adjusting all quadruples \emph{except} for the first one is an illusion brought on by premature optimization.
+We can instead adjust \emph{every} quadruple by the corresponding result of this final scan of summaries, the first summary being zero.
+These zero-additions can then be optimized away later.
+See \picrefdef{lsums-lv5olv7-highlight}{Scan for |LVec N5 :.: LVec N7|} for a larger example showing this same pattern.
+
+The general case is captured in an |LScan| instance for functor composition:
+\begin{code}
+instance (LScan g, LScan f, Zip g) =>  LScan (g :.: f) where
+  lscan (Comp1 gfa) = (Comp1 (zipWith adjustl tots' gfa'), tot)
+   where
+     (gfa', tots)  = unzip (lscan <#> gfa)
+     (tots',tot)   = lscan tots
+     adjustl t     = fmap (t <>)
+\end{code}
+
 
 \section{FFT}
 
