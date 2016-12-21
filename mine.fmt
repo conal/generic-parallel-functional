@@ -19,6 +19,8 @@
 
 %format NOP = "{}"
 
+%format =~ = " \simeq "
+
 %% optional double-dollar spelling, to avoid $ confusing emacs latex-mode.
 %format <$$> = <$>
 %format <#> = <$>
@@ -40,3 +42,5 @@
 
 %% %format *** = "\symThree{*}"
 %% %format &&& = "\symThree{\&}"
+
+%% %format fmap(f)(x) = f <$> x

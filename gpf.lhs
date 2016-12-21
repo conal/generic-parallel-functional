@@ -51,6 +51,9 @@ Let's start with a very familiar data type of lists:
 data List a = Nil | Cons a (List a)
 \end{code}
 
+%format :< = " \triangleleft "
+%format >: = " \triangleright "
+
 This data type is sometimes more specifically called ``cons lists'' (for historical reasons going back to early Lisp implementations). One might also call them ``right lists'', since they grow rightward.
 \begin{code}
 data RList a = RNil | a :< RList a
@@ -66,8 +69,7 @@ In terms of our functor algebra, we are using sum, unit, identity, and product:
 type RList =~ U1 :+: Par1 :*: RList
 type LList =~ U1 :+: RList :*: Par1
 \end{code}
-
-Spelling out the isomorphism explicitly,
+Spelling out the isomorphisms explicitly,
 \begin{code}
 instance Generic1 RList where
   type Rep1 RList = U1 :+: Par1 :*: RList
@@ -484,7 +486,7 @@ The prefixes of |g|, are not prefixes of |f :*: g|, however, since each is missi
 The prefix \emph{sums}, therefore, are lacking the sum of all of |f|, which corresponds to the last output of the |lscan| result for |f|.
 All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| result, as shown in \picrefdef{lsums-lv5xlv11-highlight}{Product scan}.
 
-The product instance:
+The general product instance is in \figrefdef{product-scan}{Product scan}{
 \begin{code}
 instance (LScan f, LScan g) => LScan (f :*: g) where
   lscan (fa :*: ga) = (fa' :*: ((fx <> NOP) <#> ga'), fx <> gx)
@@ -492,6 +494,7 @@ instance (LScan f, LScan g) => LScan (f :*: g) where
      (fa'  , fx)  = lscan fa
      (ga'  , gx)  = lscan ga
 \end{code}
+}.
 
 We now have enough functionality for scanning vectors using either the GADT or type family definitions from \secref{statically-shaped-types}.
 \picrefdef{lsums-rv8-no-hash-no-opt}{scan for |RVec N8|, unoptimized} shows |lscan| for |RVec N8| (\emph{right} vector of length 8).
@@ -502,7 +505,7 @@ The combination of left scan and right vector is particularly unfortunate, as it
 The source of quadratic work is the product instance's \emph{right} adjustment combined with the right-associated shape of |RVec|.
 Each single element (left) is used to adjust the entire suffix (right), requiring linear work at each step, adding up to quadratic.
 
-In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \picrefdeftwo{lsums-lv8-no-hash-no-opt}{scan for |LVec N8|, unoptimized}{lsums-lv8}{scan for |LVec N8|, optimized}.
+In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \picrefdef{lsums-lv8-no-hash-no-opt}{scan for |LVec N8|, unoptimized} and \figref{lsums-lv8} (optimized).
 
 Performing a suffix/right scan on a \emph{left} vector also leads to quadratic work, reduced by linear by switching to right vectors.
 
@@ -510,7 +513,7 @@ Although work is greatly reduced (from quadratic to linear), depth remains at li
 The reason is that unbalanced data types lead to unbalanced parallelism.
 Both |RVec| and |LVec| are ``parallel'' in a degenerate sense, but we only get to perform small computations in parallel with large one (more apparent in \figreftwo{lsums-rv8-no-hash-no-opt}{lsums-lv8-no-hash-no-opt}), so that the result is essentially sequential.
 
-To get a more parallelism, we could replace a type like |LVec N16| with a isomorphic product such as |LVec N5 :*: LVec N11|, resulting in \figref{lsums-lv5xlv11}, reducing depth from 15 to 11.
+To get a more parallelism, we could replace a type like |LVec N16| with a isomorphic product such as |LVec N5 :*: LVec N11|, resulting in \figref{lsums-lv5xlv11-highlight}, reducing depth from 15 to 11.
 More generally, scan on |LVec m :*: LVec n| has depth |max (m-1) (n-1) + 1 = max m n|.
 For an ideal partition adding up to |p|, we'll want |m = n = p/2|.
 For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \picrefdef{lsums-lv8xlv8}{|lscan| on |LVec N8 :*: LVec N8|}.
@@ -547,7 +550,7 @@ We can instead adjust \emph{every} quadruple by the corresponding result of this
 These zero-additions can then be optimized away later.
 See \picrefdef{lsums-lv5olv7-highlight}{Scan for |LVec N5 :.: LVec N7|} for a larger example showing this same pattern.
 
-The general case is captured in an |LScan| instance for functor composition:
+The general case is captured in an |LScan| instance for functor composition, in \figrefdef{composition-scan}{Composition scan}{
 \begin{code}
 instance (LScan g, LScan f, Zip g) =>  LScan (g :.: f) where
   lscan (Comp1 gfa) = (Comp1 (zipWith adjustl tots' gfa'), tot)
@@ -556,7 +559,20 @@ instance (LScan g, LScan f, Zip g) =>  LScan (g :.: f) where
      (tots',tot)   = lscan tots
      adjustl t     = fmap (t <>)
 \end{code}
+}.
 
+\subsection{More examples}
+
+We now know how to scan the full vocabulary of generic functor combinators, and we've seen the consequences for several data types.
+Let's now see how well generic scan works for some other example structures.
+We have already seen |Pair :.: LVec N8| as |LVec N8 :*: LVec N8| in \figref{lsums-lv8xlv8}.
+The reverse composition leads to quite a different computation shape, as \picrefdef{lsums-lv8-p}{|LVec N8 :.: Pair|} shows.
+Yet another factoring appears in \picrefdef{lsums-lv4olv4}{|LVec N4 :.: LVec N4|}.
+
+
+\subsection{Complexity analysis}
+
+\note{Either in this section or sprinkled throughout the functor combinators and examples above.}
 
 \section{FFT}
 
