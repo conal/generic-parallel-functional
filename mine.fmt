@@ -7,9 +7,10 @@
 %format :+: = " \pmb{+} "
 %format :.: = " \pmb{\circ} "
 
+%format Generic1
+%format Rep1
 %format from1
 %format to1
-%format Generic1
 %format V1
 %format U1
 %format Par1
