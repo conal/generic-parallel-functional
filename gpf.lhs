@@ -374,17 +374,12 @@ Bushes are to trees as trees are to vectors, in the following sense. Functor pro
 \section{Parallel scan}
 
 Given $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ldots,b_n$ such that
-
 \[b_k = \sum\limits_{0 \le i < k}{a_i}\]
-
 More generally, given any associative operation $\oplus$, the ``prefix scan'' is defined by
-
 \[b_k = \bigoplus\limits_{0 \le i < k}{a_i}\]
-
 with $b_0$ being the identity for $\oplus$. (One can define a similar operation if we assume semigroup---lacking identity element---rather than monoid, but the development is more straightforward with identity.)
 
-Parallel scan has surprising broad applications, including the following, taken from a longer list in \href{http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.128.6230}{\emph{Prefix
-Sums and Their Applications}}:
+Parallel scan has surprisingly broad applications, including the following, taken from a longer list in \cite{BlellochTR90}:
 
 \begin{itemize}
 \item
