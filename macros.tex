@@ -98,8 +98,8 @@
 }
 \nc\fig[1]{\wfig{4in}{#1}}
 
-\nc\picframe[1]{{\pic{#1}}}
-\nc\picframewide[1]{\wpic{6in}{\pic{#1}}}
+\nc\picframe[1]{\pic{#1}}
+\nc\picframewide[1]{\wpic{6in}{#1}}
 
 \nc\picdef[2]{\figdef{#1}{#2}{\centering \picframe{#1}}}
 \nc\picdefwide[2]{\figdefwide{#1}{#2}{\centering \picframewide{#1}}}
@@ -116,10 +116,10 @@
 
 \nc\picrefdeftwo[4]{\picdef{#1}{#2} \picdef{#3}{#4} \figreftwo{#1}{#3}}
 
-\nc\stats[2]{(\emph{W=#2, D=#2})}
+\nc\stats[2]{(\emph{W=#1, D=#2})}
 
 \nc\circuitdef[4]{\picdef{#1}{#2 \stats{#3}{#4}}}
-%% \nc\circuitdefwide[4]{\picdefwide{#1}{#2 \stats{#3}{#4}}}
+\nc\circuitdefwide[4]{\picdefwide{#1}{#2 \stats{#3}{#4}}}
 
 \nc\circuitrefdef[4]{\circuitdef{#1}{#2}{#3}{#4} \figref{#1}}
 
