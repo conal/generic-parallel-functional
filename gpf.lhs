@@ -439,8 +439,8 @@ class Functor f => LScan f where
   lscan = first to1 . lscan . from1
 \end{code}
 
-As an example of a sequential (non-parallel) scan, see \picrefdef{lsums-lv8}{Linear scan example}.
-In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|).
+As an example of a sequential (non-parallel) scan, see \circuitrefdef{lsums-lv8}{Linear scan example}{8}{7}.
+In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|), and the work and depth are shown in the caption (as \emph{W} and \emph{D}).
 As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
 
 Once we define |LScan| instances for our six fundamental combinators and given |Generic1| instances (defined automatically or manually) for a functor |Foo|, one can simply write |instance LScan Foo|. For our statically shaped vector, tree, and bush functors, we can use the GADT definitions with their manually defined |Generic1| instances, exploiting the |lscan| default, or we can use the type family versions without the need for the encoding (|from1|) and decoding (|to1|) steps.
@@ -484,7 +484,7 @@ To understand |lscan| on functor products, consider how to combine the scans of 
 Because we are left-scanning every prefix of |f| is also a prefix of |f :*: g|, so the |lscan| results for |f| are also correct results for |f :*: g|.
 The prefixes of |g|, are not prefixes of |f :*: g|, however, since each is missing all of |f|.
 The prefix \emph{sums}, therefore, are lacking the sum of all of |f|, which corresponds to the last output of the |lscan| result for |f|.
-All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| result, as shown in \picrefdef{lsums-lv5xlv11-highlight}{Product scan}.
+All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| result, as shown in \circuitrefdef{lsums-lv5xlv11-highlight}{Product scan}{26}{11}.
 
 The general product instance is in \figrefdef{product-scan}{Product scan}{
 \begin{code}
@@ -497,15 +497,15 @@ instance (LScan f, LScan g) => LScan (f :*: g) where
 }.
 
 We now have enough functionality for scanning vectors using either the GADT or type family definitions from \secref{statically-shaped-types}.
-\picrefdef{lsums-rv8-no-hash-no-opt}{scan for |RVec N8|, unoptimized} shows |lscan| for |RVec N8| (\emph{right} vector of length 8).
-There are also some zero additions that can be easily optimized away, resulting in \picrefdef{lsums-rv8}{scan for |RVec N8|, optimized}.
+\circuitrefdef{lsums-rv8-no-hash-no-opt}{scan for |RVec N8|, unoptimized}{45}{8} shows |lscan| for |RVec N8| (\emph{right} vector of length 8).
+There are also some zero additions that can be easily optimized away, resulting in \circuitrefdef{lsums-rv8}{scan for |RVec N8|, optimized}{29}{7}.
 
 The combination of left scan and right vector is particularly unfortunate, as it involves quadratic work and linear depth.
 \note{Define ``work'' and ``depth'' earlier.}
 The source of quadratic work is the product instance's \emph{right} adjustment combined with the right-associated shape of |RVec|.
 Each single element (left) is used to adjust the entire suffix (right), requiring linear work at each step, adding up to quadratic.
 
-In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \picrefdef{lsums-lv8-no-hash-no-opt}{scan for |LVec N8|, unoptimized} and \figref{lsums-lv8} (optimized).
+In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \circuitrefdef{lsums-lv8-no-hash-no-opt}{scan for |LVec N8|, unoptimized}{25}{8} and \figref{lsums-lv8} (optimized).
 
 Performing a suffix/right scan on a \emph{left} vector also leads to quadratic work, reduced by linear by switching to right vectors.
 
@@ -516,11 +516,14 @@ Both |RVec| and |LVec| are ``parallel'' in a degenerate sense, but we only get t
 To get a more parallelism, we could replace a type like |LVec N16| with a isomorphic product such as |LVec N5 :*: LVec N11|, resulting in \figref{lsums-lv5xlv11-highlight}, reducing depth from 15 to 11.
 More generally, scan on |LVec m :*: LVec n| has depth |max (m-1) (n-1) + 1 = max m n|.
 For an ideal partition adding up to |p|, we'll want |m = n = p/2|.
-For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \picrefdef{lsums-lv8xlv8}{|lscan| on |LVec N8 :*: LVec N8|}.
+For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \circuitrefdef{lsums-lv8xlv8}{|lscan| on |LVec N8 :*: LVec N8|}{23}{8}.
 
 Can we do better?
 Not as a single product, but we can as more than one product, as shown in
-\picrefdeftwo{lsums-lv5-5-6-l}{|(LVec N5 :*: LVec N5) :*: LVec N6|}{lsums-lv5-5-6-r}{|LVec N5 :*: (LVec N5 :*: LVec N6)|}.
+\circuitrefdef{lsums-lv5-5-6-l}{|(LVec N5 :*: LVec N5) :*: LVec N6|}{25}{6}
+\circuitrefdef{lsums-lv5-5-6-r}{|LVec N5 :*: (LVec N5 :*: LVec N6)|}{31}{7}
+\figreftwo{lsums-lv5-5-6-l}{lsums-lv5-5-6-r}.
+
 Again, the more balance, the better.
 
 \subsection{Composition}
@@ -536,7 +539,7 @@ We know how to scan each of the quadruples, as in \figrefdef{triple-scan}{triple
 \wfig{2.5in}{lsums-lv4}
 }.
 How can we combine the results of each scan into the scan |LVec N3 :.: LVec N4|?
-We already know the answer, since this composite type is essentially |(LVec N4 :*: LVec N4) :*: LVec N4|, the scan for which is determined by the |Par1| and product instances and is shown in \picrefdef{lsums-lv3olv4-highlight}{Scan for |LVec N3 :.: LVec N4|}.
+We already know the answer, since this composite type is essentially |(LVec N4 :*: LVec N4) :*: LVec N4|, the scan for which is determined by the |Par1| and product instances and is shown in \circuitrefdef{lsums-lv3olv4-highlight}{Scan for |LVec N3 :.: LVec N4|}{18}{5}.
 
 Let's reflect on this example as we did with binary products above.
 The prefixes of the first quadruple are all prefixes of the composite structure, so their prefix sums are prefix sums of the composite and so are used as they are.
@@ -548,7 +551,7 @@ We end up needing the sum of every \emph{prefix} of the triple of summaries, and
 Moreover, the apparent inconsistency of adjusting all quadruples \emph{except} for the first one is an illusion brought on by premature optimization.
 We can instead adjust \emph{every} quadruple by the corresponding result of this final scan of summaries, the first summary being zero.
 These zero-additions can then be optimized away later.
-See \picrefdef{lsums-lv5olv7-highlight}{Scan for |LVec N5 :.: LVec N7|} for a larger example showing this same pattern.
+See \circuitrefdef{lsums-lv5olv7-highlight}{Scan for |LVec N5 :.: LVec N7|}{59}{10} for a larger example showing this same pattern.
 
 The general case is captured in an |LScan| instance for functor composition, in \figrefdef{composition-scan}{Composition scan}{
 \begin{code}
@@ -566,8 +569,9 @@ instance (LScan g, LScan f, Zip g) =>  LScan (g :.: f) where
 We now know how to scan the full vocabulary of generic functor combinators, and we've seen the consequences for several data types.
 Let's now see how well generic scan works for some other example structures.
 We have already seen |Pair :.: LVec N8| as |LVec N8 :*: LVec N8| in \figref{lsums-lv8xlv8}.
-The reverse composition leads to quite a different computation shape, as \picrefdef{lsums-lv8-p}{|LVec N8 :.: Pair|} shows.
-Yet another factoring appears in \picrefdef{lsums-lv4olv4}{|LVec N4 :.: LVec N4|}.
+The reverse composition leads to quite a different computation shape, as \circuitrefdef{lsums-lv8-p}{|LVec N8 :.: Pair|}{23}{8} shows.
+Yet another factoring appears in \circuitrefdef{lsums-lv4olv4}{|LVec N4 :.: LVec N4|}{25}{6}.
+
 
 
 \subsection{Complexity analysis}
