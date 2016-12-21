@@ -147,9 +147,9 @@ instance Foldable Tree where
     foldMap h t1 <> foldMap h t2 <> foldMap h t3
 
 instance Traversable Tree where
-  traverse h (Leaf a) = Leaf <$> h a
+  traverse h (Leaf a) = Leaf <$$> h a
   traverse h (Branch t1 t2 t3) =
-    Branch <$> traverse h t1 <*> traverse h t2 <*> traverse h t3
+    Branch <$$> traverse h t1 <*> traverse h t2 <*> traverse h t3
 \end{code}
 
 Not only do we have repetition \emph{within} each instance definition (the three occurrences of |fmap h| above), we also have repetition \emph{among} instances for $n$-ary trees for different $n$. Fortunately, we can simplify and unify with a shift in formulation. Think of a branch node as having not $n$ subtrees, but rather a single uniform $n$-tuple of subtrees. Assume for now that we have a functor of finite lists statically indexed by length as well as element type:
@@ -175,12 +175,12 @@ instance Foldable (Tree n) where
   foldMap h (Branch ts) = (foldMap.foldMap) h ts
 
 instance Traversable (Tree n) where
-  traverse h (Leaf a) = Leaf <$> h a
+  traverse h (Leaf a) = Leaf <$$> h a
   traverse f (Branch ts) =
-    Branch <$> (traverse.traverse) f ts
+    Branch <$$> (traverse.traverse) f ts
 \end{code}
 
-\note{Note that |<$>| is infix |fmap|.}
+\note{Note that |<$$>| is infix |fmap|.}
 
 Notice that these instance definitions rely on very little about the |Vec n| functor. Specifically, for each of |Functor|, |Foldable|, and |Traversable|, the instance for |Tree n| needs only the corresponding instance for |Vec n|. For this reason, we can easily generalize |Vec n| as follows:
 \begin{code}
@@ -263,7 +263,7 @@ instance Generic1 (LVec n) => Generic1 (LVec (S n)) where
   to (Par1 a :*: as) = a :< as
 \end{code}
 
-For leaf trees, we have a choice between perfect and imperfect trees. A ``perfect'' leaf tree is one in which all leaves are at the same depth. Both forms can be ``statically shaped'', but we'll just perfect trees in this paper. For a perfect tree, we need only a single type-level number signifying the depth of all leaves. For succinctness, rename |Leaf| and |Branch| to ``|L|'' and ``|B|''. For reasons soon to be explained, also rename the types |TTree| and |BTree| to ``|RPow|'' and ``|LPow|'':
+For leaf trees, we have a choice between perfect and imperfect trees. A ``perfect'' leaf tree is one in which all leaves are at the same depth. Both forms can be ``statically shaped'', but we'll use just perfect trees in this paper, for which we need only a single type-level number signifying the depth of all leaves. For succinctness, rename |Leaf| and |Branch| to ``|L|'' and ``|B|''. For reasons soon to be explained, also rename the types |TTree| and |BTree| to ``|RPow|'' and ``|LPow|'':
 \begin{code}
 data RPow :: (* -> *) -> Nat -> * -> * where
   L :: a -> RPow f Z a
@@ -331,27 +331,27 @@ type family LPow h n where
 
 Note the similarity between the |RVec| and |RPow| type family instances and the following definitions of multiplication and exponentiation on Peano numbers (with RHS parenthesizes for emphasis):
 \begin{code}
-m * 0      = 0
-m * (1+n)  = m + (m * n)
+0      * a = 0
+(1+n)  * a = a + (n * a)
 
-m ^ 0      = 1
-m ^ (1+n)  = m * (m ^ n)
+h ^ 0      = 1
+h ^ (1+n)  = h * (h ^ n)
 \end{code}
 
 Likewise, the type family instances for |LVec| and |LPow| are analogous to the following equivalent definitions of Peano multiplication and exponentiation:
 \begin{code}
-m * 0      = 0
-m * (n+1)  = (m * n) + n
+0      * a = 0
+(n+1)  * a = (n * a) + n
 
-m ^ 0      = 1
-m ^ (n+1)  = (m ^ n) * m
+h ^ 0      = 1
+h ^ (n+1)  = (h ^ n) * h
 \end{code}
 
 \note{Something about tries and logarithms, or ``Naperian functors''.}
 
 Because these type-family-based definitions are expressed in terms of existing generic building blocks, we directly inherit many existing class instances rather than having to define them. A downside is that we \emph{cannot} provide them, which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
 
-\subsection{Top-down and bottom-up bushes}\seclabel{bushes}
+\subsection{Bushes}\seclabel{bushes}
 
 In contrast to vectors, our tree types are perfectly balanced, as is helpful in obtaining naturally parallel algorithms. From another perspective, however, they are quite imbalanced. The functor composition operator is used fully left-associated for |LPow| and fully right-associated for |RPow| (hence the names). It's easy to define a composition-balanced type as well:
 \begin{code}
@@ -360,11 +360,12 @@ type family Bush n where
   Bush (S n)  = Bush n :.: Bush n
 \end{code}
 
-There's nothing special about |Pair| or \emph{binary} composition here. We could easily generalize to |RPow (Bush n) m| or |LPow (Bush n) m|.
+There's nothing special about |Pair| or \emph{binary} composition here.
+We could easily generalize to |RPow (Bush n) m| or |LPow (Bush n) m|.
 
 Whereas each |RPow Pair n| and |LPow Pair n| holds $2^n$ elements, each statically shaped |Bush n| hold $2^{2^n}$ elements.
 
-Our ``bush'' type is adapted from an example of nested data types that has a less regular shape:
+Our ``bush'' type is adapted from an example of nested data types that has a less regular shape \cite{Bird1998}:
 \begin{code}
 data Bush a = NilB | ConsB a (Bush (Bush a))
 \end{code}
@@ -416,7 +417,7 @@ class Functor f => LScan f where
 
 When |f| is in |Traversable|, there is simple and general specification using operations from the standard Haskell libraries:
 \begin{code}
-lscan == swap . mapAccumL ( acc a -> (acc <> a,acc)) mempty
+lscan == swap . mapAccumL (\ acc a -> (acc <> a,acc)) mempty
 \end{code}
 where |mapAccumL| has type
 \begin{code}
@@ -429,8 +430,8 @@ Rather than defining |LScan| instances for all of our data types, the idea of ge
 \begin{code}
 class Functor f => LScan f where
   lscan :: Monoid a => f a -> f a :* a
-  default lscan  ::  (Generic1 f, LScan (Rep1 f))
-                 =>  Monoid a => f a -> f a :* a
+  default lscan  ::  (Generic1 f, LScan (Rep1 f), Monoid a)
+                 =>  f a -> f a :* a
   lscan = first to1 . lscan . from1
 \end{code}
 
@@ -438,7 +439,7 @@ As an example of a sequential (non-parallel) scan, see \circuitrefdef{lsums-lv8}
 In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|), and the work and depth are shown in the caption (as \emph{W} and \emph{D}).
 As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
 
-Once we define |LScan| instances for our six fundamental combinators and given |Generic1| instances (defined automatically or manually) for a functor |Foo|, one can simply write |instance LScan Foo|. For our statically shaped vector, tree, and bush functors, we can use the GADT definitions with their manually defined |Generic1| instances, exploiting the |lscan| default, or we can use the type family versions without the need for the encoding (|from1|) and decoding (|to1|) steps.
+Once we define |LScan| instances for our six fundamental combinators and given |Generic1| instances (defined automatically or manually) for a functor |Foo|, one can simply write ``|instance LScan Foo|''. For our statically shaped vector, tree, and bush functors, we can use the GADT definitions with their manually defined |Generic1| instances, exploiting the |lscan| default, or we can use the type family versions without the need for the encoding (|from1|) and decoding (|to1|) steps.
 
 \subsection{Easy instances}
 
@@ -460,7 +461,8 @@ Comments:
 \note{|LambdaCase| and |EmptyCase| extensions.}
 \item An empty structure can only generate another empty structure with a summary value of |mempty|.
 \item For a singleton value |Par1 a|, the combination of values before the first and only one is |mempty|, and the summary is the single values |a|.
-\item For a sum, scan whichever structure is present and re-tag.
+\item For a sum, scan whichever structure is present, and re-tag.
+  The higher-order function |first| applies a given function to the first element of a pair, carrying the second element along unchanged.
 \end{itemize}
 
 With these easy instances out of the way, we have only two left to define: product and composition.
@@ -481,7 +483,7 @@ The prefixes of |g|, are not prefixes of |f :*: g|, however, since each is missi
 The prefix \emph{sums}, therefore, are lacking the sum of all of |f|, which corresponds to the last output of the |lscan| result for |f|.
 All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| result, as shown in \circuitrefdef{lsums-lv5xlv11-highlight}{Product scan}{26}{11}.
 
-The general product instance is in \figrefdef{product-scan}{Product scan}{
+The general product instance is in \figrefdef{product-scan}{Product scan definition}{
 \begin{code}
 instance (LScan f, LScan g) => LScan (f :*: g) where
   lscan (fa :*: ga) = (fa' :*: ((fx <> NOP) <#> ga'), fx <> gx)
@@ -548,7 +550,7 @@ We can instead adjust \emph{every} quadruple by the corresponding result of this
 These zero-additions can then be optimized away later.
 See \circuitrefdef{lsums-lv5olv7-highlight}{Scan for |LVec N5 :.: LVec N7|}{59}{10} for a larger example showing this same pattern.
 
-The general case is captured in an |LScan| instance for functor composition, in \figrefdef{composition-scan}{Composition scan}{
+The general case is captured in an |LScan| instance for functor composition, in \figrefdef{composition-scan}{Composition scan definition}{
 \begin{code}
 instance (LScan g, LScan f, Zip g) =>  LScan (g :.: f) where
   lscan (Comp1 gfa) = (Comp1 (zipWith adjustl tots' gfa'), tot)
@@ -585,6 +587,8 @@ Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bus
 \subsection{Complexity analysis}
 
 \note{Either in this section or sprinkled throughout the functor combinators and examples above.}
+
+\subsection{Applications}
 
 \subsection{Relation to known parallel scan algorithms}
 
