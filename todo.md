@@ -1,5 +1,6 @@
-
-*   Title
+*   Title:
+    *   "Two generic functional parallel algorithms" (current)
+    *   "Generic parallel scan and FFT"
 *   Update from old sigplanconf.cls
 *   Check for accidental paragraphs after `\\end{code}`.
 *   Misc:
