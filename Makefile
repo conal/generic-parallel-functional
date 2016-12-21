@@ -1,15 +1,13 @@
 targ = gpf
 
-.PRECIOUS: %.tex
+# .PRECIOUS: %.tex
 
 default: $(targ).pdf
 
 %.pdf: %.tex Makefile
-	pdflatex $*.tex
+	latexmk -pdf $*.tex
 
-# --poly is default for lhs2TeX
-
-# $(short).lhs includes tcm.lhs, so use this modified rule
+# Was: pdflatex $*.tex
 
 %.tex: %.lhs macros.tex mine.fmt pdfs Makefile
 	lhs2TeX -o $*.tex $*.lhs
