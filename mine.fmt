@@ -40,6 +40,8 @@
 %format `mappend` = " \oplus "
 %format mappend = "(\oplus)"
 
+%format :* = " \times "
+
 %% %format fmap(f)(x) = f <$> x
 
 %format  N0 =  0
