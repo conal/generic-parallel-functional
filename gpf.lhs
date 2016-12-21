@@ -585,9 +585,13 @@ Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bus
 \circuitdef{lsums-bush2}{|Bush N2|}{30}{5}
 \circuitdef{lsums-bush3}{|Bush N3|}{719}{10}
 
+\note{Efficiency remarks about |RPow|, |LPow|, and |Bush|.}
+
 \subsection{Complexity analysis}
 
 \note{Either in this section or sprinkled throughout the functor combinators and examples above.}
+
+\subsection{Relation to known parallel scan algorithms}
 
 \section{FFT}
 
@@ -600,7 +604,7 @@ Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bus
   How would this work look with full dependent types?
 \end{itemize}
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+%% \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \bibliography{bib}
 
