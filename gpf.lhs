@@ -96,17 +96,14 @@ lToR :: LList a -> RList a
 lToR LNil = RNil
 lToR (as >: a) = a :< lToR as
 \end{code}
-
 Since these list types are easily isomorphic, why would we want to distinguish between them? One reason is that they may capture different intents. For instance, a zipper for right lists comprises a left-list for the (reversed) elements leading up to a position, a current element of focus, and a right-list for the not-yet-visited elements:
 \begin{code}
 data ZipperRList a = ZipperRList (LList a) a (RList a)
 \end{code}
-
 or
 \begin{code}
 type ZipperRList = LList :*: Par1 :*: RList
 \end{code}
-
 \note{To do: review Conor McBride's papers, and cite them here.}
 
 Another reason is that have usefully different instances for standard type classes, leading---as we will see---to different operational characteristics, especially with regard to parallelism.
@@ -119,12 +116,10 @@ Start with a simple binary leaf tree, i.e., one in which data occurs only in lea
 \begin{code}
 data Tree a = Leaf a | Branch (Tree a) (Tree a)
 \end{code}
-
 As one variation, we could instead place data in the branch nodes:
 \begin{code}
 data Tree a = Leaf | Branch (Tree a) a (Tree a)
 \end{code}
-
 Another variation is ternary rather than binary leaf trees:
 \begin{code}
 data Tree a = Leaf a | Branch (Tree a) (Tree a) (Tree a)
@@ -156,9 +151,7 @@ Not only do we have repetition \emph{within} each instance definition (the three
 \begin{code}
 type Vec :: Nat -> * -> *  -- abstract for now
 \end{code}
-
 \note{Explain notation.}
-
 Then we can define a single type of $n$-ary leaf trees:
 \begin{code}
 data Tree n a = Leaf a | Branch (Vec n (Tree a))
@@ -179,21 +172,18 @@ instance Traversable (Tree n) where
   traverse f (Branch ts) =
     Branch <$$> (traverse.traverse) f ts
 \end{code}
-
 \note{Note that |<$$>| is infix |fmap|.}
 
 Notice that these instance definitions rely on very little about the |Vec n| functor. Specifically, for each of |Functor|, |Foldable|, and |Traversable|, the instance for |Tree n| needs only the corresponding instance for |Vec n|. For this reason, we can easily generalize |Vec n| as follows:
 \begin{code}
 data Tree f a = Leaf a | Branch (f (Tree a))
 \end{code}
-
 The instance definitions for ``|f|-ary'' trees are exactly as with $n$-ary, except for making the requirements on |f| implicit:
 \begin{code}
 instance Functor      f => Functor      (Tree f) where ...
 instance Foldable     f => Foldable     (Tree f) where ...
 instance Traversable  f => Traversable  (Tree f) where ...
 \end{code}
-
 \note{Type-check all of these definitions with a test module.}
 
 This generalization covers ``list-ary'' (rose) trees and even ``tree-ary'' trees.
@@ -215,7 +205,6 @@ data TTree f a = TLeaf a | TBranch (f (TDTree a))
 
 data BTree f a = BLeaf a | BBranch (BTree (f a))
 \end{code}
-
 Bottom-up trees (|LTree|) are a canonical example of ``nested'' or ``non-regular'' data types, requiring polymorphic recursion \cite{Bird1998}.
 
 \subsection{Statically shaped variations}\seclabel{statically-shaped-types}
@@ -235,7 +224,6 @@ A lightweight compromise is to simulate some of the power dependent types via ty
 \begin{code}
 data Nat = Z | S Nat
 \end{code}
-
 Thanks to promotion, |Nat| is not only a new data type with value-level constructors |Z| and |S|, but also a new \emph{kind} with \emph{type-level} constructors |Z| and |S|.
 
 \subsubsection{GADT formulation}
@@ -337,7 +325,6 @@ Note the similarity between the |RVec| and |RPow| type family instances and the 
 h ^ 0      = 1
 h ^ (1+n)  = h * (h ^ n)
 \end{code}
-
 Likewise, the type family instances for |LVec| and |LPow| are analogous to the following equivalent definitions of Peano multiplication and exponentiation:
 \begin{code}
 0      * a = 0
@@ -346,7 +333,6 @@ Likewise, the type family instances for |LVec| and |LPow| are analogous to the f
 h ^ 0      = 1
 h ^ (n+1)  = (h ^ n) * h
 \end{code}
-
 \note{Something about tries and logarithms, or ``Naperian functors''.}
 
 Because these type-family-based definitions are expressed in terms of existing generic building blocks, we directly inherit many existing class instances rather than having to define them. A downside is that we \emph{cannot} provide them, which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
@@ -359,7 +345,6 @@ type family Bush n where
   Bush Z      = Pair
   Bush (S n)  = Bush n :.: Bush n
 \end{code}
-
 There's nothing special about |Pair| or \emph{binary} composition here.
 We could easily generalize to |RPow (Bush n) m| or |LPow (Bush n) m|.
 
@@ -482,7 +467,6 @@ Because we are left-scanning every prefix of |f| is also a prefix of |f :*: g|, 
 The prefixes of |g|, are not prefixes of |f :*: g|, however, since each is missing all of |f|.
 The prefix \emph{sums}, therefore, are lacking the sum of all of |f|, which corresponds to the last output of the |lscan| result for |f|.
 All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| result, as shown in \circuitrefdef{lsums-lv5xlv11-highlight}{Product scan}{26}{11}.
-
 The general product instance is in \figrefdef{product-scan}{Product scan definition}{
 \begin{code}
 instance (LScan f, LScan g) => LScan (f :*: g) where
