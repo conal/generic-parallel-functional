@@ -13,12 +13,12 @@
 \bibpunct();A{},
 \let\cite=\citep
 
-\input{macros}
-
 %include polycode.fmt
 %include forall.fmt
 %include greek.fmt
 %include mine.fmt
+
+\input{macros}
 
 \setlength\mathindent{1ex}
 
@@ -57,21 +57,21 @@ These type primitives serve to connect algorithms with data types in the followi
 \end{itemize}
 In this way, algorithms and data types are defined independently and then automatically work together.
 
-A particular version of this general scheme is found in |GHC.Generics|, in which the type primitives are really \emph{functor} building blocks.~\cite{Magalhaes:2010}.
+One version of this general scheme is found in |GHC.Generics|, in which the type primitives are really \emph{functor} building blocks.
 \note{Also, cite the wiki page and the Haddock docs.}
 For this paper, we'll use six: sum, product, composition, and their three corresponding identities, as in \figrefdef{ghc-generics}{Functor building blocks}{
 \begin{code}
-data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  -- lifted |Either|
-data     (f  :*:  g)  a = f a :*: g a          -- lifted |(,)|
-newtype  (g  :.:  f)  a = Comp1 (g (f a))      -- composition
+data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  SPC  -- lifted |Either|
+data     (f  :*:  g)  a = f a :*: g a               -- lifted |(,)|
+newtype  (g  :.:  f)  a = Comp1 (g (f a))           -- composition
 
-data     V1           a                        -- lifted |Void|
-newtype  U1           a = U1                   -- lifted |()|
-newtype  Par1         a = Par1 a               -- singleton
+data     V1           a                             -- lifted |Void|
+newtype  U1           a = U1                        -- lifted |()|
+newtype  Par1         a = Par1 a                    -- singleton
 \end{code}
 }
 There are additional definitions that capture recursion and meta-data such as field names and operator fixity, but the collection in \figref{ghc-generics} suffices for this paper.
-To make the encoding of data types easy, |GHC.Generics| come with a generic deriving mechanism (enabled by the |DeriveGeneric| flag), so that for regular (not generalized) algebraic data types, one can simply write ``data ... deriving Generic'' for types of kind |*|.
+To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| flag), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*|~\cite{Magalhaes:2010}.
 For type constructors of kind |* -> *|, as in this paper, one derives |Generic1| instead.
 Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving an encoding functor |Rep f| and encoding and decoding operations |to1| and |from1|, as in \figrefdef{Generic1}{Functor encoding and decoding}{
 \begin{code}
@@ -326,11 +326,11 @@ Both forms can be ``statically shaped'', but we'll use just perfect trees in thi
 For succinctness, rename |Leaf| and |Branch| to ``|L|'' and ``|B|''.
 For reasons soon to be explained, also rename the types |TTree| and |BTree| to ``|RPow|'' and ``|LPow|'':
 \begin{code}
-data RPow :: (* -> *) -> Nat -> * -> * where
+data RPow :: (* -> *) -> Nat -> * -> * SPC where
   L :: a -> RPow f Z a
   B :: f (RPow f n a) -> RPow f (S n) a
 
-data LPow :: (* -> *) -> Nat -> * -> * where
+data LPow :: (* -> *) -> Nat -> * -> * SPC where
   L :: a -> LPow f Z a
   B :: LPow f n (f a) -> LPow f (S n) a
 \end{code}
@@ -697,10 +697,10 @@ lalls      = lscanN @All
 \end{code}
 The |(***)| operation applies two given functions to the respective components of a pair.
 
-\subsection{Applications}\sectiondef{scan-apps}
+\subsectiondef{Applications}
 
-As a first simple example application of parallel scan, let's construct powers of a given number to fill a structure `f`.
-A simple implementation constructs a structure with identical values using |pure| (from |Applicative|) and then calculates all prefix products:
+As a first simple example application of parallel scan, let's construct powers of a given number to fill a structure |f|.
+A simple implementation builds a structure with identical values using |pure| (from |Applicative|) and then calculates all prefix products:
 
 > powers :: (LScan f, Applicative f, Num a) => a -> f a :* a
 > powers = lproducts  . pure
@@ -708,9 +708,9 @@ A simple implementation constructs a structure with identical values using |pure
 \circuitrefdef{powers-rb4-no-hash}{|powers @(RBin N4)|}{32}{4} shows one instance of |powers|.
 A quick examination shows that there is a lot of redundant computation due to the special context of scanning over identical values.
 For instance, for an input $x$, we compute $x^2$ eight times and $x^4$ four times.
-Fortunately, automatic common subexpression elimination (CSE) eliminates these redundancies easily, resulting in \circuitrefdef{powers-rb4}{|powers @(RBin N4)| --- with CSE}{15}{4}.
+Fortunately, automatic common subexpression elimination (CSE) removes these redundancies easily, resulting in \circuitrefdef{powers-rb4}{|powers @(RBin N4)| --- with CSE}{15}{4}.
 
-Building on this example, let's define polynomial evaluation, mapping a structure of coefficients $a_0, \ldots, a_n$ and a parameter $x$ to $\sum_{0 \le i < n} a_i \cdot x^i$\out{$a_0 + a_1 x + \cdots + a_{n-1} x^{n-1}$}.
+Building on this example, let's define polynomial evaluation, mapping a structure of coefficients $a_0, \ldots, a_{n-1}$ and a parameter $x$ to $\sum_{0 \le i < n} a_i \cdot x^i$\out{$a_0 + a_1 x + \cdots + a_{n-1} x^{n-1}$}.
 A very simple formulation is to construct all of the powers of $x$ and then form a dot product with the coefficients:
 
 \begin{code}
@@ -735,13 +735,10 @@ The Fast Fourier Transform (FFT) algorithm computes the Discrete Fourier Transfo
 First discovered by Gauss~\cite{GaussFFTHistory}, the algorithm was rediscovered by \citet{danielson1942some}, and later by \citet{CooleyTukey}, who popularized the algorithm.
 
 Given a sequence of complex numbers, $x_0, \ldots, x_{N-1}$, the DFT is defined as
-
 $$ X_k =  \sum\limits_{n=0}^{N-1} x_n e^{\frac{-i2\pi kn}{N}} \text{, \quad for\ } 0 \le k < N $$
-
 Naively implemented, this DFT definition leads to quadratic work.
 The main trick to FFT is to factor $N$ into $N_1 N_2$ and then optimize the DFT definition, removing some exponentials that turn out to be equal to one.
 The simplified result:
-
 $$
       \sum_{n_1=0}^{N_1-1} 
         \left[ e^{-\frac{2\pi i}{N} n_1 k_2} \right]
@@ -749,7 +746,6 @@ $$
                   e^{-\frac{2\pi i}{N_2} n_2 k_2 } \right)
         e^{-\frac{2\pi i}{N_1} n_1 k_1}
 $$
-
 In this form, we have two smaller sets of DFTs: $N_1$ of size $N_2$ each, and $N_2$ of size $N_1$ each.
 See \figrefdef{factored-dft}{Factored DFT}{\pic{cooley-tukey-general}}, from~\cite{JohnsonCooleyTukeyPic}.
 
@@ -778,7 +774,7 @@ class FFT f where
 
 Again, instances for |U1| and |Par1| are easy to define (exercise).
 We will \emph{not} be able to define an instance for |f :*: g|.
-Instead, for small functors, such as short vectors, we can simply use the DFT.
+Instead, for small functors, such as short vectors, we can simply use the DFT definition.
 The uniform pair case simplifies particularly nicely:\notefoot{I don't think I've defined |Pair|.}
 
 > instance FFT Pair where
@@ -803,15 +799,16 @@ Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ r
 > twiddle = (liftA2.liftA2) (*) (omegas (size @(g :.: f)))
 >
 > omegas :: ... => Int -> g (f (Complex a))
-> omegas n = powers <$> powers (exp (- i * 2 * pi / fromIntegral n))
+> omegas n =
+>  powers <$> powers (exp (- i * 2 * pi / fromIntegral n))
 
 The |size| method calculates the size of a structure.
 The ``|@|'' notation here is visible type application~\cite{eisenberg2016visible}.
 Unsurprisingly, the size of a composition is the product of the sizes.
 
-Since |powers| is a scan (as defined in \secref{scan-apps}), we can compute it efficiently in parallel.
+Since |powers| is a scan (as defined in \secref{Applications}), we can compute |omegas| efficiently in parallel.
 
-\subsection{Comparison}
+\subsection{Comparing data types}
 
 \figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figref{fft-bush2} for a bush of depth two.
 Each complex number appears as its real and imaginary components.
@@ -820,8 +817,8 @@ Each complex number appears as its real and imaginary components.
 \circuitdef{fft-bush2}{|Bush N2|}{186}{6}
 
 The top-down and bottom-up tree algorithms correspond to two popular FFT variations known as ``decimation in time'' and ``decimation in frequency'' (``DIT'' and ``DIF''), respectively.
-In the array formulation, these variations arise by choosing $N_1=2$ or $N_2=2$.
-A more detailed comparison is in \figreftwo{fft-stats-16}{fft-stats-256}.
+In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2$.
+\figreftwo{fft-stats-16}{fft-stats-256} offer a more detailed comparison.
 \figdef{fft-stats-16}{FFT for 16 complex values}{
 \fftStats{
   \stat{|RPow Pair N4|}{74}{40}{74}{197}{8}
@@ -834,7 +831,7 @@ A more detailed comparison is in \figreftwo{fft-stats-16}{fft-stats-256}.
   \stat{|LPow Pair N8|}{2690}{2582}{2690}{8241}{20}
   \stat{|Bush      N3|}{2528}{1922}{2528}{7310}{14}
 }}
-(The ``total'' operation count includes constants.)
+(The total operation counts include constants.)
 Unlike scan, top-down and bottom-up trees lead to exactly the same work and depth.
 Pleasantly, the |Bush| instance of generic FFT appears to improve over the classic DIT and DIF algorithms in both work and depth.
 
