@@ -2,16 +2,7 @@
 
 \documentclass[preprint]{sigplanconf}
 
-% I don't like links while drafting, since they result in a bookmarks pane
-% in Acrobat Reader.  Turn off "draft" later.
 \usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
-
-% \pagenumbering{arabic}
-
-% author-date form
-\usepackage[]{natbib}
-\bibpunct();A{},
-\let\cite=\citep
 
 %include polycode.fmt
 %include forall.fmt
@@ -20,13 +11,9 @@
 
 \input{macros}
 
-\setlength\mathindent{1ex}
-
 \title{Two generic functional parallel algorithms}
 
 \authorinfo{Conal Elliott}{Target}{conal@@conal.net}
-
-\bibliographystyle{plainnat}
 
 \begin{document}
 
@@ -48,7 +35,8 @@ Instantiating the generic formulations to ``top-down'' and ``bottom-up'' trees, 
 
 \section{Datatype-generic programming in Haskell}
 
-There is a long, rich history of datatype-generic programming in Haskell~\note{refs}.
+There is a long, rich history of datatype-generic programming in Haskell.
+See, e.g., \cite{Gibbons06DatatypeGeneric,DatatypeGenericComparison2012}.
 The basic idea of most such designs is to relate a broad range of types to a small set of basic ones via isomorphism (or more accurately, embedding-projection pairs), particularly binary sums and products and their corresponding identities (``void'' and ``unit'').
 These type primitives serve to connect algorithms with data types in the following sense:
 \begin{itemize}
