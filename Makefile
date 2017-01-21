@@ -15,13 +15,12 @@ default: $(targ).pdf
 showpdf=skim
 
 dots = $(wildcard figures/*.dot)
-pdfs = $(addsuffix .pdf, $(basename $(dots)))
 
 # Cap the size so that LaTeX doesn't choke.
 %.pdf: %.dot # Makefile
 	dot -Tpdf -Gmargin=0 -Gsize=10,10 $< -o $@
 
-pdfs: $(pdfs)
+pdfs: $(addsuffix .pdf, $(basename $(dots)))
 
 see: $(targ).pdf
 	${showpdf} $(targ).pdf
