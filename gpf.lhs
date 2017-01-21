@@ -71,7 +71,7 @@ newtype  Par1         a = Par1 a                    -- singleton
 \end{code}
 }
 There are additional definitions that capture recursion and meta-data such as field names and operator fixity, but the collection in \figref{ghc-generics} suffices for this paper.
-To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| flag), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*|~\cite{Magalhaes:2010}.
+To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| flag), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*| \cite{Magalhaes:2010}.
 For type constructors of kind |* -> *|, as in this paper, one derives |Generic1| instead.
 Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving an encoding functor |Rep f| and encoding and decoding operations |to1| and |from1|, as in \figrefdef{Generic1}{Functor encoding and decoding}{
 \begin{code}
@@ -97,21 +97,15 @@ Let's start with a very familiar data type of lists:
 \begin{code}
 data List a = Nil | Cons a (List a)
 \end{code}
-
-%format :< = " \triangleleft "
-%format >: = " \triangleright "
-
 This data type is sometimes more specifically called ``cons lists'' (for historical reasons going back to early Lisp implementations).
 One might also call them ``right lists'', since they grow rightward.
 \begin{code}
 data RList a = RNil | a :< RList a
 \end{code}
-
 Alternatively, there are ``snoc lists'' or ``left lists'', which grow leftward:
 \begin{code}
 data LList a = LNil | LList a >: a
 \end{code}
-
 In terms of our functor algebra, we are using sum, unit, identity, and product:
 \begin{code}
 type RList =~ U1 :+: Par1 :*: RList
@@ -196,28 +190,29 @@ instance Foldable Tree where
     foldMap h t1 <> foldMap h t2 <> foldMap h t3
 
 instance Traversable Tree where
-  traverse h (Leaf a) = Leaf <$$> h a
+  traverse h (Leaf a) = Leaf <#> h a
   traverse h (Branch t1 t2 t3) =
-    Branch <$$> traverse h t1 <*> traverse h t2 <*> traverse h t3
+    Branch <#> traverse h t1 <*> traverse h t2 <*> traverse h t3
 \end{code}
+Note that |<#>| is infix |fmap|.
 
 Not only do we have repetition \emph{within} each instance definition (the three occurrences of |fmap h| above), we also have repetition \emph{among} instances for $n$-ary trees for different $n$.
 Fortunately, we can simplify and unify with a shift in formulation.
 Think of a branch node as having not $n$ subtrees, but rather a single uniform $n$-tuple of subtrees.
 Assume for now that we have a functor of finite lists statically indexed by length as well as element type:
 \begin{code}
-type Vec :: Nat -> * -> *  -- abstract for now
+type Vec :: Nat -> * -> * SPC -- abstract for now
 instance Functor      (Vec n) where ...
 instance Foldable     (Vec n) where ...
 instance Traversable  (Vec n) where ...
 \end{code}
-\note{Explain notation.}
-Then we can define a single type of $n$-ary leaf trees:
+\out{\note{Explain notation.}}
+Define a single type of $n$-ary leaf trees, polymorphic over $n$:
 \begin{code}
 data Tree n a = Leaf a | Branch (Vec n (Tree a))
 \end{code}
 
-The more general vector-based instance definitions are simpler than even the binary-only versions given above:\footnote{Note that |<$$>| is infix |fmap|.}
+The more general vector-based instance definitions are simpler than even the binary-only versions given above:
 \begin{code}
 instance Functor (Tree n) where
   fmap h (Leaf a) = Leaf (h a)
@@ -228,14 +223,14 @@ instance Foldable (Tree n) where
   foldMap h (Branch ts) = (foldMap.foldMap) h ts
 
 instance Traversable (Tree n) where
-  traverse h (Leaf a) = Leaf <$$> h a
+  traverse h (Leaf a) = Leaf <#> h a
   traverse f (Branch ts) =
-    Branch <$$> (traverse.traverse) f ts
+    Branch <#> (traverse.traverse) f ts
 \end{code}
 
 Notice that these instance definitions rely on very little about the |Vec n| functor.
 Specifically, for each of |Functor|, |Foldable|, and |Traversable|, the instance for |Tree n| needs only the corresponding instance for |Vec n|.
-For this reason, we can easily generalize |Vec n| as follows:
+For this reason, we can easily generalize from |Vec n| as follows:
 \begin{code}
 data Tree f a = Leaf a | Branch (f (Tree a))
 \end{code}
@@ -245,8 +240,6 @@ instance Functor      f => Functor      (Tree f) where ...
 instance Foldable     f => Foldable     (Tree f) where ...
 instance Traversable  f => Traversable  (Tree f) where ...
 \end{code}
-\note{Type-check all of these definitions with a test module.}
-
 This generalization covers ``list-ary'' (rose) trees and even ``tree-ary'' trees.
 With this functor-parametrized tree type, we can reconstruct $n$-ary trees as |Tree (Vec n)|.
 
@@ -426,7 +419,8 @@ type family Bush n where
   Bush Z      = Pair
   Bush (S n)  = Bush n :.: Bush n
 \end{code}
-Whereas each |RPow Pair n| and |LPow Pair n| holds $2^n$ elements, each statically shaped |Bush n| hold $2^{2^n}$ elements.
+The uniform |Pair| functor can be defined in a variety of ways, including as |Par1 :*: Par1|.
+Whereas each |RPow Pair n| and |LPow Pair n| holds $2^n$ elements, each statically shaped |Bush n| holds $2^{2^n}$ elements.
 Moreover, there's nothing special about |Pair| or \emph{binary} composition here.
 Either could be replaced or generalized.
 
@@ -442,6 +436,8 @@ Likewise, functor composition is associative up to isomorphism.
 Where |RPow f| and |LPow f| are fully right- and left-associated compositions, |Bush f| forms balanced compositions.
 Many other variations are possible, but the |Bush| definition above will suffice for this paper.
 
+\note{The previous paragraph is somewhat redundant with the preceding paragraphs. Tighten.}
+
 \section{Parallel scan}
 
 Given $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ldots,b_n$ such that
@@ -452,47 +448,34 @@ with $b_0$ being the identity for $\oplus$.
 (One can define a similar operation if we assume semigroup---lacking identity element---rather than monoid, but the development is more straightforward with identity.)
 
 Parallel scan has surprisingly broad applications, including the following, taken from a longer list in \cite{BlellochTR90}:
-
 \begin{itemize}
-\item
-  Adding multi-precision numbers
-\item
-  Polynomial evaluation
-\item
-  Solving recurrences
-\item
-  Sorting
-\item
-  Solving tridiagonal linear systems
-\item
-  Lexical analysis
-\item
-  Regular expression search
-\item
-  Labeling components in two dimensional images
+\item Adding multi-precision numbers
+\item Polynomial evaluation
+\item Solving recurrences
+\item Sorting
+\item Solving tridiagonal linear systems
+\item Lexical analysis
+\item Regular expression search
+\item Labeling components in two dimensional images
 \end{itemize}
-
 Scans may be ``prefix'' (from the left, as above) or or ``suffix'' (from the right).
 We will just develop prefix scan, but generic suffix scan works out in the same way.
 
 Note that $a_k$ does \emph{not} influence $b_k$.
 Often scans are classified as ``exclusive'', as above, or ``inclusive'', where $a_k$ does contribute to $b_k$.
-Note also that there is one more output element than input, which is atypical in parallel computing, perhaps because scans are often performed in place.
+Note also that there is one more output element than input, which is atypical in the literature on parallel prefix algorithms, perhaps because scans are often performed in place.
 As we will see below, the choice of exclusive+total above makes for a more elegant generic decomposition.
 
 The standard list prefix scans in Haskell, |scanl| and |scanr|, also yield one more output element than input, which is possible for lists.
 For other data types, such as trees and especially perfect ones, there may not be a place to stash the extra value.
-For a generic scan applying to many different data types, we can simply form a product, so that scanning maps |f a| to |f a :* a|.
-\note{Note use of infix product throughout the paper.} The extra summary value is the fold over the whole input structure.
+For a generic scan applying to many different data types, we can simply form a product, so that scanning maps |f a| to |f a :* a|.\footnote{Please forgive the overloading of ``|:*|'' for infix type-level and functor-level products throughout the paper.}
+The extra summary value is the fold over the whole input structure.
 Thus, we have the following class for left-scannable functors:
 \begin{code}
 class Functor f => LScan f where
   lscan :: Monoid a => f a -> f a :* a
 \end{code}
-
-\note{Maybe rename to ``|LScannable|''.}
-
-\note{Maybe remove the |Functor| superclass, which I think just serves convenience.}
+The |Functor| superclass is just for convenience and can be dropped in favor of more verbose signatures elsewhere.
 
 When |f| is in |Traversable|, there is simple and general specification using operations from the standard Haskell libraries:
 \begin{code}
@@ -506,7 +489,7 @@ Traversable t => (b -> a -> b :* c) -> b -> t a -> b :* t c
 Although all of the example types in this paper are indeed in |Traversable|, using this |lscan| specification as an implementation results in an entirely sequential implementation, since data dependencies are \emph{linearly} threaded through the whole computation.
 
 Rather than defining |LScan| instances for all of our data types, the idea of generic programming is to define instances only for the small set of fundamental functor combinators and then automatically compose instances for other types via the generic encodings (derived automatically when possible).
-To do so, provide a default signature and definition for functors with such encodings \note{mention |DefaultSignatures|}:
+To do so, provide a default signature and definition for functors with such encodings \note{mention and cite |DefaultSignatures|}:
 \begin{code}
 class Functor f => LScan f where
   lscan :: Monoid a => f a -> f a :* a
@@ -517,10 +500,11 @@ class Functor f => LScan f where
 
 As an example of a sequential (non-parallel) scan, see \circuitrefdef{lsums-lv8}{Linear scan example}{8}{7}.
 In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|), and the work and depth are shown in the caption (as \emph{W} and \emph{D}).
+``Work'' is the total number of primitive operations performed, while ``depth'' is the longest dependency chain, and hence a measure of ideal parallel computation time \needcite{}.
 As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
 
-Once we define |LScan| instances for our six fundamental combinators and given |Generic1| instances (defined automatically or manually) for a functor |Foo|, one can simply write ``|instance LScan Foo|''.
-For our statically shaped vector, tree, and bush functors, we can use the GADT definitions with their manually defined |Generic1| instances, exploiting the |lscan| default, or we can use the type family versions without the need for the encoding (|from1|) and decoding (|to1|) steps.
+Once we define |LScan| instances for our six fundamental combinators, one can simply write ``|instance LScan F|'' for any functor |F| having a |Generic1| instance (derived automatically or defined manually).
+For our statically shaped vector, tree, and bush functors, we have a choice: use the GADT definitions with their manually defined |Generic1| instances (exploiting the |lscan| default), or use the type family versions without the need for the encoding (|from1|) and decoding (|to1|) steps.
 
 \subsection{Easy instances}
 
@@ -539,7 +523,7 @@ instance (LScan f, LScan g) => LScan (f :+: g) where
 Comments:
 \begin{itemize}
 \item Since there are no values of type |V1 a|, a complete case expression needs no clauses.
-\note{|LambdaCase| and |EmptyCase| extensions.}
+(The definition relies on the |LambdaCase| and |EmptyCase| language extensions.)
 \item An empty structure can only generate another empty structure with a summary value of |mempty|.
 \item For a singleton value |Par1 a|, the combination of values before the first and only one is |mempty|, and the summary is the value |a|.
 \item For a sum, scan whichever structure is present, and re-tag.
@@ -578,13 +562,12 @@ We now have enough functionality for scanning vectors using either the GADT or t
 There are some zero additions that can be easily optimized away, resulting in \circuitrefdef{lsums-rv8}{scan for |RVec N8|, optimized}{29}{7}.
 
 The combination of left scan and right vector is particularly unfortunate, as it involves quadratic work and linear depth.
-\note{Define ``work'' and ``depth'' earlier.}
 The source of quadratic work is the product instance's \emph{right} adjustment combined with the right-associated shape of |RVec|.
 Each single element (left) is used to adjust the entire suffix (right), requiring linear work at each step, summing to quadratic.
 
 In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \circuitrefdef{lsums-lv8-no-hash-no-opt}{scan for |LVec N8|, unoptimized}{25}{8} and \figref{lsums-lv8} (optimized).
 
-Performing a suffix/right scan on a \emph{left} vector also leads to quadratic work, reduced by linear by switching to right vectors.
+Performing a suffix/right scan on a left vector also leads to quadratic work, reduced to linear by switching to right vectors.
 
 Although work is greatly reduced (from quadratic to linear), depth remains at linear.
 The reason is that unbalanced data types lead to unbalanced parallelism.
@@ -679,7 +662,7 @@ class Newtype n where
   pack    :: O n -> n
   unpack  :: n -> O n
 \end{code}
-This class is from~\cite{newtype-generics}, which also defines many instances for commonly used types.
+This class is from \cite{newtype-generics}, which also defines many instances for commonly used types.
 Given this vocabulary, we can scan structures of non-monoidal values by packing values into a chosen monoid, scanning, and then unpacking:
 \begin{code}
 lscanN  ::  forall n o f. (Newtype n, o ~ O n, LScan f, Monoid n)
@@ -732,7 +715,7 @@ See \circuitrefdef{evalPoly-rb4}{|evalPoly @(RBin N4)|}{29+15}{9}.
 \subsection{Background}
 
 The Fast Fourier Transform (FFT) algorithm computes the Discrete Fourier Transform (DFT), reducing work from $O(n^2)$ to $O(n \log n)$.
-First discovered by Gauss~\cite{GaussFFTHistory}, the algorithm was rediscovered by \citet{danielson1942some}, and later by \citet{CooleyTukey}, who popularized the algorithm.
+First discovered by Gauss \cite{GaussFFTHistory}, the algorithm was rediscovered by \citet{danielson1942some}, and later by \citet{CooleyTukey}, who popularized the algorithm.
 
 Given a sequence of complex numbers, $x_0, \ldots, x_{N-1}$, the DFT is defined as
 $$ X_k =  \sum\limits_{n=0}^{N-1} x_n e^{\frac{-i2\pi kn}{N}} \text{, \quad for\ } 0 \le k < N $$
@@ -747,7 +730,7 @@ $$
         e^{-\frac{2\pi i}{N_1} n_1 k_1}
 $$
 In this form, we have two smaller sets of DFTs: $N_1$ of size $N_2$ each, and $N_2$ of size $N_1$ each.
-See \figrefdef{factored-dft}{Factored DFT}{\pic{cooley-tukey-general}}, from~\cite{JohnsonCooleyTukeyPic}.
+See \figrefdef{factored-dft}{Factored DFT}{\pic{cooley-tukey-general}}, from \cite{JohnsonCooleyTukeyPic}.
 
 Rather than implementing FFT via sequences/arrays as usual, let's take a step and consider a more structured approach.
 
@@ -775,7 +758,7 @@ class FFT f where
 Again, instances for |U1| and |Par1| are easy to define (exercise).
 We will \emph{not} be able to define an instance for |f :*: g|.
 Instead, for small functors, such as short vectors, we can simply use the DFT definition.
-The uniform pair case simplifies particularly nicely:\notefoot{I don't think I've defined |Pair|.}
+The uniform pair case simplifies particularly nicely:
 
 > instance FFT Pair where
 >   type FFO Pair = Pair
@@ -803,7 +786,7 @@ Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ r
 >  powers <$> powers (exp (- i * 2 * pi / fromIntegral n))
 
 The |size| method calculates the size of a structure.
-The ``|@|'' notation here is visible type application~\cite{eisenberg2016visible}.
+The ``|@|'' notation here is visible type application \cite{eisenberg2016visible}.
 Unsurprisingly, the size of a composition is the product of the sizes.
 
 Since |powers| is a scan (as defined in \secref{Applications}), we can compute |omegas| efficiently in parallel.
