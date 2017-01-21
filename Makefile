@@ -29,7 +29,7 @@ see: $(targ).pdf
 SHELL = bash
 
 clean:
-	rm -f $(short).{tex,dvi,pdf,aux,bbl,blg,out,log,ptb}
+	rm -f $(targ).{tex,dvi,pdf,aux,bbl,blg,out,log,ptb}
 
 web-paper: web-paper-token
 

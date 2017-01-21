@@ -125,3 +125,20 @@
 
 \nc\figneeded[1]{\figdef{needed}{#1}}
 
+
+\newcommand{\stat}[6]{
+#1 & #2 & #3 & #4 & #5 & #6 \\ \hline
+}
+\newcommand{\fftStats}[1]{
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}
+  \hline
+  \stat{Type}{$+$}{$\times$}{$-$}{total}{max depth} \hline
+  #1
+  \hline
+\end{tabular}
+\end{center}
+}
+
+\nc\symTwo[1]{\mathbin{#1\!\!\!#1}}
+\nc\symThree[1]{\mathbin{#1\!\!\!#1\!\!\!#1}}

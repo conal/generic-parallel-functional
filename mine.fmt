@@ -15,8 +15,11 @@
 %format U1
 %format Par1
 %format Comp1
+%format unComp1
 %format L1
 %format R1
+
+%format liftA2
 
 %format NOP = "{}"
 
@@ -62,3 +65,12 @@
 %format N14 = 14
 %format N15 = 15
 %format N16 = 16
+
+
+%format :# = "\mathbin{:\!\!\#}"
+
+%format *** = "\symThree{*}"
+
+%format <.> = "\cdot"
+
+%format @ = "{\ @}"
