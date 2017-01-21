@@ -1,3 +1,6 @@
+# To do
+
+*   Type-check all definitions with a test module, especially in the early sections on trees.
 *   Title:
     *   "Two generic functional parallel algorithms" (current)
     *   "Generic parallel scan and FFT"
@@ -10,6 +13,10 @@
     *   Reveals commonality of some algorithms that appear quite different.
         Theme: postpone optimization.
 
-Done:
+# Done
 
+*   Define `Pair` before or at its first use.
+*   Define "work" and "depth" at their first use.
 *   Remove code comment indentation.
+*   Maybe rename `LScan` to ``|LScannable|''.
+    No. Too wide.
