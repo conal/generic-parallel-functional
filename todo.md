@@ -9,3 +9,7 @@
     *   "Parallel-friendly" might be more suitable than "parallel".
     *   Reveals commonality of some algorithms that appear quite different.
         Theme: postpone optimization.
+
+Done:
+
+*   Remove code comment indentation.
