@@ -27,7 +27,7 @@ Meanwhile, typed functional programming has explored a variety of data types, in
 Definitions over these few fundamental type constructions then automatically assemble into algorithms for an infinite set of data types---some familiar and some new.
 This paper presents generic functional formulations for two important and well-known classes of parallel algorithms: parallel scan (generalized prefix sum) and Fast Fourier Transform (FFT).
 Notably, arrays play no role in these formulations.
-Consequent benefits include a simpler and more compositional style, much use of common algebraic patterns (such as |Functor|, |Applicative|, |Foldable|, and |Traversable|), and freedom from possibility of run-time indexing errors.
+Consequent benefits include a simpler and more compositional style, much use of common algebraic patterns---such as |Functor|, |Applicative|, |Foldable|, and |Traversable|\out{ \cite{McBride:2008}}---and freedom from possibility of run-time indexing errors.
 The functional generic style also clearly reveals deep commonality among what otherwise appears to be quite different algorithms.
 Instantiating the generic formulations to ``top-down'' and ``bottom-up'' trees, two well-known algorithms for each of parallel scan and FFT naturally emerge, as well as two possibly new algorithms.
 
@@ -45,8 +45,7 @@ These type primitives serve to connect algorithms with data types in the followi
 \end{itemize}
 In this way, algorithms and data types are defined independently and then automatically work together.
 
-One version of this general scheme is found in |GHC.Generics|, in which the type primitives are really \emph{functor} building blocks.
-\note{Also, cite the wiki page and the Haddock docs.}
+One version of this general scheme is found in |GHC.Generics|, in which the type primitives are really \emph{functor} building blocks \cite{HaskellWikiGhcGenerics}.
 For this paper, we'll use six: sum, product, composition, and their three corresponding identities, as in \figrefdef{ghc-generics}{Functor building blocks}{
 \begin{code}
 data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  SPC  -- lifted |Either|
@@ -128,7 +127,7 @@ lToR (as >: a) = a :< lToR as
 \end{code}
 Since these list types are easily isomorphic, why would we want to distinguish between them?
 One reason is that they may capture different intentions.
-For instance, a zipper for right lists comprises a left-list for the (reversed) elements leading up to a position, a current element of focus, and a right-list for the not-yet-visited elements:
+For instance, a zipper for right lists comprises a left-list for the (reversed) elements leading up to a position, a current element of focus, and a right-list for the not-yet-visited elements \cite{HuetZipper1997,McBride01derivative}:
 \begin{code}
 data ZipperRList a = ZipperRList (LList a) a (RList a)
 \end{code}
@@ -136,7 +135,6 @@ or
 \begin{code}
 type ZipperRList = LList :*: Par1 :*: RList
 \end{code}
-\note{To do: review Conor McBride's papers, and cite them here.}
 
 Another reason is that have usefully different instances for standard type classes, leading---as we will see---to different operational characteristics, especially with regard to parallelism.
 
@@ -194,7 +192,6 @@ instance Functor      (Vec n) where ...
 instance Foldable     (Vec n) where ...
 instance Traversable  (Vec n) where ...
 \end{code}
-\out{\note{Explain notation.}}
 Define a single type of $n$-ary leaf trees, polymorphic over $n$:
 \begin{code}
 data Tree n a = Leaf a | Branch (Vec n (Tree a))
@@ -268,7 +265,7 @@ A third---much less commonly used--option is to statically verify the size restr
 
 A lightweight compromise is to simulate some of the power dependent types via type-level encodings of sizes, as with our use of |Nat| for indexing the |Vec| type above.
 There are many possible definitions for |Nat|.
-For this paper, assume that |Nat| is a kind-promoted version \note{cite} of the following data type of Peano numbers (constructed via zero and successor):
+For this paper, assume that |Nat| is a kind-promoted version of the following data type of Peano numbers (constructed via zero and successor) \cite{yorgey2012giving}:
 \begin{code}
 data Nat = Z | S Nat
 \end{code}
@@ -343,7 +340,7 @@ instance  Generic1 (LPow f n) =>
 
 We can then give these statically shaped data types |Functor|, |Foldable|, and |Traversable| instances exactly matching the dynamically shaped versions given above.
 In addition, they have |Applicative| and |Monad| instances, left as an exercise for the reader.
-\note{Maybe provide and mention homomorphisms with the function instances as well as the trie (representable functor) connection.}
+Since all of these types are memo tries \cite{Hinze00memofunctions}, their class instances instance follow homomorphically from the corresponding instances for functions \cite{long-type-class-morphisms}.
 
 \subsubsection{Type family formulation}
 
@@ -353,7 +350,7 @@ Functor product and functor composition are both associative but only up to isom
 This limit to associativity is exactly why both exist and are useful.
 While |RVec| and |RPow| are right associations, |LVec| and |LPow| are left associations.
 
-Instead of the GADT-based definitions given above for |RVec|, |LVec|, |RPow|, and |LPow|, we can make the repeated product and repeated composition more apparent by using type families \note{cite}, with instances defined inductively over type-level natural numbers.
+Instead of the GADT-based definitions given above for |RVec|, |LVec|, |RPow|, and |LPow|, we can make the repeated product and repeated composition more apparent by using closed type families \cite{ClosedTypeFamilies:2014}, with instances defined inductively over type-level natural numbers.
 Vectors:
 \begin{code}
 type family RVec n where
@@ -391,7 +388,6 @@ Likewise, the type family instances for |LVec| and |LPow| are analogous to the f
 h ^ 0      = 1
 h ^ (n+1)  = (h ^ n) * h
 \end{code}
-\note{Something about tries and logarithms, or ``Naperian functors''.}
 
 Because these type-family-based definitions are expressed in terms of existing generic building blocks, we directly inherit many existing class instances rather than having to define them.
 A downside is that we \emph{cannot} provide them, which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
@@ -477,7 +473,7 @@ Traversable t => (b -> a -> b :* c) -> b -> t a -> b :* t c
 Although all of the example types in this paper are indeed in |Traversable|, using this |lscan| specification as an implementation results in an entirely sequential implementation, since data dependencies are \emph{linearly} threaded through the whole computation.
 
 Rather than defining |LScan| instances for all of our data types, the idea of generic programming is to define instances only for the small set of fundamental functor combinators and then automatically compose instances for other types via the generic encodings (derived automatically when possible).
-To do so, provide a default signature and definition for functors with such encodings \note{mention and cite |DefaultSignatures|}:
+To do so, provide a default signature and definition for functors with such encodings:
 \begin{code}
 class Functor f => LScan f where
   lscan :: Monoid a => f a -> f a :* a
