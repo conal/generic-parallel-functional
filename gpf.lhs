@@ -1,8 +1,9 @@
 % -*- latex -*-
 
-\documentclass[preprint]{sigplanconf}
+%% \documentclass[preprint]{sigplanconf}
+\documentclass[acmlarge]{acmart}
 
-\usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
+%% \usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
 
 %include polycode.fmt
 %include forall.fmt
@@ -11,9 +12,21 @@
 
 \input{macros}
 
+\bibliographystyle{plainnat}
+%% % (author date) form
+%% \usepackage[]{natbib}
+%% \bibpunct();A{},
+%% \let\cite=\citep
+\citestyle{acmauthoryear}
+
 \title{Two generic functional parallel algorithms}
 
-\authorinfo{Conal Elliott}{Target}{conal@@conal.net}
+%% \authorinfo{Conal Elliott}{Target}{conal@@conal.net}
+\author{Conal Elliott}
+\email{conal@@conal.net}
+\affiliation{%
+  \institution{Target}
+}
 
 \begin{document}
 
@@ -46,33 +59,32 @@ These type primitives serve to connect algorithms with data types in the followi
 In this way, algorithms and data types are defined independently and then automatically work together.
 
 One version of this general scheme is found in |GHC.Generics|, in which the type primitives are really \emph{functor} building blocks \cite{HaskellWikiGhcGenerics}.
-For this paper, we'll use six: sum, product, composition, and their three corresponding identities, as in \figrefdef{ghc-generics}{Functor building blocks}{
-\begin{code}
-data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  SPC  -- lifted |Either|
-data     (f  :*:  g)  a = f a :*: g a               -- lifted |(,)|
-newtype  (g  :.:  f)  a = Comp1 (g (f a))           -- composition
+For this paper, we'll use six: sum, product, composition, and their three corresponding identities, as in \figref{ghc-generics}.
 
-data     V1           a                             -- lifted |Void|
-newtype  U1           a = U1                        -- lifted |()|
-newtype  Par1         a = Par1 a                    -- singleton
-\end{code}
-}
 There are additional definitions that capture recursion and meta-data such as field names and operator fixity, but the collection in \figref{ghc-generics} suffices for this paper.
 To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| flag), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*| \cite{Magalhaes:2010}.
 For type constructors of kind |* -> *|, as in this paper, one derives |Generic1| instead.
-Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving an encoding functor |Rep f| and encoding and decoding operations |to1| and |from1|, as in \figrefdef{Generic1}{Functor encoding and decoding}{
+Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving an encoding functor |Rep f| and encoding and decoding operations |to1| and |from1|, as in \figref{Generic1}.
+
+\figpairW{0.52}{0.40}{ghc-generics}{Functor building blocks}{
+\begin{code}
+data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  SPC  -- sum
+data     (f  :*:  g)  a = f a :*: g a               -- product
+newtype  (g  :.:  f)  a = Comp1 (g (f a))           -- composition
+
+data     V1           a                             -- void
+newtype  U1           a = U1                        -- unit
+newtype  Par1         a = Par1 a                    -- singleton
+\end{code}
+}{Generic1}{Functor encoding and decoding}{
 \begin{code}
 -- Representable types of kind |* -> *|.
--- This class is derivable in GHC with the |DeriveGeneric| flag on.
 class Generic1 f where
-  --  Generic representation type
   type Rep1 f :: * -> *
-  --  Convert from the datatype to its representation
-  from1  :: f a -> (Rep1 f) a
-  --  Convert from the representation to the datatype
-  to1    :: (Rep1 f) a -> f a
+  from1  :: f a -> Rep1 f a
+  to1    :: Rep1 f a -> f a
 \end{code}
-}.
+}
 
 To define a generic algorithm, one gives class instances for these primitives and gives a general definition in terms of |from1| and |to1|.
 
@@ -84,7 +96,7 @@ Let's start with a very familiar data type of lists:
 \begin{code}
 data List a = Nil | Cons a (List a)
 \end{code}
-This data type is sometimes more specifically called ``cons lists'' (for historical reasons going back to early Lisp implementations).
+This data type is sometimes more specifically called ``cons lists''\out{ (for historical reasons going back to early Lisp implementations)}.
 One might also call them ``right lists'', since they grow rightward.
 \begin{code}
 data RList a = RNil | a :< RList a
@@ -166,19 +178,16 @@ The repetition present in the data type definition will be mirrored in instance 
 For instance, for ternary leaf trees:
 \begin{code}
 instance Functor Tree where
-  fmap h (Leaf a) = Leaf (h a)
-  fmap h (Branch t1 t2 t3) =
-    Branch (fmap h t1) (fmap h t2) (fmap h t3)
+  fmap h (Leaf a)           = Leaf (h a)
+  fmap h (Branch t1 t2 t3)  = Branch (fmap h t1) (fmap h t2) (fmap h t3)
 
 instance Foldable Tree where
-  foldMap h (Leaf a) = h a
-  foldMap h (Branch t1 t2 t3) =
-    foldMap h t1 <> foldMap h t2 <> foldMap h t3
+  foldMap h (Leaf a)           = h a
+  foldMap h (Branch t1 t2 t3)  = foldMap h t1 <> foldMap h t2 <> foldMap h t3
 
 instance Traversable Tree where
-  traverse h (Leaf a) = Leaf <#> h a
-  traverse h (Branch t1 t2 t3) =
-    Branch <#> traverse h t1 <*> traverse h t2 <*> traverse h t3
+  traverse h (Leaf a)           = Leaf <#> h a
+  traverse h (Branch t1 t2 t3)  = Branch <#> traverse h t1 <*> traverse h t2 <*> traverse h t3
 \end{code}
 Note that |<#>| is infix |fmap|.
 
@@ -200,17 +209,16 @@ data Tree n a = Leaf a | Branch (Vec n (Tree a))
 The more general vector-based instance definitions are simpler than even the binary-only versions given above:
 \begin{code}
 instance Functor (Tree n) where
-  fmap h (Leaf a) = Leaf (h a)
-  fmap h (Branch ts) = Branch ((fmap.fmap) f ts)
+  fmap h (Leaf a)     = Leaf (h a)
+  fmap h (Branch ts)  = Branch ((fmap.fmap) f ts)
 
 instance Foldable (Tree n) where
-  foldMap h (Leaf a) = h a
-  foldMap h (Branch ts) = (foldMap.foldMap) h ts
+  foldMap h (Leaf a)     = h a
+  foldMap h (Branch ts)  = (foldMap.foldMap) h ts
 
 instance Traversable (Tree n) where
-  traverse h (Leaf a) = Leaf <#> h a
-  traverse f (Branch ts) =
-    Branch <#> (traverse.traverse) f ts
+  traverse h (Leaf a)     = Leaf <#> h a
+  traverse f (Branch ts)  = Branch <#> (traverse.traverse) f ts
 \end{code}
 
 Notice that these instance definitions rely on very little about the |Vec n| functor.
