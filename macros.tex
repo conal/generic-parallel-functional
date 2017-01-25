@@ -45,22 +45,48 @@
 
 %% http://tex.stackexchange.com/questions/5769/two-figures-side-by-side
 
-\setlength{\fboxsep}{0.25ex}
+\setlength{\fboxsep}{1ex}
 
 %% \figone{fraction}{label}{caption}{content}
 \nc\figoneW[4]{
 \fbox{
-\setlength\mathindent{0ex}
-\begin{subfigure}[c]{#1\textwidth}
+\begin{minipage}{#1\linewidth}
+  \centering
+  \setlength\mathindent{0ex}
   #4
-  \vspace*{-2ex}
-  \caption{#3}
+  \vspace*{-3ex}
+  \captionof{figure}{#3}
   \label{fig:#2}
-\end{subfigure}
+\end{minipage}
 }
 }
-%% \figone{label}{caption}{content}
-\nc\figone{\figoneW{0.47}}
+\nc\figone{\figoneW{\stdWidth}}
+
+%% \figo{fraction}{content}
+\nc\figoW[2]{
+\fbox{
+\begin{minipage}{#1\linewidth}
+  \centering
+  \setlength\mathindent{0ex}
+  #2
+\end{minipage}
+}
+}
+
+\nc\figp[2]{
+\begin{figure}
+\centering
+#1
+\hspace{-2ex}
+#2
+\end{figure}
+}
+
+%% \circdefW{frac}{label}{caption}{work}{depth}
+\nc\circdefW[5]{\figoneW{#1}{#2}{#3 \stats{#4}{#5}}{\incpic{#2}}}
+\nc\circdef{\circdefW{\stdWidth}}
+
+\nc\stdWidth{0.46}
 
 %% \figpair{frac1}{frac2}{label1}{caption1}{content1}{label2}{caption2}{content2}
 \nc\figpairW[8]{
@@ -73,10 +99,12 @@
 \end{figure}
 }
 %% \figpair{label1}{caption1}{content1}{label2}{caption2}{content2}
-\nc\figpair[2]{\figpairW{0.47}{0.47}}
+\nc\figpair{\figpairW{\stdWidth}{\stdWidth}}
 
 \nc\incpic[1]{\includegraphics[width=\linewidth]{figures/#1}}
 
+%% \incpicW{frac}{file}
+\nc\incpicW[2]{\includegraphics[width=#1\linewidth]{figures/#2}}
 
 %%%%%%
 

@@ -19,7 +19,10 @@
 %% \let\cite=\citep
 \citestyle{acmauthoryear}
 
-\title{Two generic functional parallel algorithms}
+% \title{Two generic functional parallel algorithms}
+% \title{Generic functional parallel algorithms}
+% \subtitle{Scan and FFT}
+\title{Generic functional parallel algorithms: Scan and FFT}
 
 %% \authorinfo{Conal Elliott}{Target}{conal@@conal.net}
 \author{Conal Elliott}
@@ -77,6 +80,7 @@ newtype  U1           a = U1                        -- unit
 newtype  Par1         a = Par1 a                    -- singleton
 \end{code}
 }{Generic1}{Functor encoding and decoding}{
+\vspace{1.9ex}
 \begin{code}
 -- Representable types of kind |* -> *|.
 class Generic1 f where
@@ -84,6 +88,7 @@ class Generic1 f where
   from1  :: f a -> Rep1 f a
   to1    :: Rep1 f a -> f a
 \end{code}
+\vspace{1.9ex}
 }
 
 To define a generic algorithm, one gives class instances for these primitives and gives a general definition in terms of |from1| and |to1|.
@@ -141,14 +146,16 @@ Since these list types are easily isomorphic, why would we want to distinguish b
 One reason is that they may capture different intentions.
 For instance, a zipper for right lists comprises a left-list for the (reversed) elements leading up to a position, a current element of focus, and a right-list for the not-yet-visited elements \cite{HuetZipper1997,McBride01derivative}:
 \begin{code}
-data ZipperRList a = ZipperRList (LList a) a (RList a)
+data ZipperList a = ZipperList (LList a) a (RList a)
 \end{code}
 or
 \begin{code}
-type ZipperRList = LList :*: Par1 :*: RList
+type ZipperList = LList :*: Par1 :*: RList
 \end{code}
+In fact, |ZipperList| serves as a zipper for left-lists as well.
+\note{I guess only non-empty lists. Hm. Maybe remark that traversing a right-list to the right end yields a left-list, and conversely.}
 
-Another reason is that have usefully different instances for standard type classes, leading---as we will see---to different operational characteristics, especially with regard to parallelism.
+Another reason for distinguishing left- from right-lists is that they have usefully different instances for standard type classes, leading---as we will see---to different operational characteristics, especially with regard to parallelism.
 
 \subsection{Top-down trees}
 
@@ -432,11 +439,8 @@ Many other variations are possible, but the |Bush| definition above will suffice
 
 \section{Parallel scan}
 
-Given $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ldots,b_n$ such that
-\[b_k = \sum\limits_{0 \le i < k}{a_i}\]
-More generally, given any associative operation $\oplus$, the ``prefix scan'' is defined by
-\[b_k = \bigoplus\limits_{0 \le i < k}{a_i}\]
-with $b_0$ being the identity for $\oplus$.
+Given $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ldots,b_n$ such that $b_k = \sum_{0 \le i < k}{a_i}$.
+More generally, given any associative operation $\oplus$, the ``prefix scan'' is defined by $b_k = \bigoplus_{0 \le i < k}{a_i}$, with $b_0$ being the identity for $\oplus$.
 (One can define a similar operation if we assume semigroup---lacking identity element---rather than monoid, but the development is more straightforward with identity.)
 
 Parallel scan has surprisingly broad applications, including the following, taken from a longer list in \cite{BlellochTR90}:
@@ -464,8 +468,7 @@ For a generic scan applying to many different data types, we can simply form a p
 The extra summary value is the fold over the whole input structure.
 Thus, we have the following class for left-scannable functors:
 \begin{code}
-class Functor f => LScan f where
-  lscan :: Monoid a => f a -> f a :* a
+class Functor f => LScan f where lscan :: Monoid a => f a -> f a :* a
 \end{code}
 The |Functor| superclass is just for convenience and can be dropped in favor of more verbose signatures elsewhere.
 
@@ -477,7 +480,6 @@ where |mapAccumL| has type
 \begin{code}
 Traversable t => (b -> a -> b :* c) -> b -> t a -> b :* t c
 \end{code}
-
 Although all of the example types in this paper are indeed in |Traversable|, using this |lscan| specification as an implementation results in an entirely sequential implementation, since data dependencies are \emph{linearly} threaded through the whole computation.
 
 Rather than defining |LScan| instances for all of our data types, the idea of generic programming is to define instances only for the small set of fundamental functor combinators and then automatically compose instances for other types via the generic encodings (derived automatically when possible).
@@ -485,15 +487,9 @@ To do so, provide a default signature and definition for functors with such enco
 \begin{code}
 class Functor f => LScan f where
   lscan :: Monoid a => f a -> f a :* a
-  default lscan  ::  (Generic1 f, LScan (Rep1 f), Monoid a)
-                 =>  f a -> f a :* a
+  default lscan :: (Generic1 f, LScan (Rep1 f), Monoid a) => f a -> f a :* a
   lscan = first to1 . lscan . from1
 \end{code}
-
-As an example of a sequential (non-parallel) scan, see \circuitrefdef{lsums-lv8}{Linear scan example}{8}{7}.
-In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|), and the work and depth are shown in the caption (as \emph{W} and \emph{D}).
-``Work'' is the total number of primitive operations performed, while ``depth'' is the longest dependency chain, and hence a measure of ideal parallel computation time \needcite{}.
-As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
 
 Once we define |LScan| instances for our six fundamental combinators, one can simply write ``|instance LScan F|'' for any functor |F| having a |Generic1| instance (derived automatically or defined manually).
 For our statically shaped vector, tree, and bush functors, we have a choice: use the GADT definitions with their manually defined |Generic1| instances (exploiting the |lscan| default), or use the type family versions without the need for the encoding (|from1|) and decoding (|to1|) steps.
@@ -526,20 +522,23 @@ With these easy instances out of the way, we have only two left to define: produ
 
 \subsection{Product}
 
-Suppose we have linear scans of size, as in \figrefdef{two-scans}{Two scans}{
-\vspace{-2ex}
-\wfig{2.0in}{lsums-lv5}
-\vspace{-5ex}
-\wfig{3.3in}{lsums-lv11}
-}.
+Suppose we have linear scans of size, as in \figref{two-scans}.
 We will see later how these individual scans arise from particular functors |f| and |g| (of sizes five and eleven respectively), but for now take them as given.
 To understand |lscan| on functor products, consider how to combine the scans of |f| and |g| into scan for |f :*: g|.
 
 Because we are left-scanning, every prefix of |f| is also a prefix of |f :*: g|, so the |lscan| results for |f| are also correct results for |f :*: g|.
 The prefixes of |g| are not prefixes of |f :*: g|, however, since each |g|-prefix misses all of |f|.
 The prefix \emph{sums}, therefore, are lacking the sum of all of |f|, which corresponds to the last output of the |lscan| result for |f|.
-All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| result, as shown in \circuitrefdef{lsums-lv5xlv11-highlight}{Product scan}{26}{11}.
-The general product instance is in \figrefdef{product-scan}{Product scan definition}{
+All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| result, as shown in \figref{lsums-lv5xlv11-highlight}.
+\figpair{two-scans}{Two scans}{
+\vspace{1.8ex}
+\incpicW{0.6}{lsums-lv5}
+
+\vspace{2.4ex}
+\incpic{lsums-lv11}
+\vspace{1ex}
+}{lsums-lv5xlv11-highlight}{Product scan \stats{26}{11}}{\incpic{lsums-lv5xlv11-highlight}}
+The general product instance:
 \begin{code}
 instance (LScan f, LScan g) => LScan (f :*: g) where
   lscan (fa :*: ga) = (fa' :*: ((fx <> NOP) <#> ga'), fx <> gx)
@@ -547,19 +546,30 @@ instance (LScan f, LScan g) => LScan (f :*: g) where
      (fa'  , fx)  = lscan fa
      (ga'  , gx)  = lscan ga
 \end{code}
-}.
 
 We now have enough functionality for scanning vectors using either the GADT or type family definitions from \secref{statically-shaped-types}.
-\circuitrefdef{lsums-rv8-no-hash-no-opt}{scan for |RVec N8|, unoptimized}{45}{8} shows |lscan| for |RVec N8| (\emph{right} vector of length 8).
-There are some zero additions that can be easily optimized away, resulting in \circuitrefdef{lsums-rv8}{scan for |RVec N8|, optimized}{29}{7}.
+\figref{lsums-rv8-no-hash-no-opt} shows |lscan| for |RVec N8| (\emph{right} vector of length 8).
+There are some zero-additions that can be easily optimized away, resulting in \figref{lsums-rv8}.
+In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|), and the work and depth are shown in the caption (as \emph{W} and \emph{D}).
+``Work'' is the total number of primitive operations performed, while ``depth'' is the longest dependency chain, and hence a measure of ideal parallel computation time \needcite{}.
+As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
+
+\figp{
+\circdef{lsums-rv8-no-hash-no-opt}{scan for |RVec N8|, unoptimized}{45}{8}}{
+\circdef{lsums-rv8}{scan for |RVec N8|, optimized}{29}{7}
+}
 
 The combination of left scan and right vector is particularly unfortunate, as it involves quadratic work and linear depth.
 The source of quadratic work is the product instance's \emph{right} adjustment combined with the right-associated shape of |RVec|.
 Each single element (left) is used to adjust the entire suffix (right), requiring linear work at each step, summing to quadratic.
 
-In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \circuitrefdef{lsums-lv8-no-hash-no-opt}{scan for |LVec N8|, unoptimized}{25}{8} and \figref{lsums-lv8} (optimized).
-
+In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \figref{lsums-lv8-no-hash-no-opt} and \figref{lsums-lv8} (optimized).
 Performing a suffix/right scan on a left vector also leads to quadratic work, reduced to linear by switching to right vectors.
+
+\figp{
+\circdef{lsums-lv8-no-hash-no-opt}{|lscan| on |LVec N8|, unoptimized}{25}{8}}{
+\circdef{lsums-lv8}{|lscan| on |LVec N8|, optimized}{8}{7}
+}
 
 Although work is greatly reduced (from quadratic to linear), depth remains at linear.
 The reason is that unbalanced data types lead to unbalanced parallelism.
@@ -568,29 +578,33 @@ Both |RVec| and |LVec| are ``parallel'' in a degenerate sense, but we only get t
 To get a more parallelism, we could replace a type like |LVec N16| with a isomorphic product such as |LVec N5 :*: LVec N11|, resulting in \figref{lsums-lv5xlv11-highlight}, reducing depth from 15 to 11.
 More generally, scan on |LVec m :*: LVec n| has depth |max (m-1) (n-1) + 1 = max m n|.
 For an ideal partition adding up to |p|, we'll want |m = n = p/2|.
-For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \circuitrefdef{lsums-lv8xlv8}{|lscan| on |LVec N8 :*: LVec N8|}{23}{8} with depth 8.
+For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \figref{lsums-lv8xlv8}.
 
 Can we do better?
-Not as a single product, but we can as more than one product, as shown in
-\circuitdef{lsums-lv5-5-6-l}{|(LVec N5 :*: LVec N5) :*: LVec N6|}{25}{6}
-\circuitdef{lsums-lv5-5-6-r}{|LVec N5 :*: (LVec N5 :*: LVec N6)|}{31}{7}
-\figreftwo{lsums-lv5-5-6-l}{lsums-lv5-5-6-r}.
+Not as a single product, but we can as more than one product, as shown in \figref{lsums-lv5-5-6-l}.
 Again, the more balance, the better.
+
+\figp{
+\circdef{lsums-lv5-5-6-l}{|lscan| on |(LVec N5 :*: LVec N5) :*: LVec N6|}{25}{6}}{
+\circdef{lsums-lv8xlv8}{|lscan| on |LVec N8 :*: LVec N8|}{23}{8}
+}
 
 \subsection{Composition}
 
 We now come to the last of our six functor combinators, namely composition, i.e., a structure of structures.
 Suppose we have a triple of quadruples: |LVec N3 :.: LVec N4|.
-We know how to scan each quadruple, as in \figrefdef{triple-scan}{triple scan}{
-\vspace{-3ex}
-\wfig{2.5in}{lsums-lv4}
-\vspace{-3ex}
-\wfig{2.5in}{lsums-lv4}
-\vspace{-3ex}
-\wfig{2.5in}{lsums-lv4}
-}.
+We know how to scan each quadruple, as in \figref{triple-scan}.
+
 How can we combine the results of each scan into a scan for |LVec N3 :.: LVec N4|?
-We already know the answer, since this composite type is essentially |(LVec N4 :*: LVec N4) :*: LVec N4|, the scan for which is determined by the |Par1| and product instances and is shown in \circuitrefdef{lsums-lv3olv4-highlight}{Scan for |LVec N3 :.: LVec N4|}{18}{5}.
+We already know the answer, since this composite type is essentially |(LVec N4 :*: LVec N4) :*: LVec N4|, the scan for which is determined by the |Par1| and product instances and is shown in \figref{lsums-lv3olv4-highlight}.
+
+\figpairW{0.34}{0.58}{triple-scan}{triple scan}{
+\incpic{lsums-lv4}
+
+\incpic{lsums-lv4}
+
+\incpic{lsums-lv4}
+}{lsums-lv3olv4-highlight}{Scan for |LVec N3 :.: LVec N4| \stats{18}{5}}{\incpic{lsums-lv3olv4-highlight}}
 
 Let's reflect on this example as we did with binary products above.
 The prefixes of the first quadruple are all prefixes of the composite structure, so their prefix sums are prefix sums of the composite and so are used as they are.
@@ -602,9 +616,9 @@ We end up needing the sum of every \emph{prefix} of the triple of summaries, and
 Moreover, the apparent inconsistency of adjusting all quadruples \emph{except} for the first one is an illusion brought on by premature optimization.
 We can instead adjust \emph{every} quadruple by the corresponding result of this final scan of summaries, the first summary being zero.
 These zero-additions can then be optimized away later.
-See \circuitrefdef{lsums-lv5olv7-highlight}{Scan for |LVec N5 :.: LVec N7|}{59}{10} for a larger example showing this same pattern.
+\out{See \circuitrefdef{lsums-lv5olv7-highlight}{Scan for |LVec N5 :.: LVec N7|}{59}{10} for a larger example showing this same pattern.}
 
-The general case is captured in an |LScan| instance for functor composition, in \figrefdef{composition-scan}{Composition scan definition}{
+The general case is captured in an |LScan| instance for functor composition:
 \begin{code}
 instance (LScan g, LScan f, Zip g) =>  LScan (g :.: f) where
   lscan (Comp1 gfa) = (Comp1 (zipWith adjustl tots' gfa'), tot)
@@ -613,28 +627,33 @@ instance (LScan g, LScan f, Zip g) =>  LScan (g :.: f) where
      (tots',tot)   = lscan tots
      adjustl t     = fmap (t <>)
 \end{code}
-}.
 
 \subsection{More examples}
 
 We now know how to scan the full vocabulary of generic functor combinators, and we've seen the consequences for several data types.
 Let's now examine how well generic scan works for some other example structures.
 We have already seen |Pair :.: LVec N8| as |LVec N8 :*: LVec N8| in \figref{lsums-lv8xlv8}.
-The reverse composition leads to quite a different computation shape, as \circuitrefdef{lsums-lv8-p}{|LVec N8 :.: Pair|}{23}{8} shows.
-Yet another factoring appears in \circuitrefdef{lsums-lv4olv4}{|LVec N4 :.: LVec N4|}{25}{6}.
+The reverse composition leads to quite a different computation shape, as \figref{lsums-lv8-p} shows.
+Yet another factoring appears in \figref{lsums-lv4olv4}.
+\figp{
+\circdef{lsums-lv8-p}{|LVec N8 :.: Pair|}{23}{8}}{
+\circdef{lsums-lv4olv4}{|LVec N4 :.: LVec N4|}{25}{6}}
 
 Next let's try functor exponentiation in its left- and right-associated form.
 We just saw the equivalent of |RPow (LVec N4) N2| (and |LPow (LVec N4) N2|) as \figref{lsums-lv4olv4}.
-\circuitdef{lsums-rb4}{|RPow (LVec N4) N2|}{33}{4}
-\circuitdef{lsums-lb4}{|LPow (LVec N4) N2|}{27}{6}
 \figreftwo{lsums-rb4}{lsums-lb4} show |RPow Pair N4| and |LPow Pair N4| (top-down and bottom-up perfect binary leaf trees of depth four).
+\figp{
+\circdef{lsums-rb4}{|RPow (LVec N4) N2|}{33}{4}}{
+\circdef{lsums-lb4}{|LPow (LVec N4) N2|}{27}{6}}
 
 Finally, consider the |Bush| type from \secref{bushes}.
 Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bushes of depth zero through three.
-\circuitdef{lsums-bush0}{|Bush N0|}{2}{1}
-\circuitdef{lsums-bush1}{|Bush N1|}{5}{2}
-\circuitdef{lsums-bush2}{|Bush N2|}{30}{5}
-\circuitdef{lsums-bush3}{|Bush N3|}{719}{10}
+\figp{
+\circdef{lsums-bush0}{|Bush N0|}{2}{1}}{
+\circdef{lsums-bush1}{|Bush N1|}{5}{2}}
+\figp{
+\circdef{lsums-bush2}{|Bush N2|}{30}{5}}{
+\circdef{lsums-bush3}{|Bush N3|}{719}{10}}
 
 \note{Efficiency remarks about |RPow|, |LPow|, and |Bush|.}
 
@@ -680,10 +699,13 @@ A simple implementation builds a structure with identical values using |pure| (f
 > powers :: (LScan f, Applicative f, Num a) => a -> f a :* a
 > powers = lproducts  . pure
 
-\circuitrefdef{powers-rb4-no-hash}{|powers @(RBin N4)|}{32}{4} shows one instance of |powers|.
+\figref{powers-rb4-no-hash} shows one instance of |powers|.
 A quick examination shows that there is a lot of redundant computation due to the special context of scanning over identical values.
 For instance, for an input $x$, we compute $x^2$ eight times and $x^4$ four times.
-Fortunately, automatic common subexpression elimination (CSE) removes these redundancies easily, resulting in \circuitrefdef{powers-rb4}{|powers @(RBin N4)| --- with CSE}{15}{4}.
+Fortunately, automatic common subexpression elimination (CSE) removes these redundancies easily, resulting in \figref{powers-rb4}.
+\figp{
+\circdef{powers-rb4}{|powers @(RBin N4)| --- with CSE}{15}{4}}{
+\circdef{powers-rb4-no-hash}{|powers @(RBin N4)|}{32}{4}}
 
 Building on this example, let's define polynomial evaluation, mapping a structure of coefficients $a_0, \ldots, a_{n-1}$ and a parameter $x$ to $\sum_{0 \le i < n} a_i \cdot x^i$\out{$a_0 + a_1 x + \cdots + a_{n-1} x^{n-1}$}.
 A very simple formulation is to construct all of the powers of $x$ and then form a dot product with the coefficients:
@@ -696,9 +718,11 @@ evalPoly coeffs x = coeffs <.> fst (powers x)
 (<.>) :: (Foldable f, Applicative f, Num a) => f a -> f a -> a
 u <.> v = sum (liftA2 (*) u v)
 \end{code}
-See \circuitrefdef{evalPoly-rb4}{|evalPoly @(RBin N4)|}{29+15}{9}.
-
-
+See \figref{evalPoly-rb4}.
+\begin{figure}
+\centering
+\circdef{evalPoly-rb4}{|evalPoly @(RBin N4)|}{29+15}{9}
+\end{figure}
 
 \subsection{Relation to known parallel scan algorithms}
 
