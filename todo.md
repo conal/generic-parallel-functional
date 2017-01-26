@@ -7,12 +7,11 @@
     *   Relation to known parallel scan algorithms.
     *   Complexity analysis
 *   Consistency of figure captions
-*   "`RBin`"
 *   Fill in the constraint ellipses in FFT definitions.
-*   Stats for scan (as for FFT)
 *   Type-check all definitions with a test module, especially in the early sections on trees.
 *   Title:
-    *   "Two generic functional parallel algorithms" (current)
+    *   "Generic functional parallel algorithms: scan and FFT" (current)
+    *   "Two generic functional parallel algorithms"
     *   "Generic parallel scan and FFT"
     *   "Generic parallel functional programming: two examples"
 *   Update from old sigplanconf.cls
@@ -26,6 +25,9 @@
 
 # Done
 
+*   Stats for scan (as for FFT).
+    Don't, since the stats are in the captions.
+*   "`RBin`"
 *   Something about tries and logarithms, or Naperian functors.
 *   Not: mention and cite `DefaultSignatures`.
 *   Maybe provide and mention homomorphisms with the function instances as well as the trie (representable functor) connection.

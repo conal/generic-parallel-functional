@@ -1,6 +1,6 @@
 % -*- latex -*-
 
-\documentclass[acmlarge,review]{acmart}
+\documentclass[acmlarge]{acmart} % ,authorversion,anonymous,natbib
 
 %% \usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
 
@@ -406,6 +406,13 @@ h ^ (n+1)  = (h ^ n) * h
 Because these type-family-based definitions are expressed in terms of existing generic building blocks, we directly inherit many existing class instances rather than having to define them.
 A downside is that we \emph{cannot} provide them, which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
 
+Although |RPow| and |LPow| work with any functor argument, we will use uniform pairs in the examples below.
+The uniform |Pair| functor can be defined in a variety of ways, including |Par1 :*: Par1|, |RVec N2|, or |LVec N2|.
+For convenience, define top-down and bottom-up \emph{binary} trees:
+
+> type RBin = RPow Pair
+> type LBin = LPow Pair
+
 \subsection{Bushes}\seclabel{bushes}
 
 In contrast to vectors, our tree types are perfectly balanced, as is helpful in obtaining naturally parallel algorithms.
@@ -417,8 +424,7 @@ type family Bush n where
   Bush Z      = Pair
   Bush (S n)  = Bush n :.: Bush n
 \end{code}
-The uniform |Pair| functor can be defined in a variety of ways, including as |Par1 :*: Par1|.
-Whereas each |RPow Pair n| and |LPow Pair n| holds $2^n$ elements, each statically shaped |Bush n| holds $2^{2^n}$ elements.
+Whereas each |RBin n| and |LBin n| holds $2^n$ elements, each statically shaped |Bush n| holds $2^{2^n}$ elements.
 Moreover, there's nothing special about |Pair| or \emph{binary} composition here.
 Either could be replaced or generalized.
 
@@ -640,7 +646,7 @@ Yet another factoring appears in \figref{lsums-lv4olv4}.
 
 Next let's try functor exponentiation in its left- and right-associated form.
 We just saw the equivalent of |RPow (LVec N4) N2| (and |LPow (LVec N4) N2|) as \figref{lsums-lv4olv4}.
-\figreftwo{lsums-rb4}{lsums-lb4} show |RPow Pair N4| and |LPow Pair N4| (top-down and bottom-up perfect binary leaf trees of depth four).
+\figreftwo{lsums-rb4}{lsums-lb4} show |RBin N4| and |LBin N4| (top-down and bottom-up perfect binary leaf trees of depth four).
 \figp{
 \circdef{lsums-rb4}{|RPow (LVec N4) N2|}{33}{4}}{
 \circdef{lsums-lb4}{|LPow (LVec N4) N2|}{27}{6}}
@@ -808,8 +814,8 @@ Since |powers| is a scan (as defined in \secref{Applications}), we can compute |
 \figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figref{fft-bush2} for a bush of depth two.
 Each complex number appears as its real and imaginary components.
 \figp{
-\circdef{fft-rb4}{|RPow Pair N4|}{197}{8}}{
-\circdef{fft-lb4}{|LPow Pair N4|}{197}{8}}
+\circdef{fft-rb4}{|RBin N4|}{197}{8}}{
+\circdef{fft-lb4}{|LBin N4|}{197}{8}}
 \figo{\circdef{fft-bush2}{|Bush N2|}{186}{6}}
 %% \figp{
 %% \circdef{fft-bush2}{|Bush N2|}{186}{6}}{
@@ -823,19 +829,30 @@ In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2
 %% \nc\circdefW[5]{\figoneW{#1}{#2}{#3 \stats{#4}{#5}}{\incpic{#2}}}
 %% \nc\circdef{\circdefW{\stdWidth}}
 
-\figp{
-\figoneW{0.43}{fft-stats-16}{FFT for 16 complex values}{
-\fftStats{
-  \stat{|RPow Pair N4|}{74}{40}{74}{197}{8}
-  \stat{|LPow Pair N4|}{74}{40}{74}{197}{8}
-  \stat{|Bush      N2|}{72}{32}{72}{186}{6}
-}}}{
-\figoneW{0.49}{fft-stats-256}{FFT for 256 complex values}{
-\fftStats{
-  \stat{|RPow Pair N8|}{2690}{2582}{2690}{8241}{20}
-  \stat{|LPow Pair N8|}{2690}{2582}{2690}{8241}{20}
-  \stat{|Bush      N3|}{2528}{1922}{2528}{7310}{14}
-}}}
+\begin{figure}
+\begin{minipage}{0.43\linewidth}
+ \centering
+  \fftStats{
+    \stat{|RBin N4|}{74}{40}{74}{197}{8}
+    \stat{|LBin N4|}{74}{40}{74}{197}{8}
+    \stat{|Bush N2|}{72}{32}{72}{186}{6}
+  }
+  \vspace*{-3ex}
+  \captionof{figure}{FFT for 16 complex values}
+  \label{fig:fft-stats-16}
+\end{minipage}
+\begin{minipage}{0.49\linewidth}
+ \centering
+  \fftStats{
+    \stat{|RBin N8|}{2690}{2582}{2690}{8241}{20}
+    \stat{|LBin N8|}{2690}{2582}{2690}{8241}{20}
+    \stat{|Bush N3|}{2528}{1922}{2528}{7310}{14}
+  }
+  \vspace*{-3ex}
+  \captionof{figure}{FFT for 256 complex values}
+  \label{fig:fft-stats-256}
+\end{minipage}
+\end{figure}
 (The total operation counts include constants.)
 Unlike scan, top-down and bottom-up trees lead to exactly the same work and depth.
 Pleasantly, the |Bush| instance of generic FFT appears to improve over the classic DIT and DIF algorithms in both work and depth.
