@@ -74,6 +74,7 @@
 %format <.> = "\cdot"
 
 %format @ = "{\ @}"
+%format @@ = "@"
 
 %format :< = " \triangleleft "
 %format >: = " \triangleright "

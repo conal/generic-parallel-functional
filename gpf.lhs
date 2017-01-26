@@ -1,7 +1,6 @@
 % -*- latex -*-
 
-%% \documentclass[preprint]{sigplanconf}
-\documentclass[acmlarge]{acmart}
+\documentclass[acmlarge,review]{acmart}
 
 %% \usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
 
@@ -689,7 +688,7 @@ lproducts  = lscanN @(Product a)
 lalls      = lscanN @All
 ...
 \end{code}
-The |(***)| operation applies two given functions to the respective components of a pair.
+The |(***)| operation applies two given functions to the respective components of a pair, and the ``|@@|'' notation is visible type application \cite{eisenberg2016visible}.
 
 \subsectiondef{Applications}
 
@@ -704,8 +703,8 @@ A quick examination shows that there is a lot of redundant computation due to th
 For instance, for an input $x$, we compute $x^2$ eight times and $x^4$ four times.
 Fortunately, automatic common subexpression elimination (CSE) removes these redundancies easily, resulting in \figref{powers-rb4}.
 \figp{
-\circdef{powers-rb4}{|powers @(RBin N4)| --- with CSE}{15}{4}}{
-\circdef{powers-rb4-no-hash}{|powers @(RBin N4)|}{32}{4}}
+\circdef{powers-rb4-no-hash}{|powers @(RBin N4)| --- without CSE}{32}{4}}{
+\circdef{powers-rb4}{|powers @(RBin N4)| --- with CSE}{15}{4}}
 
 Building on this example, let's define polynomial evaluation, mapping a structure of coefficients $a_0, \ldots, a_{n-1}$ and a parameter $x$ to $\sum_{0 \le i < n} a_i \cdot x^i$\out{$a_0 + a_1 x + \cdots + a_{n-1} x^{n-1}$}.
 A very simple formulation is to construct all of the powers of $x$ and then form a dot product with the coefficients:
@@ -718,11 +717,10 @@ evalPoly coeffs x = coeffs <.> fst (powers x)
 (<.>) :: (Foldable f, Applicative f, Num a) => f a -> f a -> a
 u <.> v = sum (liftA2 (*) u v)
 \end{code}
-See \figref{evalPoly-rb4}.
-\begin{figure}
-\centering
-\circdef{evalPoly-rb4}{|evalPoly @(RBin N4)|}{29+15}{9}
-\end{figure}
+See \figreftwo{evalPoly-rb4}{evalPoly-lb4}.
+\figp{
+\circdef{evalPoly-rb4}{|evalPoly @(RBin N4)|}{29+15}{9}}{
+\circdef{evalPoly-lb4}{|evalPoly @(LBin N4)|}{29+15}{11}}
 
 \subsection{Relation to known parallel scan algorithms}
 
@@ -736,9 +734,9 @@ First discovered by Gauss \cite{GaussFFTHistory}, the algorithm was rediscovered
 Given a sequence of complex numbers, $x_0, \ldots, x_{N-1}$, the DFT is defined as
 $$ X_k =  \sum\limits_{n=0}^{N-1} x_n e^{\frac{-i2\pi kn}{N}} \text{, \quad for\ } 0 \le k < N $$
 Naively implemented, this DFT definition leads to quadratic work.
-The main trick to FFT is to factor $N$ into $N_1 N_2$ and then optimize the DFT definition, removing some exponentials that turn out to be equal to one.
-The simplified result:
-$$
+The main trick to FFT is to factor $N$ and then optimize the DFT definition, removing some exponentials that turn out to be equal to one.
+For $N = N_1 N_2$,
+$$ X_k =
       \sum_{n_1=0}^{N_1-1} 
         \left[ e^{-\frac{2\pi i}{N} n_1 k_2} \right]
           \left( \sum_{n_2=0}^{N_2-1} x_{N_1 n_2 + n_1}  
@@ -746,9 +744,10 @@ $$
         e^{-\frac{2\pi i}{N_1} n_1 k_1}
 $$
 In this form, we have two smaller sets of DFTs: $N_1$ of size $N_2$ each, and $N_2$ of size $N_1$ each.
-See \figrefdef{factored-dft}{Factored DFT}{\pic{cooley-tukey-general}}, from \cite{JohnsonCooleyTukeyPic}.
+If we use the same method for solving these $N_1 + N_2$ smaller DFTs, we get a recursive FFT algorithm.
+See \figrefdef{factored-dft}{Factored DFT \cite{JohnsonCooleyTukeyPic}}{\pic{cooley-tukey-general}}.
 
-Rather than implementing FFT via sequences/arrays as usual, let's take a step and consider a more structured approach.
+Rather than implementing FFT via sequences/arrays as usual, let's take a step back and consider a more structured approach.
 
 \subsection{Factor types, not numbers!}
 
@@ -765,8 +764,7 @@ One new wrinkle is that the result shape differs from the original shape, so we'
 class FFT f where
   type FFO f :: * -> *
   fft :: f C -> FFO f C
-  default fft  ::  ( Generic1 f, Generic1 (FFO f), FFT (Rep1 f)
-                   , FFO (Rep1 f) ~ Rep1 (FFO f) )
+  default fft  ::  ( Generic1 f, Generic1 (FFO f), FFT (Rep1 f) , FFO (Rep1 f) ~ Rep1 (FFO f) )
                =>  f C -> FFO f C
   fft xs = to1 . fft xs . from1
 \end{code}
@@ -798,11 +796,9 @@ Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ r
 > twiddle = (liftA2.liftA2) (*) (omegas (size @(g :.: f)))
 >
 > omegas :: ... => Int -> g (f (Complex a))
-> omegas n =
->  powers <$> powers (exp (- i * 2 * pi / fromIntegral n))
+> omegas n = powers <$> powers (exp (- i * 2 * pi / fromIntegral n))
 
 The |size| method calculates the size of a structure.
-The ``|@|'' notation here is visible type application \cite{eisenberg2016visible}.
 Unsurprisingly, the size of a composition is the product of the sizes.
 
 Since |powers| is a scan (as defined in \secref{Applications}), we can compute |omegas| efficiently in parallel.
@@ -811,25 +807,35 @@ Since |powers| is a scan (as defined in \secref{Applications}), we can compute |
 
 \figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figref{fft-bush2} for a bush of depth two.
 Each complex number appears as its real and imaginary components.
-\circuitdef{fft-rb4}{|RPow Pair N4|}{197}{8}
-\circuitdef{fft-lb4}{|LPow Pair N4|}{197}{8}
-\circuitdef{fft-bush2}{|Bush N2|}{186}{6}
+\figp{
+\circdef{fft-rb4}{|RPow Pair N4|}{197}{8}}{
+\circdef{fft-lb4}{|LPow Pair N4|}{197}{8}}
+\figo{\circdef{fft-bush2}{|Bush N2|}{186}{6}}
+%% \figp{
+%% \circdef{fft-bush2}{|Bush N2|}{186}{6}}{
+%% \circdef{fft-bush3}{|Bush N3|}{7310}{14}}
 
 The top-down and bottom-up tree algorithms correspond to two popular FFT variations known as ``decimation in time'' and ``decimation in frequency'' (``DIT'' and ``DIF''), respectively.
 In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2$.
 \figreftwo{fft-stats-16}{fft-stats-256} offer a more detailed comparison.
-\figdef{fft-stats-16}{FFT for 16 complex values}{
+
+%% %% \circdefW{frac}{label/file}{caption}{work}{depth}
+%% \nc\circdefW[5]{\figoneW{#1}{#2}{#3 \stats{#4}{#5}}{\incpic{#2}}}
+%% \nc\circdef{\circdefW{\stdWidth}}
+
+\figp{
+\figoneW{0.43}{fft-stats-16}{FFT for 16 complex values}{
 \fftStats{
   \stat{|RPow Pair N4|}{74}{40}{74}{197}{8}
   \stat{|LPow Pair N4|}{74}{40}{74}{197}{8}
   \stat{|Bush      N2|}{72}{32}{72}{186}{6}
-}}
-\figdef{fft-stats-256}{FFT for 256 complex values}{
+}}}{
+\figoneW{0.49}{fft-stats-256}{FFT for 256 complex values}{
 \fftStats{
   \stat{|RPow Pair N8|}{2690}{2582}{2690}{8241}{20}
   \stat{|LPow Pair N8|}{2690}{2582}{2690}{8241}{20}
   \stat{|Bush      N3|}{2528}{1922}{2528}{7310}{14}
-}}
+}}}
 (The total operation counts include constants.)
 Unlike scan, top-down and bottom-up trees lead to exactly the same work and depth.
 Pleasantly, the |Bush| instance of generic FFT appears to improve over the classic DIT and DIF algorithms in both work and depth.
@@ -848,3 +854,4 @@ Pleasantly, the |Bush| instance of generic FFT appears to improve over the class
 \bibliography{bib}
 
 \end{document}
+

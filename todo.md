@@ -7,6 +7,8 @@
     *   Relation to known parallel scan algorithms.
     *   Complexity analysis
 *   Consistency of figure captions
+*   "`RBin`"
+*   Fill in the constraint ellipses in FFT definitions.
 *   Stats for scan (as for FFT)
 *   Type-check all definitions with a test module, especially in the early sections on trees.
 *   Title:

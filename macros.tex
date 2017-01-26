@@ -46,10 +46,11 @@
 %% http://tex.stackexchange.com/questions/5769/two-figures-side-by-side
 
 \setlength{\fboxsep}{1ex}
+\setlength{\fboxrule}{0.01ex} % doesn't seem to work beyond zero/nonzero
 
 %% \figone{fraction}{label}{caption}{content}
 \nc\figoneW[4]{
-\fbox{
+\fbox{%
 \begin{minipage}{#1\linewidth}
   \centering
   \setlength\mathindent{0ex}
@@ -62,15 +63,22 @@
 }
 \nc\figone{\figoneW{\stdWidth}}
 
-%% \figo{fraction}{content}
-\nc\figoW[2]{
-\fbox{
-\begin{minipage}{#1\linewidth}
-  \centering
-  \setlength\mathindent{0ex}
-  #2
-\end{minipage}
-}
+%% %% \figo{fraction}{content}
+%% \nc\figoW[2]{
+%% \fbox{
+%% \begin{minipage}{#1\linewidth}
+%%   \centering
+%%   \setlength\mathindent{0ex}
+%%   #2
+%% \end{minipage}
+%% }
+%% }
+
+\nc\figo[1]{
+\begin{figure}
+\centering
+#1
+\end{figure}
 }
 
 \nc\figp[2]{
@@ -82,7 +90,7 @@
 \end{figure}
 }
 
-%% \circdefW{frac}{label}{caption}{work}{depth}
+%% \circdefW{frac}{label/file}{caption}{work}{depth}
 \nc\circdefW[5]{\figoneW{#1}{#2}{#3 \stats{#4}{#5}}{\incpic{#2}}}
 \nc\circdef{\circdefW{\stdWidth}}
 
@@ -116,7 +124,7 @@
 \begin{center}
 \begin{tabular}{|c|c|c|c|c|c|}
   \hline
-  \stat{Type}{$+$}{$\times$}{$-$}{total}{max depth} \hline
+  \stat{Type}{$+$}{$\times$}{$-$}{total}{depth} \hline
   #1
   \hline
 \end{tabular}
