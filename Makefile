@@ -4,23 +4,26 @@ targ = gpf
 
 default: $(targ).pdf
 
-%.pdf: %.tex Makefile
-	latexmk -pdf $*.tex
+gpf.pdf: gpf.tex Makefile
+	latexmk -pdf gpf.tex
+
+# %.pdf: %.tex Makefile
+# 	latexmk -pdf $*.tex
 
 # Was: pdflatex $*.tex
 
-%.tex: %.lhs macros.tex mine.fmt pdfs Makefile
+%.tex: %.lhs macros.tex mine.fmt $(pdfs) Makefile
 	lhs2TeX -o $*.tex $*.lhs
 
-showpdf=skim
-
 dots = $(wildcard figures/*.dot)
+
+figures = $(addsuffix .pdf, $(basename $(dots)))
 
 # Cap the size so that LaTeX doesn't choke.
 %.pdf: %.dot # Makefile
 	dot -Tpdf -Gmargin=0 -Gsize=10,10 $< -o $@
 
-pdfs: $(addsuffix .pdf, $(basename $(dots)))
+showpdf=skim
 
 see: $(targ).pdf
 	${showpdf} $(targ).pdf
