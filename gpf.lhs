@@ -1,6 +1,6 @@
 % -*- latex -*-
 
-\documentclass[acmlarge]{acmart} % ,authorversion,anonymous,natbib
+\documentclass[acmlarge,authorversion]{acmart} % ,anonymous
 
 %% \usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
 
@@ -30,6 +30,10 @@
   \institution{Target}
 }
 
+%% Temporary
+\setcopyright{rightsretained}
+\settopmatter{printacmref=false, printccs=true, printfolios=true}
+
 \begin{document}
 
 \maketitle
@@ -44,11 +48,11 @@ This paper presents generic functional formulations for two important and well-k
 Notably, arrays play no role in these formulations.
 Consequent benefits include a simpler and more compositional style, much use of common algebraic patterns---such as |Functor|, |Applicative|, |Foldable|, and |Traversable|\out{ \cite{McBride:2008}}---and freedom from possibility of run-time indexing errors.
 The functional generic style also clearly reveals deep commonality among what otherwise appears to be quite different algorithms.
-Instantiating the generic formulations to ``top-down'' and ``bottom-up'' trees, two well-known algorithms for each of parallel scan and FFT naturally emerge, as well as two possibly new algorithms.
+Instantiating the generic formulations to ``top-down'' and ``bottom-up'' trees as well as ``bushes'', two well-known algorithms for each of parallel scan and FFT naturally emerge, as well as two possibly new algorithms.
 
 \section{Introduction}
 
-\section{Datatype-generic programming in Haskell}
+%% \section{Datatype-generic programming in Haskell}
 
 There is a long, rich history of datatype-generic programming in Haskell.
 See, e.g., \cite{Gibbons06DatatypeGeneric,DatatypeGenericComparison2012}.
@@ -92,6 +96,38 @@ class Generic1 f where
 
 To define a generic algorithm, one gives class instances for these primitives and gives a general definition in terms of |from1| and |to1|.
 
+The effectiveness of generic programming relies on having at our disposal a variety of data types, each corresponding to a unique composition of the small set of generic type building blocks.
+In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays.
+The various array algorithms involve idiosyncratic patterns of traversal and construction of this single data type.
+For instance, a parallel array reduction with an associative operator involves recursive or iterative generation of numeric indices for extracting elements, taking care that each element is visited exactly once and combined left-to-right.
+Typically, adjacent element pairs are combined, resulting in an array of half size, and the process repeats until there is only one value remaining.
+(Often, such operations are performed in place, littering the original array with partial reduction results.)
+The essential idea of such an algorithm is the natural fold for perfect, binary leaf trees, but this essence is obscured by an \emph{encoding} of trees as arrays.
+The correctness of the algorithm depends on careful translation of the natural tree algorithm.
+Mistakes typically hide in the tedious details of index arithmetic, which must be perfectly consistent with the particular encoding chosen.
+Those mistakes will not be caught by a type-checker (unless programmed with dependent types and full correctness proofs), instead manifesting at run-time in the form of incorrect results and/or index out-of-bound errors.
+Note also that this array reduction algorithm only works for arrays whose size is a power of two.
+This restriction is a dynamic condition rather than part of the type signature.
+If we use the essential data type (a perfect, binary leaf tree) directly rather than via an encoding, it is easy to capture this restriction in the type system and check it statically.
+Our Haskell-based formulations below use GADTs (generalized algebraic data types) or type families.
+
+When we use natural, recursively defined data types \emph{explicitly}, we get to use standard programming patterns such as folds and traversals \needcite{} directly.
+In a language like Haskell, those patterns follow known laws and are well supported by the programming ecosystem.
+The use of array encodings makes those patterns \emph{implicit}, as a sort of informal guide only, distancing programs from the elegant and well-understood laws and abstractions that motivate the programs, justify their correctness, and point to algorithmic variations that solve related problems or make different implementation trade-offs.
+
+Even the \emph{determinacy} of an array-based parallel algorithm can be difficult to ensure or validate.
+When the result is an array rather than a single value, as in scans and FFTs, values are written to indexed locations.
+In the presence of parallelism, determinacy depends on those write indices being distinct, which again is a subtle, encoding-specific property, unlikely to be verified automatically.
+
+Given these severe drawbacks, why are arrays so widely used in designing, implementing, and explaining parallel algorithms?
+Perhaps simply for the sake of a simpler mapping from algorithm to efficient implementation primitives.
+As we will see below, however, we can instead write algorithms in elegant, modular style using a variety of data types and the standard algebraic abstractions on those data types--such as |Functor|, |Applicative|, |Foldable|, and |Traversable| \cite{McBride:2008}---\emph{and} generate very efficient implementations.
+Better yet, we can define such algorithms generically.
+
+\note{That last paragraph needs work.}
+
+\todo{contributions}
+
 \section{Some useful data types}
 
 \subsection{Right-lists and left-lists}
@@ -118,28 +154,28 @@ Spelling out the isomorphisms explicitly,
 \begin{code}
 instance Generic1 RList where
   type Rep1 RList = U1 :+: Par1 :*: RList
-  from RNil = L1 U1
-  from (a :< as) = R1 (Par1 a :*: as)
-  to (L1 U1) = RNil
-  to (R1 (Par1 a :*: as)) = a :< as
+  from RNil       = L1 U1
+  from (a :< as)  = R1 (Par1 a :*: as)
+  to (L1 U1)               = RNil
+  to (R1 (Par1 a :*: as))  = a :< as
 
 instance Generic1 LList where
   type Rep1 LList = U1 :+: LList :*: Par1
-  from LNil = L1 U1
-  from (a :< as) = R1 (as :*: Par1 a)
-  to (L1 U1) = LNil
-  to (R1 (as :*: Par1 a)) = as >: a
+  from LNil       = L1 U1
+  from (a :< as)  = R1 (as :*: Par1 a)
+  to (L1 U1)               = LNil
+  to (R1 (as :*: Par1 a))  = as >: a
 \end{code}
 
-|RList| and |LList| are isomorphic not only to their underlying representation functors, but also to each other, as follows:
+|RList| and |LList| are isomorphic not only to their underlying representation functors, but also to each other, as follows:\notefoot{Probably drop these definitions.}
 \begin{code}
 rToL :: RList a -> LList a
-rToL RNil = LNil
-rToL (a :< as) = rToL as >: a
+rToL RNil       = LNil
+rToL (a :< as)  = rToL as >: a
 
 lToR :: LList a -> RList a
-lToR LNil = RNil
-lToR (as >: a) = a :< lToR as
+lToR LNil       = RNil
+lToR (as >: a)  = a :< lToR as
 \end{code}
 Since these list types are easily isomorphic, why would we want to distinguish between them?
 One reason is that they may capture different intentions.
@@ -596,7 +632,7 @@ Again, the more balance, the better.
 
 \subsection{Composition}
 
-We now come to the last of our six functor combinators, namely composition, i.e., a structure of structures.
+We now come to the last of our six functor combinators, namely composition, i.e., structures of structures.
 Suppose we have a triple of quadruples: |LVec N3 :.: LVec N4|.
 We know how to scan each quadruple, as in \figref{triple-scan}.
 
@@ -681,17 +717,16 @@ class Newtype n where
 This class is from \cite{newtype-generics}, which also defines many instances for commonly used types.
 Given this vocabulary, we can scan structures of non-monoidal values by packing values into a chosen monoid, scanning, and then unpacking:
 \begin{code}
-lscanN  ::  forall n o f. (Newtype n, o ~ O n, LScan f, Monoid n)
-        =>  f o -> f o :* o
-lscanN = (fmap unpack *** unpack) . lscan . fmap (pack @n)
+lscanNew  ::  forall n o f. (Newtype n, o ~ O n, LScan f, Monoid n) =>  f o -> f o :* o
+lscanNew = (fmap unpack *** unpack) . lscan . fmap (pack @n)
 \end{code}
 
 \begin{code}
 lsums, lproducts :: (LScan f, Num a) => f a -> f a :* a
 lalls :: LScan f => f Bool -> f Bool :* Bool
-lsums      = lscanN @(Sum a)
-lproducts  = lscanN @(Product a)
-lalls      = lscanN @All
+lsums      = lscanNew @(Sum a)
+lproducts  = lscanNew @(Product a)
+lalls      = lscanNew @All
 ...
 \end{code}
 The |(***)| operation applies two given functions to the respective components of a pair, and the ``|@@|'' notation is visible type application \cite{eisenberg2016visible}.
@@ -712,12 +747,11 @@ Fortunately, automatic common subexpression elimination (CSE) removes these redu
 \circdef{powers-rb4-no-hash}{|powers @(RBin N4)| --- without CSE}{32}{4}}{
 \circdef{powers-rb4}{|powers @(RBin N4)| --- with CSE}{15}{4}}
 
-Building on this example, let's define polynomial evaluation, mapping a structure of coefficients $a_0, \ldots, a_{n-1}$ and a parameter $x$ to $\sum_{0 \le i < n} a_i \cdot x^i$\out{$a_0 + a_1 x + \cdots + a_{n-1} x^{n-1}$}.
+Building on this example, let's define polynomial evaluation, mapping a structure of coefficients $a_0, \ldots, a_{n-1}$ and a parameter $x$ to $\sum_{0 \le i < n} a_i x^i$\out{$a_0 + a_1 x + \cdots + a_{n-1} x^{n-1}$}.
 A very simple formulation is to construct all of the powers of $x$ and then form a dot product with the coefficients:
 
 \begin{code}
-evalPoly  ::  (LScan f, Foldable f, Applicative f, Num a)
-          =>  f a -> a -> a
+evalPoly  ::  (LScan f, Foldable f, Applicative f, Num a) =>  f a -> a -> a
 evalPoly coeffs x = coeffs <.> fst (powers x)
 
 (<.>) :: (Foldable f, Applicative f, Num a) => f a -> f a -> a
@@ -806,8 +840,7 @@ Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ r
 
 The |size| method calculates the size of a structure.
 Unsurprisingly, the size of a composition is the product of the sizes.
-
-Since |powers| is a scan (as defined in \secref{Applications}), we can compute |omegas| efficiently in parallel.
+Since |powers| (defined in \secref{Applications}) is a prefix scan, we can compute |omegas| efficiently in parallel.
 
 \subsection{Comparing data types}
 
@@ -824,11 +857,6 @@ Each complex number appears as its real and imaginary components.
 The top-down and bottom-up tree algorithms correspond to two popular FFT variations known as ``decimation in time'' and ``decimation in frequency'' (``DIT'' and ``DIF''), respectively.
 In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2$.
 \figreftwo{fft-stats-16}{fft-stats-256} offer a more detailed comparison.
-
-%% %% \circdefW{frac}{label/file}{caption}{work}{depth}
-%% \nc\circdefW[5]{\figoneW{#1}{#2}{#3 \stats{#4}{#5}}{\incpic{#2}}}
-%% \nc\circdef{\circdefW{\stdWidth}}
-
 \begin{figure}
 \begin{minipage}{0.43\linewidth}
  \centering
