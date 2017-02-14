@@ -71,7 +71,6 @@ There are additional definitions that capture recursion and meta-data such as fi
 To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| flag), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*| \cite{Magalhaes:2010}.
 For type constructors of kind |* -> *|, as in this paper, one derives |Generic1| instead.
 Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving an encoding functor |Rep f| and encoding and decoding operations |to1| and |from1|, as in \figref{Generic1}.
-
 \figpairW{0.52}{0.40}{ghc-generics}{Functor building blocks}{
 \begin{code}
 data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  SPC  -- sum
@@ -93,8 +92,7 @@ class Generic1 f where
 \end{code}
 \vspace{1.9ex}
 }
-
-To define a generic algorithm, one gives class instances for these primitives and gives a general definition in terms of |from1| and |to1|.
+To define a generic algorithm, one provides class instances for these primitives and writes a default definition for each method in terms of |from1| and |to1|.
 
 The effectiveness of generic programming relies on having at our disposal a variety of data types, each corresponding to a unique composition of the small set of generic type building blocks.
 In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays.
@@ -109,9 +107,9 @@ Those mistakes will not be caught by a type-checker (unless programmed with depe
 Note also that this array reduction algorithm only works for arrays whose size is a power of two.
 This restriction is a dynamic condition rather than part of the type signature.
 If we use the essential data type (a perfect, binary leaf tree) directly rather than via an encoding, it is easy to capture this restriction in the type system and check it statically.
-Our Haskell-based formulations below use GADTs (generalized algebraic data types) or type families.
+The Haskell-based formulations below use GADTs (generalized algebraic data types) and type families.
 
-When we use natural, recursively defined data types \emph{explicitly}, we get to use standard programming patterns such as folds and traversals \needcite{} directly.
+When we use natural, recursively defined data types \emph{explicitly}, we can use standard programming patterns such as folds and traversals \out{\cite{McBride:2008}} directly.
 In a language like Haskell, those patterns follow known laws and are well supported by the programming ecosystem.
 The use of array encodings makes those patterns \emph{implicit}, as a sort of informal guide only, distancing programs from the elegant and well-understood laws and abstractions that motivate the programs, justify their correctness, and point to algorithmic variations that solve related problems or make different implementation trade-offs.
 
@@ -120,7 +118,7 @@ When the result is an array rather than a single value, as in scans and FFTs, va
 In the presence of parallelism, determinacy depends on those write indices being distinct, which again is a subtle, encoding-specific property, unlikely to be verified automatically.
 
 Given these severe drawbacks, why are arrays so widely used in designing, implementing, and explaining parallel algorithms?
-Perhaps simply for the sake of a simpler mapping from algorithm to efficient implementation primitives.
+One benefit is a relatively straightforward mapping from algorithm to efficient implementation primitives.
 As we will see below, however, we can instead write algorithms in elegant, modular style using a variety of data types and the standard algebraic abstractions on those data types--such as |Functor|, |Applicative|, |Foldable|, and |Traversable| \cite{McBride:2008}---\emph{and} generate very efficient implementations.
 Better yet, we can define such algorithms generically.
 
@@ -137,7 +135,7 @@ Let's start with a very familiar data type of lists:
 data List a = Nil | Cons a (List a)
 \end{code}
 This data type is sometimes more specifically called ``cons lists''\out{ (for historical reasons going back to early Lisp implementations)}.
-One might also call them ``right lists'', since they grow rightward.
+One might also call them ``right lists'', since they grow rightward:
 \begin{code}
 data RList a = RNil | a :< RList a
 \end{code}
@@ -217,7 +215,7 @@ data Tree a = Leaf a | Branch (Tree a) (Tree a) (Tree a)
 
 Already, this style of definition is starting to show some strain.
 The repetition present in the data type definition will be mirrored in instance definitions.
-For instance, for ternary leaf trees:
+For instance, for ternary leaf trees,
 \begin{code}
 instance Functor Tree where
   fmap h (Leaf a)           = Leaf (h a)
@@ -228,10 +226,9 @@ instance Foldable Tree where
   foldMap h (Branch t1 t2 t3)  = foldMap h t1 <> foldMap h t2 <> foldMap h t3
 
 instance Traversable Tree where
-  traverse h (Leaf a)           = Leaf <#> h a
-  traverse h (Branch t1 t2 t3)  = Branch <#> traverse h t1 <*> traverse h t2 <*> traverse h t3
+  traverse h (Leaf a)           = fmap Leaf (h a)
+  traverse h (Branch t1 t2 t3)  = liftA3 Branch (traverse h t1) (traverse h t2) (traverse h t3)
 \end{code}
-Note that |<#>| is infix |fmap|.
 
 Not only do we have repetition \emph{within} each instance definition (the three occurrences of |fmap h| above), we also have repetition \emph{among} instances for $n$-ary trees for different $n$.
 Fortunately, we can simplify and unify with a shift in formulation.
@@ -259,8 +256,8 @@ instance Foldable (Tree n) where
   foldMap h (Branch ts)  = (foldMap.foldMap) h ts
 
 instance Traversable (Tree n) where
-  traverse h (Leaf a)     = Leaf <#> h a
-  traverse f (Branch ts)  = Branch <#> (traverse.traverse) f ts
+  traverse h (Leaf a)     = fmap Leaf (h a)
+  traverse f (Branch ts)  = fmap Branch ((traverse.traverse) f ts)
 \end{code}
 
 Notice that these instance definitions rely on very little about the |Vec n| functor.
@@ -582,7 +579,7 @@ All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| 
 The general product instance:
 \begin{code}
 instance (LScan f, LScan g) => LScan (f :*: g) where
-  lscan (fa :*: ga) = (fa' :*: ((fx <> NOP) <#> ga'), fx <> gx)
+  lscan (fa :*: ga) = (fa' :*: (fmap (fx <> NOP) ga'), fx <> gx)
    where
      (fa'  , fx)  = lscan fa
      (ga'  , gx)  = lscan ga
@@ -664,7 +661,7 @@ The general case is captured in an |LScan| instance for functor composition:
 instance (LScan g, LScan f, Zip g) =>  LScan (g :.: f) where
   lscan (Comp1 gfa) = (Comp1 (zipWith adjustl tots' gfa'), tot)
    where
-     (gfa', tots)  = unzip (lscan <#> gfa)
+     (gfa', tots)  = unzip (fmap lscan gfa)
      (tots',tot)   = lscan tots
      adjustl t     = fmap (t <>)
 \end{code}
@@ -836,7 +833,7 @@ Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ r
 > twiddle = (liftA2.liftA2) (*) (omegas (size @(g :.: f)))
 >
 > omegas :: ... => Int -> g (f (Complex a))
-> omegas n = powers <$> powers (exp (- i * 2 * pi / fromIntegral n))
+> omegas n = fmap powers (powers (exp (- i * 2 * pi / fromIntegral n)))
 
 The |size| method calculates the size of a structure.
 Unsurprisingly, the size of a composition is the product of the sizes.
