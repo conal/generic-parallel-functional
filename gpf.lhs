@@ -571,14 +571,13 @@ Because we are left-scanning, every prefix of |f| is also a prefix of |f :*: g|,
 The prefixes of |g| are not prefixes of |f :*: g|, however, since each |g|-prefix misses all of |f|.
 The prefix \emph{sums}, therefore, are lacking the sum of all of |f|, which corresponds to the last output of the |lscan| result for |f|.
 All we need to do, therefore, is adjust each |g| result by the final |f| result, as shown in \figref{lsums-lv5xlv11-highlight}.
-\figpair{two-scans}{Two scans}{
+\figpair{two-scans}{|lscan @(RVec N5)| and |lscan @(RVec N11)|}{
 \vspace{1.8ex}
 \incpicW{0.6}{lsums-lv5}
-
 \vspace{2.4ex}
 \incpic{lsums-lv11}
 \vspace{1ex}
-}{lsums-lv5xlv11-highlight}{Product scan \stats{26}{11}}{\incpic{lsums-lv5xlv11-highlight}}
+}{lsums-lv5xlv11-highlight}{|lscan @(RVec N5 :*: RVec N11)| \stats{26}{11}}{\incpic{lsums-lv5xlv11-highlight}}
 The general product instance:
 \begin{code}
 instance (LScan f, LScan g) => LScan (f :*: g) where
@@ -602,8 +601,8 @@ In this picture (and many more like it below), the data types are shown in flatt
 As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
 
 \figp{
-\circdef{lsums-rv8-no-hash-no-opt}{scan for |RVec N8|, unoptimized}{36}{8}}{
-\circdef{lsums-rv8}{scan for |RVec N8|, optimized}{28}{7}
+\circdef{lsums-rv8-no-hash-no-opt}{|lscan @(RVec N8)|, unoptimized}{36}{8}}{
+\circdef{lsums-rv8}{|lscan @(RVec N8)|, optimized}{28}{7}
 }
 
 The combination of left scan and right vector is particularly unfortunate, as it involves quadratic work and linear depth.
@@ -624,8 +623,8 @@ D  (RVec n)  = O(n)
 \end{code}
 In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \figref{lsums-lv8-no-hash-no-opt} and \figref{lsums-lv8} (optimized).
 \figp{
-\circdef{lsums-lv8-no-hash-no-opt}{|lscan| on |LVec N8|, unoptimized}{16}{8}}{
-\circdef{lsums-lv8}{|lscan| on |LVec N8|, optimized}{7}{7}
+\circdef{lsums-lv8-no-hash-no-opt}{|lscan @(LVec N8)|, unoptimized}{16}{8}}{
+\circdef{lsums-lv8}{|lscan @(LVec N8)|, optimized}{7}{7}
 }
 \begin{code}
 W (LVec 0) = W U1 = 0
@@ -653,8 +652,8 @@ Can we do better?
 Not as a single product, but we can as more than one product, as shown in \figref{lsums-lv5-5-6-l}.
 Again, the more balance, the better.
 \figp{
-\circdef{lsums-lv8xlv8}{|lscan| on |LVec N8 :*: LVec N8|}{22}{8}}{
-\circdef{lsums-lv5-5-6-l}{|lscan| on |(LVec N5 :*: LVec N5) :*: LVec N6|}{24}{6}}
+\circdef{lsums-lv8xlv8}{|lscan @(LVec N8 :*: LVec N8)|}{22}{8}}{
+\circdef{lsums-lv5-5-6-l}{|lscan @((LVec N5 :*: LVec N5) :*: LVec N6)|}{24}{6}}
 
 \subsection{Composition}
 
@@ -664,13 +663,13 @@ We know how to scan each quadruple, as in \figref{triple-scan}.
 How can we combine the results of each scan into a scan for |LVec N3 :.: LVec N4|?
 We already know the answer, since this composite type is essentially |(LVec N4 :*: LVec N4) :*: LVec N4|, the scan for which is determined by the |Par1| and product instances and is shown in \figref{lsums-lv3olv4-highlight}.
 
-\figpairW{0.34}{0.58}{triple-scan}{triple scan}{
+\figpairW{0.34}{0.58}{triple-scan}{triple |lscan @(LVec N4)|}{
 \incpic{lsums-lv4}
 
 \incpic{lsums-lv4}
 
 \incpic{lsums-lv4}
-}{lsums-lv3olv4-highlight}{Scan for |LVec N3 :.: LVec N4| \stats{18}{5}}{\incpic{lsums-lv3olv4-highlight}}
+}{lsums-lv3olv4-highlight}{|lscan @(LVec N3 :.: LVec N4)| \stats{18}{5}}{\incpic{lsums-lv3olv4-highlight}}
 
 Let's reflect on this example as we did with binary products above.
 The prefixes of the first quadruple are all prefixes of the composite structure, so their prefix sums are prefix sums of the composite and so are used as they are.
@@ -708,15 +707,15 @@ We have already seen |Pair :.: LVec N8| as |LVec N8 :*: LVec N8| in \figref{lsum
 The reverse composition leads to quite a different computation shape, as \figref{lsums-lv8-p} shows.
 Yet another factoring appears in \figref{lsums-lv4olv4}.
 \figp{
-\circdef{lsums-lv8-p}{|LVec N8 :.: Pair|}{22}{8}}{
-\circdef{lsums-lv4olv4}{|LVec N4 :.: LVec N4|}{24}{6}}
+\circdef{lsums-lv8-p}{|lscan @(LVec N8 :.: Pair)|}{22}{8}}{
+\circdef{lsums-lv4olv4}{|lscan @(LVec N4 :.: LVec N4)|}{24}{6}}
 
 Next let's try functor exponentiation in its left- and right-associated forms.
 We just saw the equivalent of |RPow (LVec N4) N2| (and |LPow (LVec N4) N2|) as \figref{lsums-lv4olv4}.
 \figreftwo{lsums-rb4}{lsums-lb4} show |RBin N4| and |LBin N4| (top-down and bottom-up perfect binary leaf trees of depth four).\notefoot{Maybe drop the ``|RBin|'' and ``|LBin|'' shorthands.}
 \figp{
-\circdef{lsums-rb4}{|RBin N4|}{32}{4}}{
-\circdef{lsums-lb4}{|LBin N4|}{26}{6}}
+\circdef{lsums-rb4}{|lscan @(RBin N4)|}{32}{4}}{
+\circdef{lsums-lb4}{|lscan @(LBin N4)|}{26}{6}}
 Complexities for |RPow h|:
 \begin{code}
 W (RPow h 0) = W Par1 = 0
@@ -780,11 +779,11 @@ Thus
 & = \onehalf \cdot \size{\Bush n} \cdot log_2 \size{\Bush n}
 \end{align*}
 \figp{
-\circdef{lsums-bush0}{|Bush N0|}{1}{1}}{
-\circdef{lsums-bush1}{|Bush N1|}{4}{2}}
+\circdef{lsums-bush0}{|lscan @(Bush N0)|}{1}{1}}{
+\circdef{lsums-bush1}{|lscan @(Bush N1)|}{4}{2}}
 \figp{
-\circdef{lsums-bush2}{|Bush N2|}{29}{5}}{
-\circdef{lsums-bush3}{|Bush N3|}{718}{10}}
+\circdef{lsums-bush2}{|lscan @(Bush N2)|}{29}{5}}{
+\circdef{lsums-bush3}{|lscan @(Bush N3)|}{718}{10}}
 
 \figreftwo{lscan-stats-16}{lscan-stats-256} offer an empirical comparison, including some optimizations not taken into account in the complexity analysis above.
 Note that top-down trees have the least depth, bottom-up trees have the least work.
@@ -879,6 +878,8 @@ See \figreftwo{evalPoly-rb4}{evalPoly-lb4}.
 
 \section{FFT}
 
+%format C = "\mathbb{C}"
+
 \subsection{Background}
 
 The Fast Fourier Transform (FFT) algorithm computes the Discrete Fourier Transform (DFT), reducing work from $O(n^2)$ to $O(n \log n)$.
@@ -942,7 +943,7 @@ where |ffts'| performs several non-contiguous FFTs:
 > ffts' :: ... => g (f C) -> FFO g (f C)
 > ffts' = transpose . fmap fft . transpose
 
-Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ root of unity:
+Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ root of unity:\notefoot{Maybe have |omegas| compute |n| for itself.}
 
 > twiddle :: ... => g (f C) -> g (f C)
 > twiddle = (liftA2.liftA2) (*) (omegas (size @(g :.: f)))
@@ -950,38 +951,101 @@ Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ r
 > omegas :: ... => Int -> g (f (Complex a))
 > omegas n = fmap powers (powers (exp (- i * 2 * pi / fromIntegral n)))
 
-The |size| method calculates the size of a structure.\notefoot{Define much earlier for use in complexity analyses, and drop the following sentence about composition.}
+The |size| method calculates the size of a structure.
 Unsurprisingly, the size of a composition is the product of the sizes.
-Since |powers| (defined in \secref{Applications}) is a prefix scan, we can compute |omegas| efficiently in parallel.
+\notefoot{Define much earlier for use in complexity analyses, and drop this paragraph.}
 
-This definition of |fft| for |g :.: f| optimizes:
+%format WO = W"_"omegas
+%format DO = D"_"omegas
+%format WT = W"_"twiddle
+%format DT = D"_"twiddle
+%format WFs = W"_"ffts'
+%format DFs = D"_"ffts'
+
+Complexity of |fft| depends on complexity of |twiddle| and |omegas|.
+Since |powers| (defined in \secref{Applications}) is a prefix scan, we can compute |omegas| efficiently in parallel.
+Constructing |omegas| requires one |powers| for |g| and then one more for each element of the resulting |g C|, with the latter collection constructed in parallel.
+Thanks scanning on constant structures, |powers| requires only linear work even on top-down trees.
+Depth of |powers| is logarithmic.
 \begin{code}
-    ffts' . transpose . twiddle . ffts'
+WO  (g (f C))  = O (ssize g + ssize g *. ssize f) = O (ssize (g :.: f))
+DO  (g (f C))  = log2 (ssize g) + log2 (ssize f)
+               = log2 (ssize g *. ssize f)
+               = log2 (ssize (g :.: f)
+\end{code}
+After constructing |omegas|, |twiddle| multiplies two |g :.: f| structures element-wise, using linear work and constant depth.
+\begin{code}
+WT  (g (f C))  = WO (g (f C)) + O (ssize (g :.: f))
+               = O (ssize (g :.: f)) + O (ssize (g :.: f))
+               = O (ssize (g :.: f))
+DT  (g (f C))  = DO (g (f C)) + O(1)
+               = log2 (ssize (g :.: f)) + O(1)
+\end{code}
+The first |ffts'|, on |g :.: f|, does |ssize f| many |fft| on |g| (thanks to |transpose|), in parallel (via |fmap|).
+The second |ffts'|, on |f :.: g|, does |ssize g| many |fft| on |f|, also in parallel.
+Altogether,
+\begin{code}
+W (g :.: f)  = ssize g *. W f + WT + ssize f *. W g
+             = ssize g *. W f + O (ssize (g :.: f)) + ssize f *. W g
+
+D (g :.: f)  = DFs (g (f C)) + DT (g :.: f) + DFs (f (g C))
+             = D g + log2 (ssize (g :.: f)) + O(1) + D f
+\end{code}
+
+The definition of |fft| for |g :.: f| can be simplified (without changing complexity):
+\begin{code}
+    Comp1 . ffts' . transpose . twiddle . ffts' . unComp1
 ==  {- definition of |ffts'| (and associativity of |(.)|) -}
-    transpose . fmap fft . transpose .  transpose .  twiddle .  transpose . fmap fft . transpose
+    Comp1 . transpose . fmap fft . transpose .  transpose .  twiddle .  transpose . fmap fft . transpose . unComp1
 ==  {- |transpose . transpose == id| -}
-    transpose . fmap fft . twiddle . transpose . fmap fft . transpose
+    Comp1 . transpose . fmap fft . twiddle . transpose . fmap fft . transpose . unComp1
 ==  {- |transpose . fmap h == traverse h| -}
-    traverse fft . twiddle . traverse fft . transpose
+    Comp1 . traverse fft . twiddle . traverse fft . transpose . unComp1
 \end{code}
 
 \subsection{Comparing data types}
 
-\todo{Complexity analysis. Perhaps simpler than |lscan| due to symmetry.}
+The top-down and bottom-up tree algorithms correspond to two popular binary FFT variations known as ``decimation in time'' and ``decimation in frequency'' (``DIT'' and ``DIF''), respectively.
+In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2$.
+Consider top-down trees first:
+
+\begin{code}
+
+W  (RPow h 0) = W  Par1 = 0
+
+D  (RPow h 0) = D  Par1 = 0
+
+W (RPow h (S n))  = W (h :.: RPow h n)
+                  = ssize h *. W (RPow h n) + O (ssize (h :.: RPow h n)) + ssize (RPow h n) *. W h
+                  = ssize h *. W (RPow h n) + O (pow (ssize h) (S n)) + ssize (RPow h n) *. W h
+
+D (RPow h (S n))  = D (h :.: RPow h n)
+                  = D h + D (RPow f n) + log2 (ssize (h :.: RPow f n)) + O(1)
+                  = D h + D (RPow f n) + log2 (pow (ssize h) (S n)) + O(1)
+                  = D (RPow f n) + O (n)
+
+\end{code}
+
+Unlike scan, top-down and bottom-up trees lead to exactly the same work and depth, due to symmetries in the FFT algorithm.
+
+
+\note{Working here. Solve the recurrences. Then |LPow|, and then |Bush|.}
+
+\todo{Consistent structure for these proofs throughout the paper.}
+
+\todo{Instance and complexity for |Par1|.}
 
 \figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figreftwo{fft-bush2}{fft-bush3} for bushes of depth two and three.\notefoot{Probably drop |Bush N3|.}
 Each complex number appears as its real and imaginary components.\notefoot{Remove literals from counts, and maybe split counts into additions and multiplications.}
 \figp{
-\circdef{fft-rb4}{|RBin N4|}{197}{8}}{
-\circdef{fft-lb4}{|LBin N4|}{197}{8}}
-% \figo{\circdef{fft-bush2}{|Bush N2|}{186}{6}}
+\circdef{fft-rb4}{|fft @(RBin N4)|}{197}{8}}{
+\circdef{fft-lb4}{|fft @(LBin N4)|}{197}{8}}
+% \figo{\circdef{fft-bush2}{|fft @(Bush N2)|}{186}{6}}
 \figp{
-\circdef{fft-bush2}{|Bush N2|}{186}{6}}{
-\circdef{fft-bush3}{|Bush N3|}{7310}{14}}
+\circdef{fft-bush2}{|fft @(Bush N2)|}{186}{6}}{
+\circdef{fft-bush3}{|fft @(Bush N3)|}{7310}{14}}
 
-The top-down and bottom-up tree algorithms correspond to two popular binary FFT variations known as ``decimation in time'' and ``decimation in frequency'' (``DIT'' and ``DIF''), respectively.
-In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2$.
-\figreftwo{fft-stats-16}{fft-stats-256} offer a more detailed comparison.
+\figreftwo{fft-stats-16}{fft-stats-256} gives an empirical comparison.
 \begin{figure}
 \begin{minipage}{0.43\linewidth}
  \centering
@@ -1007,7 +1071,6 @@ In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2
 \end{minipage}
 \end{figure}
 (The total operation counts include constants.\notefoot{Maybe remove them.})
-Unlike scan, top-down and bottom-up trees lead to exactly the same work and depth.
 Pleasantly, the |Bush| instance of generic FFT appears to improve over the classic DIT and DIF algorithms in both work and depth.
 
 \section{Related work}
