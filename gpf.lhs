@@ -950,9 +950,20 @@ Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ r
 > omegas :: ... => Int -> g (f (Complex a))
 > omegas n = fmap powers (powers (exp (- i * 2 * pi / fromIntegral n)))
 
-The |size| method calculates the size of a structure.
+The |size| method calculates the size of a structure.\notefoot{Define much earlier for use in complexity analyses, and drop the following sentence about composition.}
 Unsurprisingly, the size of a composition is the product of the sizes.
 Since |powers| (defined in \secref{Applications}) is a prefix scan, we can compute |omegas| efficiently in parallel.
+
+This definition of |fft| for |g :.: f| optimizes:
+\begin{code}
+    ffts' . transpose . twiddle . ffts'
+==  {- definition of |ffts'| (and associativity of |(.)|) -}
+    transpose . fmap fft . transpose .  transpose .  twiddle .  transpose . fmap fft . transpose
+==  {- |transpose . transpose == id| -}
+    transpose . fmap fft . twiddle . transpose . fmap fft . transpose
+==  {- |transpose . fmap h == traverse h| -}
+    traverse fft . twiddle . traverse fft . transpose
+\end{code}
 
 \subsection{Comparing data types}
 
