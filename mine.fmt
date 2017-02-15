@@ -78,3 +78,10 @@
 
 %format :< = " \triangleleft "
 %format >: = " \triangleright "
+
+%format (ssize (a)) = "\lvert "a" \rvert"
+
+%format pow a (n) = a "^{"n"}"
+
+%format log2
+%format *. = "\cdot"

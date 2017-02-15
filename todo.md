@@ -23,10 +23,13 @@
     *   Reveals commonality of some algorithms that appear quite different.
         Theme: postpone optimization.
 *   Cite "work" and "depth"
+*   Use "Figure" instead of "Fig." in figure captions.
+    Same for the "Compiling to categories" paper.
 *   Maybe rename `LScan` to "`LScannable`".
 *   Tweaks for acmart:
     *   Abstract *before* `maketitle` (p 14). Really?
     *   "Thee captions for figures must be entered after the figure bodies, and for the tables before the table bodies." (p 15)
+*   Check for accidental paragraphs after `\\end{code}`.
 
 # Done
 

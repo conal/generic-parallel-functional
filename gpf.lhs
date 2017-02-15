@@ -230,9 +230,9 @@ instance Traversable Tree where
   traverse h (Branch t1 t2 t3)  = liftA3 Branch (traverse h t1) (traverse h t2) (traverse h t3)
 \end{code}
 
-Not only do we have repetition \emph{within} each instance definition (the three occurrences of |fmap h| above), we also have repetition \emph{among} instances for $n$-ary trees for different $n$.
+Not only do we have repetition \emph{within} each instance definition (the three occurrences each of |fmap h|, |foldMap h|, and |traverse h| above), we also have repetition \emph{among} instances for $n$-ary trees for different $n$.
 Fortunately, we can simplify and unify with a shift in formulation.
-Think of a branch node as having not $n$ subtrees, but rather a single uniform $n$-tuple of subtrees.
+Think of a branch node not as having $n$ subtrees, but rather a single uniform $n$-tuple of subtrees.
 Assume for now that we have a functor of finite lists statically indexed by length as well as element type:
 \begin{code}
 type Vec :: Nat -> * -> * SPC -- abstract for now
@@ -244,7 +244,6 @@ Define a single type of $n$-ary leaf trees, polymorphic over $n$:
 \begin{code}
 data Tree n a = Leaf a | Branch (Vec n (Tree a))
 \end{code}
-
 The more general vector-based instance definitions are simpler than even the binary-only versions given above:
 \begin{code}
 instance Functor (Tree n) where
@@ -277,16 +276,15 @@ With this functor-parametrized tree type, we can reconstruct $n$-ary trees as |T
 
 Just as there are both left- and right-growing lists, trees come in two flavors as well.
 The forms above are all ``top-down'', in the sense that successive unwrappings of branch nodes reveal subtrees moving from the top downward.
-(No unwrapping for the top level, one unwrapping for the collection of next-to-top subtrees, another for the collection of next level down, etc.) There are also ``bottom-up'' trees, in which successive branch node unwrappings reveal the information in subtrees from the bottom moving upward.
+(No unwrapping for the top level, one unwrapping for the collection of next-to-top subtrees, another for the collection of next level down, etc.)
+There are also ``bottom-up'' trees, in which successive branch node unwrappings reveal the information in subtrees from the bottom moving upward.
 In short:
-
 \begin{itemize}
 \item
   A top-down leaf tree is either a leaf or an |f|-structure of trees.
 \item
   A bottom-up leaf tree is either a leaf or a tree of |f|-structures.
 \end{itemize}
-
 In Haskell,
 \begin{code}
 data TTree f a = TLeaf a | TBranch (f (TTree a))
@@ -300,23 +298,21 @@ Bottom-up trees (|LTree|) are a canonical example of ``nested'' or ``non-regular
 Some algorithms work only on collections of restricted size.
 For instance, the most common parallel scan and FFT algorithms are limited to arrays of size $2^n$, while the more general (not just binary) Cooley-Tukey FFT algorithms require composite size, i.e., $m \cdot n$ for integers $m, n \ge 2$.
 In array-based algorithms, these restrictions can be realized in one of two ways:
-
 \begin{itemize}
 \item
   Check array sizes dynamically, incurring a performance penalty; or
 \item
   Document the restriction, assume the best, and blame the library user if the assumption is violated.
 \end{itemize}
-
-A third---much less commonly used--option is to statically verify the size restriction at the call site, perhaps by using a dependently typed language and providing proofs as part of the call.
+A third---much less commonly used---option is to statically verify the size restriction at the call site, perhaps by using a dependently typed language and providing proofs as part of the call.
 
 A lightweight compromise is to simulate some of the power dependent types via type-level encodings of sizes, as with our use of |Nat| for indexing the |Vec| type above.
 There are many possible definitions for |Nat|.
-For this paper, assume that |Nat| is a kind-promoted version of the following data type of Peano numbers (constructed via zero and successor) \cite{yorgey2012giving}:
+For this paper, assume that |Nat| is a kind-promoted version of the following data type of Peano numbers (constructed via zero and successor):
 \begin{code}
 data Nat = Z | S Nat
 \end{code}
-Thanks to promotion, |Nat| is not only a new data type with value-level constructors |Z| and |S|, but also a new \emph{kind} with \emph{type-level} constructors |Z| and |S|.
+Thanks to promotion, |Nat| is not only a new data type with value-level constructors |Z| and |S|, but also a new \emph{kind} with \emph{type-level} constructors |Z| and |S| \cite{yorgey2012giving}.
 
 \subsubsection{GADT formulation}
 
@@ -367,8 +363,7 @@ instance Generic1 (RPow f Z) where
   from1 (L a) = Par1 a
   to1 (Par1 a) = L a
 
-instance  Generic1 (RPow f n) =>
-          Generic1 (RPow f (S n)) where
+instance  Generic1 (RPow f n) => Generic1 (RPow f (S n)) where
   type Rep1 (RPow f (S n)) = f :.: RPow f n
   from1 (B ts) = Comp1 ts
   to1 (Comp1 ts)  = B ts
@@ -378,8 +373,7 @@ instance Generic1 (LPow f Z) where
   from1 (L a) = Par1 a
   to1 (Par1 a) = L a
 
-instance  Generic1 (LPow f n) =>
-          Generic1 (LPow f (S n)) where
+instance  Generic1 (LPow f n) => Generic1 (LPow f (S n)) where
   type Rep1 (LPow f (S n)) = LPow f n :.: f
   from1 (B ts) = Comp1 ts
   to1 (Comp1 ts) = B ts
@@ -391,8 +385,8 @@ Since all of these types are memo tries \cite{Hinze00memofunctions}, their class
 
 \subsubsection{Type family formulation}
 
-Note that |RVec n| and |LVec n| are each essentially an $n$-ary functor \emph{product} of |Par1|.
-Similarly, |RPow f n| and |LPow f n| are each an $n$-ary functor \emph{composition} of |f|.
+Note that |RVec n| and |LVec n| are essentially $n$-ary functor \emph{products} of |Par1|.
+Similarly, |RPow f n| and |LPow f n| are $n$-ary functor \emph{compositions} of |f|.
 Functor product and functor composition are both associative but only up to isomorphism.
 This limit to associativity is exactly why both exist and are useful.
 While |RVec| and |RPow| are right associations, |LVec| and |LPow| are left associations.
@@ -440,7 +434,10 @@ Because these type-family-based definitions are expressed in terms of existing g
 A downside is that we \emph{cannot} provide them, which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
 
 Although |RPow| and |LPow| work with any functor argument, we will use uniform pairs in the examples below.
-The uniform |Pair| functor can be defined in a variety of ways, including |Par1 :*: Par1|, |RVec N2|, or |LVec N2|.
+The uniform |Pair| functor can be defined in a variety of ways, including |Par1 :*: Par1|, |RVec N2|, |LVec N2|, or its own algebraic data type:
+\begin{code}
+data Pair a = a :# a deriving (Functor,Foldable,Traversable)
+\end{code}
 For convenience, define top-down and bottom-up \emph{binary} trees:
 
 > type RBin = RPow Pair
@@ -448,7 +445,7 @@ For convenience, define top-down and bottom-up \emph{binary} trees:
 
 \subsection{Bushes}\seclabel{bushes}
 
-In contrast to vectors, our tree types are perfectly balanced, as is helpful in obtaining naturally parallel algorithms.
+In contrast to vectors, the tree types above are perfectly balanced, as is helpful in obtaining naturally parallel algorithms.
 From another perspective, however, they are quite imbalanced.
 The functor composition operator is used fully left-associated for |LPow| and fully right-associated for |RPow| (hence the names).
 It's easy to define a composition-balanced type as well:
@@ -457,7 +454,7 @@ type family Bush n where
   Bush Z      = Pair
   Bush (S n)  = Bush n :.: Bush n
 \end{code}
-Whereas each |RBin n| and |LBin n| holds $2^n$ elements, each statically shaped |Bush n| holds $2^{2^n}$ elements.
+While each |RBin n| and |LBin n| holds $2^n$ elements, each statically shaped |Bush n| holds $2^{2^n}$ elements.
 Moreover, there's nothing special about |Pair| or \emph{binary} composition here.
 Either could be replaced or generalized.
 
@@ -468,7 +465,7 @@ data Bush a = NilB | ConsB a (Bush (Bush a))
 
 Bushes are to trees as trees are to vectors, in the following sense.
 Functor product is associative up to isomorphism.
-Where |RVec| and |LVec| choose fully right or left associated products, |RPow f| and |LPow f| form perfectly and recursively balanced products.
+Where |RVec| and |LVec| choose fully right- or left-associated products, |RPow f| and |LPow f| form perfectly and recursively balanced products.
 Likewise, functor composition is associative up to isomorphism.
 Where |RPow f| and |LPow f| are fully right- and left-associated compositions, |Bush f| forms balanced compositions.
 Many other variations are possible, but the |Bush| definition above will suffice for this paper.
@@ -555,19 +552,25 @@ Comments:
 \item For a sum, scan whichever structure is present, and re-tag.
 (The higher-order function |first| applies a function to the first element of a pair, carrying the second element along unchanged.)
 \end{itemize}
+Work and depth for |U1|, |V1|, and |Par1| are all zero.
+For sums,
+\begin{code}
+W  (f :+: g)  = W  f `max` W  g
+D  (f :+: g)  = D  f `max` D  g
+\end{code}
 
-With these easy instances out of the way, we have only two left to define: product and composition.
+With the four easy instances out of the way, we have only two left to define: product and composition.
 
 \subsection{Product}
 
-Suppose we have linear scans of size, as in \figref{two-scans}.
+Suppose we have linear scans, as in \figref{two-scans}.
 We will see later how these individual scans arise from particular functors |f| and |g| (of sizes five and eleven respectively), but for now take them as given.
 To understand |lscan| on functor products, consider how to combine the scans of |f| and |g| into scan for |f :*: g|.
 
 Because we are left-scanning, every prefix of |f| is also a prefix of |f :*: g|, so the |lscan| results for |f| are also correct results for |f :*: g|.
 The prefixes of |g| are not prefixes of |f :*: g|, however, since each |g|-prefix misses all of |f|.
 The prefix \emph{sums}, therefore, are lacking the sum of all of |f|, which corresponds to the last output of the |lscan| result for |f|.
-All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| result, as shown in \figref{lsums-lv5xlv11-highlight}.
+All we need to do, therefore, is adjust each |g| result by the final |f| result, as shown in \figref{lsums-lv5xlv11-highlight}.
 \figpair{two-scans}{Two scans}{
 \vspace{1.8ex}
 \incpicW{0.6}{lsums-lv5}
@@ -579,10 +582,16 @@ All we need to do, therefore, is adjust \emph{each} |g| result by the final |f| 
 The general product instance:
 \begin{code}
 instance (LScan f, LScan g) => LScan (f :*: g) where
-  lscan (fa :*: ga) = (fa' :*: (fmap (fx <> NOP) ga'), fx <> gx)
+  lscan (fa :*: ga) = (fa' :*: fmap (fx NOP <> ) ga', fx <> gx)
    where
      (fa'  , fx)  = lscan fa
      (ga'  , gx)  = lscan ga
+\end{code}
+The work for |f :*: g| is the combine work for each, plus the cost of adjusting the result for |g|.
+The depth is the maximum depth for |f| and |g|, plus one more step to adjust the final |g| result.
+\begin{code}
+W  (f :*: g) = W f + W g + ssize g + 1
+D  (f :*: g) = (D f `max` D g) + 1
 \end{code}
 
 We now have enough functionality for scanning vectors using either the GADT or type family definitions from \secref{statically-shaped-types}.
@@ -593,46 +602,65 @@ In this picture (and many more like it below), the data types are shown in flatt
 As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
 
 \figp{
-\circdef{lsums-rv8-no-hash-no-opt}{scan for |RVec N8|, unoptimized}{45}{8}}{
-\circdef{lsums-rv8}{scan for |RVec N8|, optimized}{29}{7}
+\circdef{lsums-rv8-no-hash-no-opt}{scan for |RVec N8|, unoptimized}{36}{8}}{
+\circdef{lsums-rv8}{scan for |RVec N8|, optimized}{28}{7}
 }
 
 The combination of left scan and right vector is particularly unfortunate, as it involves quadratic work and linear depth.
 The source of quadratic work is the product instance's \emph{right} adjustment combined with the right-associated shape of |RVec|.
 Each single element (left) is used to adjust the entire suffix (right), requiring linear work at each step, summing to quadratic.
+We can verify the complexity by using the definition of |RVec| and the complexities for the generic building blocks involved.
+\begin{code}
+W (RVec 0) == W U1 == 0
+W (RVec (S n)) == W (Par1 :*: RVec n) == W Par1 + W (RVec n) + ssize (RVec n) + 1 == W (RVec n) + O(n)
 
+D (RVec 0) == D U1 == 0
+D (RVec (S n)) == D (Par1 :*: RVec n) == D Par1 + D (RVec n) + 1 == D (RVec n) + 1
+\end{code}
+Thus
+\begin{code}
+W  (RVec n)  == O(pow n 2)
+D  (RVec n)  == O(n)
+\end{code}
 In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \figref{lsums-lv8-no-hash-no-opt} and \figref{lsums-lv8} (optimized).
-Performing a suffix/right scan on a left vector also leads to quadratic work, reduced to linear by switching to right vectors.
-
 \figp{
-\circdef{lsums-lv8-no-hash-no-opt}{|lscan| on |LVec N8|, unoptimized}{25}{8}}{
-\circdef{lsums-lv8}{|lscan| on |LVec N8|, optimized}{8}{7}
+\circdef{lsums-lv8-no-hash-no-opt}{|lscan| on |LVec N8|, unoptimized}{16}{8}}{
+\circdef{lsums-lv8}{|lscan| on |LVec N8|, optimized}{7}{7}
 }
+\begin{code}
+W (LVec 0) == W U1 == 0
+W (LVec (S n)) == W (LVec n :*: Par1) == W (LVec n) + W Par1 + ssize Par1 + 1 == W (LVec n) + 2
+
+D  (RVec 0) == W U1 == 0
+D  (RVec (S n)) == D (Par1 :*: RVec n) == D Par1 + D (RVec n) + 1 == D (RVec n) + 1
+\end{code}
+Thus
+\begin{code}
+W  (LVec n) == O(n)
+D  (LVec n) == O(n)
+\end{code}
+Performing a suffix/right scan on a left vector also leads to quadratic work, reduced to linear by switching to right vectors.
 
 Although work is greatly reduced (from quadratic to linear), depth remains at linear.
 The reason is that unbalanced data types lead to unbalanced parallelism.
-Both |RVec| and |LVec| are ``parallel'' in a degenerate sense, but we only get to perform small computations in parallel with large one (more apparent in \figreftwo{lsums-rv8-no-hash-no-opt}{lsums-lv8-no-hash-no-opt}), so that the result is essentially sequential.
+Both |RVec| and |LVec| are ``parallel'' in a sense, but we only get to perform small computations in parallel with large one (more apparent in \figreftwo{lsums-rv8-no-hash-no-opt}{lsums-lv8-no-hash-no-opt}), so that the result is essentially sequential.
 
 To get a more parallelism, we could replace a type like |LVec N16| with a isomorphic product such as |LVec N5 :*: LVec N11|, resulting in \figref{lsums-lv5xlv11-highlight}, reducing depth from 15 to 11.
 More generally, scan on |LVec m :*: LVec n| has depth |max (m-1) (n-1) + 1 = max m n|.
 For an ideal partition adding up to |p|, we'll want |m = n = p/2|.
 For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \figref{lsums-lv8xlv8}.
-
 Can we do better?
 Not as a single product, but we can as more than one product, as shown in \figref{lsums-lv5-5-6-l}.
 Again, the more balance, the better.
-
 \figp{
-\circdef{lsums-lv5-5-6-l}{|lscan| on |(LVec N5 :*: LVec N5) :*: LVec N6|}{25}{6}}{
-\circdef{lsums-lv8xlv8}{|lscan| on |LVec N8 :*: LVec N8|}{23}{8}
-}
+\circdef{lsums-lv8xlv8}{|lscan| on |LVec N8 :*: LVec N8|}{22}{8}}{
+\circdef{lsums-lv5-5-6-l}{|lscan| on |(LVec N5 :*: LVec N5) :*: LVec N6|}{24}{6}}
 
 \subsection{Composition}
 
 We now come to the last of our six functor combinators, namely composition, i.e., structures of structures.
 Suppose we have a triple of quadruples: |LVec N3 :.: LVec N4|.
 We know how to scan each quadruple, as in \figref{triple-scan}.
-
 How can we combine the results of each scan into a scan for |LVec N3 :.: LVec N4|?
 We already know the answer, since this composite type is essentially |(LVec N4 :*: LVec N4) :*: LVec N4|, the scan for which is determined by the |Par1| and product instances and is shown in \figref{lsums-lv3olv4-highlight}.
 
@@ -663,7 +691,13 @@ instance (LScan g, LScan f, Zip g) =>  LScan (g :.: f) where
    where
      (gfa', tots)  = unzip (fmap lscan gfa)
      (tots',tot)   = lscan tots
-     adjustl t     = fmap (t <>)
+     adjustl t     = fmap (t NOP <>)
+\end{code}
+The work for scanning |g :.: f| includes work for each |f|, work for the |g| of summaries, and updates to all results (before optimizing away the zero adjust, which doesn't change order).
+The depth is the depth of |f| (since each |f| is handled in parallel with the others), followed by the depth of a single |g| scan.
+\begin{code}
+W  (g :.: f) = ssize g *. W f + W g + ssize g *. ssize f
+D  (g :.: f) = D f + D g
 \end{code}
 
 \subsection{More examples}
@@ -674,36 +708,120 @@ We have already seen |Pair :.: LVec N8| as |LVec N8 :*: LVec N8| in \figref{lsum
 The reverse composition leads to quite a different computation shape, as \figref{lsums-lv8-p} shows.
 Yet another factoring appears in \figref{lsums-lv4olv4}.
 \figp{
-\circdef{lsums-lv8-p}{|LVec N8 :.: Pair|}{23}{8}}{
-\circdef{lsums-lv4olv4}{|LVec N4 :.: LVec N4|}{25}{6}}
+\circdef{lsums-lv8-p}{|LVec N8 :.: Pair|}{22}{8}}{
+\circdef{lsums-lv4olv4}{|LVec N4 :.: LVec N4|}{24}{6}}
 
-Next let's try functor exponentiation in its left- and right-associated form.
+Next let's try functor exponentiation in its left- and right-associated forms.
 We just saw the equivalent of |RPow (LVec N4) N2| (and |LPow (LVec N4) N2|) as \figref{lsums-lv4olv4}.
-\figreftwo{lsums-rb4}{lsums-lb4} show |RBin N4| and |LBin N4| (top-down and bottom-up perfect binary leaf trees of depth four).
+\figreftwo{lsums-rb4}{lsums-lb4} show |RBin N4| and |LBin N4| (top-down and bottom-up perfect binary leaf trees of depth four).\notefoot{Maybe drop the ``|RBin|'' and ``|LBin|'' shorthands.}
 \figp{
-\circdef{lsums-rb4}{|RPow (LVec N4) N2|}{33}{4}}{
-\circdef{lsums-lb4}{|LPow (LVec N4) N2|}{27}{6}}
+\circdef{lsums-rb4}{|RBin N4|}{32}{4}}{
+\circdef{lsums-lb4}{|LBin N4|}{26}{6}}
+Complexities for |RPow h|:
+\begin{code}
+W (RPow h 0) == W Par1 == 0
+W (RPow h (S n)) == W (h :.: RPow h n) == ssize h *. W (RPow h n) + W h + pow (ssize h) (S n)
+
+D (RPow h 0) == D Par1 == 0
+D (RPow h (S n)) == D (h :.: RPow h n) == D h + D (RPow h n)
+\end{code}
+For any fixed |h|, |W h + pow (ssize h) (S n) == O(n)|, so the Master Theorem gives a solution \cite[Chapter 4]{Cormen:2009} for |W|.
+Since |D h == O (1)| (again, for fixed |h|) |D| has a simple solution.
+\begin{code}
+W  (RPow h n) == O (ssize (RPow h n) *. log (ssize (RPow h n)))
+D  (RPow h n) == O (n) == O (log (ssize (RPow h n)))
+\end{code}
+Complexities for |LPow h|:
+\begin{code}
+W (LPow h 0) == W Par1 == 1
+W (LPow h (S n)) == W (LPow h n :.: h) == ssize (LPow h n) *. W h + W (LPow h n) + pow (ssize h) (S n)
+
+D (LPow h 0) == D Par1 == 0
+D (LPow h (S n)) == D (LPow h n :.: h) == D (LPow h n) + D h
+\end{code}
+With a fixed |h|, |W h == O(1)|, and |ssize (LPow h n) *. W h + pow (ssize h) (S n) == O((ssize (LPow h n)))|, so the Master Theorem gives a solution \emph{linear} in |ssize (LPow h n)|, while the depth is again logarithmic:
+\begin{code}
+W  (LPow h n) == O ((ssize (LPow h n)))
+D  (LPow h n) == O (n) == O (log (ssize (LPow h n)))
+\end{code}
+For this reason, parallel scan on bottom-up trees can do much less work than on top-down trees.
+They also have fan-out bounded by |ssize h|, as contrasted with the linear fan-out for top-down trees which is an important consideration for hardware implementations.
+On the other hand, the depth for bottom-up trees is about twice the depth for top-down trees.
+
+These two scan algorithms are well-known: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
 
 Finally, consider the |Bush| type from \secref{bushes}.
 Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bushes of depth zero through three.
+Depth complexity:
+\begin{code}
+D (Bush 0) == D Pair == 1
+D (Bush (S n)) == D (Bush n :.: Bush n) == D (Bush n) + D (Bush n) == 2 *. D (Bush n)
+\end{code}
+Hence
+\begin{code}
+D (Bush n) == O (pow 2 n) == O (pow 2 (log2 (log2 (ssize (Bush n))))) == O (log (ssize (Bush n)))
+\end{code}
+Work complexity is trickier:
+\begin{code}
+W (Bush 0) == W Pair == 1
+W (Bush (S n))  == W (Bush n :.: Bush n) == ssize (Bush n) *. W (Bush n) + W (Bush n) + ssize (Bush (S n))
+                == 2 *. ssize (Bush n) *. W (Bush n)
+                == 2 *. pow 2 (pow 2 n) *. W (Bush n)
+\end{code}
+Letting |W' n = W (Bush n)|,
+$$
+W' n
+= \prod_{0 \le i < n} 2 \cdot 2^{2^i}
+= 2^n \cdot 2^{\sum_{0 \le i < n} 2^i}
+= 2^n \cdot 2^{2^n - 1} = ...
+= 2^n \cdot 2^{2^n} / 2
+= O (2^{2^n} \cdot log_2 (2^{2^n}))
+$$
+Thus,
+\begin{code}
+W (Bush n) == O (ssize (Bush n) *. log (ssize (Bush n)))
+\end{code}
 \figp{
-\circdef{lsums-bush0}{|Bush N0|}{2}{1}}{
-\circdef{lsums-bush1}{|Bush N1|}{5}{2}}
+\circdef{lsums-bush0}{|Bush N0|}{1}{1}}{
+\circdef{lsums-bush1}{|Bush N1|}{4}{2}}
 \figp{
-\circdef{lsums-bush2}{|Bush N2|}{30}{5}}{
-\circdef{lsums-bush3}{|Bush N3|}{719}{10}}
+\circdef{lsums-bush2}{|Bush N2|}{29}{5}}{
+\circdef{lsums-bush3}{|Bush N3|}{718}{10}}
 
-\note{Efficiency remarks about |RPow|, |LPow|, and |Bush|.}
+\figreftwo{lscan-stats-16}{lscan-stats-256} offer a more detailed comparison.
+Note that top-down trees have the least depth, bottom-up trees have the least work.
+Bushes appear to provide a compromise, with less work than top-down trees and less depth than bottom-up trees.
 
-\subsection{Complexity analysis}
-
-\note{Either in this section or sprinkled throughout the functor combinators and examples above.}
+\begin{figure}
+\begin{minipage}{0.43\linewidth}
+ \centering
+  \lscanStats{
+    \lscanStat{|RBin N4|}{32}{4}
+    \lscanStat{|LBin N4|}{26}{6}
+    \lscanStat{|Bush N2|}{29}{5}
+  }
+  \vspace*{-3ex}
+  \captionof{figure}{|lscan| for 16 values}
+  \label{fig:lscan-stats-16}
+\end{minipage}
+\begin{minipage}{0.49\linewidth}
+ \centering
+  \lscanStats{
+    \lscanStat{|RBin N8|}{1024}{8}
+    \lscanStat{|LBin N8|}{502}{14}
+    \lscanStat{|Bush N3|}{718}{10}
+  }
+  \vspace*{-3ex}
+  \captionof{figure}{|lscan| for 256 values}
+  \label{fig:lscan-stats-256}
+\end{minipage}
+\end{figure}
 
 \subsection{Some convenient packaging}
 
 For generality, |lscan| works on arbitrary monoids.
 For convenience, let's define some specializations.
-One way to do so is by providing functions that map non-monoidal values to and from monoids.
+One way to do so is to provide functions that map non-monoidal values to and from monoids.
 Start with a class similar to |Generic| for providing alternative representations:
 \begin{code}
 class Newtype n where
@@ -792,7 +910,7 @@ The summation formula above exhibits a trait typical of array-based algorithms, 
 This arithmetic has a purpose, however, which is interpret an array as an array of arrays.
 In a higher-level formulation, we might replace arrays and index arithmetic by an \emph{explicit} nesting of structures.
 We have already seen the fundamental building block of structure nesting, namely functor composition.
-Instead of factoring numbers, factor types.
+Instead of factoring numbers that represent type sizes, factor the types themselves.
 
 As with scan, define a class of FFT-able structures and a generic default.
 One new wrinkle is that the result shape differs from the original shape, so we'll use an associated functor ``|FFO|'':
@@ -801,8 +919,7 @@ One new wrinkle is that the result shape differs from the original shape, so we'
 class FFT f where
   type FFO f :: * -> *
   fft :: f C -> FFO f C
-  default fft  ::  ( Generic1 f, Generic1 (FFO f), FFT (Rep1 f) , FFO (Rep1 f) ~ Rep1 (FFO f) )
-               =>  f C -> FFO f C
+  default fft  ::  ( Generic1 f, Generic1 (FFO f), FFT (Rep1 f) , FFO (Rep1 f) ~ Rep1 (FFO f) ) =>  f C -> FFO f C
   fft xs = to1 . fft xs . from1
 \end{code}
 
@@ -841,26 +958,26 @@ Since |powers| (defined in \secref{Applications}) is a prefix scan, we can compu
 
 \subsection{Comparing data types}
 
-\figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figref{fft-bush2} for a bush of depth two.
-Each complex number appears as its real and imaginary components.
+\figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figreftwo{fft-bush2}{fft-bush3} for bushes of depth two and three.\notefoot{Probably drop |Bush N3|.}
+Each complex number appears as its real and imaginary components.\notefoot{Remove literals from counts, and maybe split counts into additions and multiplications.}
 \figp{
 \circdef{fft-rb4}{|RBin N4|}{197}{8}}{
 \circdef{fft-lb4}{|LBin N4|}{197}{8}}
-\figo{\circdef{fft-bush2}{|Bush N2|}{186}{6}}
-%% \figp{
-%% \circdef{fft-bush2}{|Bush N2|}{186}{6}}{
-%% \circdef{fft-bush3}{|Bush N3|}{7310}{14}}
+% \figo{\circdef{fft-bush2}{|Bush N2|}{186}{6}}
+\figp{
+\circdef{fft-bush2}{|Bush N2|}{186}{6}}{
+\circdef{fft-bush3}{|Bush N3|}{7310}{14}}
 
-The top-down and bottom-up tree algorithms correspond to two popular FFT variations known as ``decimation in time'' and ``decimation in frequency'' (``DIT'' and ``DIF''), respectively.
+The top-down and bottom-up tree algorithms correspond to two popular binary FFT variations known as ``decimation in time'' and ``decimation in frequency'' (``DIT'' and ``DIF''), respectively.
 In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2$.
 \figreftwo{fft-stats-16}{fft-stats-256} offer a more detailed comparison.
 \begin{figure}
 \begin{minipage}{0.43\linewidth}
  \centering
   \fftStats{
-    \stat{|RBin N4|}{74}{40}{74}{197}{8}
-    \stat{|LBin N4|}{74}{40}{74}{197}{8}
-    \stat{|Bush N2|}{72}{32}{72}{186}{6}
+    \fftStat{|RBin N4|}{74}{40}{74}{197}{8}
+    \fftStat{|LBin N4|}{74}{40}{74}{197}{8}
+    \fftStat{|Bush N2|}{72}{32}{72}{186}{6}
   }
   \vspace*{-3ex}
   \captionof{figure}{FFT for 16 complex values}
@@ -869,16 +986,16 @@ In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2
 \begin{minipage}{0.49\linewidth}
  \centering
   \fftStats{
-    \stat{|RBin N8|}{2690}{2582}{2690}{8241}{20}
-    \stat{|LBin N8|}{2690}{2582}{2690}{8241}{20}
-    \stat{|Bush N3|}{2528}{1922}{2528}{7310}{14}
+    \fftStat{|RBin N8|}{2690}{2582}{2690}{8241}{20}
+    \fftStat{|LBin N8|}{2690}{2582}{2690}{8241}{20}
+    \fftStat{|Bush N3|}{2528}{1922}{2528}{7310}{14}
   }
   \vspace*{-3ex}
   \captionof{figure}{FFT for 256 complex values}
   \label{fig:fft-stats-256}
 \end{minipage}
 \end{figure}
-(The total operation counts include constants.)
+(The total operation counts include constants.\notefoot{Maybe remove them.})
 Unlike scan, top-down and bottom-up trees lead to exactly the same work and depth.
 Pleasantly, the |Bush| instance of generic FFT appears to improve over the classic DIT and DIF algorithms in both work and depth.
 

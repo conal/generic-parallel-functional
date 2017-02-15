@@ -6,6 +6,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 
+%% Using?
 \usepackage{subcaption}
 
 \nc\out[1]{}
@@ -55,7 +56,7 @@
   \centering
   \setlength\mathindent{0ex}
   #4
-  \vspace*{-3ex}
+  \vspace*{-4ex}
   \captionof{figure}{#3}
   \label{fig:#2}
 \end{minipage}
@@ -87,8 +88,7 @@
 #1
 \hspace{-2ex}
 #2
-\end{figure}
-}
+\end{figure}}
 
 %% \circdefW{frac}{label/file}{caption}{work}{depth}
 \nc\circdefW[5]{\figoneW{#1}{#2}{#3 \stats{#4}{#5}}{\incpic{#2}}}
@@ -117,14 +117,29 @@
 %%%%%%
 
 
-\newcommand{\stat}[6]{
+\newcommand{\lscanStat}[3]{
+#1 & #2 & #3 \\ %\hline
+}
+\newcommand{\lscanStats}[1]{
+\begin{center}
+\begin{tabular}{ccc}%{|c|c|c|}
+  %\hline
+  \lscanStat{\out{Type}}{operations}{depth} \hline
+  #1
+  \hline
+\end{tabular}
+%\vspace{0.25ex}
+\end{center}
+}
+
+\newcommand{\fftStat}[6]{
 #1 & #2 & #3 & #4 & #5 & #6 \\ %\hline
 }
 \newcommand{\fftStats}[1]{
 \begin{center}
 \begin{tabular}{cccccc}%{|c|c|c|c|c|c|}
   %\hline
-  \stat{\out{Type}}{$+$}{$\times$}{$-$}{total}{depth} \hline
+  \fftStat{\out{Type}}{$+$}{$\times$}{$-$}{total}{depth} \hline
   #1
   \hline
 \end{tabular}
