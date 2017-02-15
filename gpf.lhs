@@ -968,16 +968,16 @@ Constructing |omegas| requires one |powers| for |g| and then one more for each e
 Thanks scanning on constant structures, |powers| requires only linear work even on top-down trees.
 Depth of |powers| is logarithmic.
 \begin{code}
-WO  (g (f C))  = O (ssize g + ssize g *. ssize f) = O (ssize (g :.: f))
+WO  (g (f C))  = O (ssize g + ssize g *. ssize f) = O ((ssize (g :.: f)))
 DO  (g (f C))  = log2 (ssize g) + log2 (ssize f)
                = log2 (ssize g *. ssize f)
                = log2 (ssize (g :.: f)
 \end{code}
-After constructing |omegas|, |twiddle| multiplies two |g :.: f| structures element-wise, using linear work and constant depth.
+After constructing |omegas|, |twiddle| multiplies two |g :.: f| structures element-wise, with linear work and constant depth.
 \begin{code}
-WT  (g (f C))  = WO (g (f C)) + O (ssize (g :.: f))
-               = O (ssize (g :.: f)) + O (ssize (g :.: f))
-               = O (ssize (g :.: f))
+WT  (g (f C))  = WO (g (f C)) + O ((ssize (g :.: f)))
+               = O ((ssize (g :.: f))) + O ((ssize (g :.: f)))
+               = O ((ssize (g :.: f)))
 DT  (g (f C))  = DO (g (f C)) + O(1)
                = log2 (ssize (g :.: f)) + O(1)
 \end{code}
@@ -986,7 +986,7 @@ The second |ffts'|, on |f :.: g|, does |ssize g| many |fft| on |f|, also in para
 Altogether,
 \begin{code}
 W (g :.: f)  = ssize g *. W f + WT + ssize f *. W g
-             = ssize g *. W f + O (ssize (g :.: f)) + ssize f *. W g
+             = ssize g *. W f + O ((ssize (g :.: f))) + ssize f *. W g
 
 D (g :.: f)  = DFs (g (f C)) + DT (g :.: f) + DFs (f (g C))
              = D g + log2 (ssize (g :.: f)) + O(1) + D f
@@ -1007,36 +1007,44 @@ The definition of |fft| for |g :.: f| can be simplified (without changing comple
 
 The top-down and bottom-up tree algorithms correspond to two popular binary FFT variations known as ``decimation in time'' and ``decimation in frequency'' (``DIT'' and ``DIF''), respectively.
 In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2$.
-Consider top-down trees first:
-
+Consider top-down trees first.
+Work:\notefoot{To do: Instance and complexity for |Par1| earlier.}
 \begin{code}
-
-W  (RPow h 0) = W  Par1 = 0
-
-D  (RPow h 0) = D  Par1 = 0
-
+W (RPow h 0) = W Par1 = 0
 W (RPow h (S n))  = W (h :.: RPow h n)
-                  = ssize h *. W (RPow h n) + O (ssize (h :.: RPow h n)) + ssize (RPow h n) *. W h
+                  = ssize h *. W (RPow h n) + O ((ssize (h :.: RPow h n))) + ssize (RPow h n) *. W h
                   = ssize h *. W (RPow h n) + O (pow (ssize h) (S n)) + ssize (RPow h n) *. W h
-
-D (RPow h (S n))  = D (h :.: RPow h n)
-                  = D h + D (RPow f n) + log2 (ssize (h :.: RPow f n)) + O(1)
-                  = D h + D (RPow f n) + log2 (pow (ssize h) (S n)) + O(1)
-                  = D (RPow f n) + O (n)
-
+                  = ssize h *. W (RPow h n) + O ((ssize (RPow h n)))
 \end{code}
+By the Master Theorem,
+\begin{code}
+W (RPow h n) = O ((ssize (RPow h n)) *. log (ssize (RPow h n)))
+\end{code}
+Next, depth:
+\begin{code}
+D (RPow h 0) = D Par1 = 0
+D (RPow h (S n))  = D (h :.: RPow h n)
+                  = D h + D (RPow h n) + log2 (ssize (h :.: RPow h n)) + O(1)
+                  = D h + D (RPow h n) + log2 (pow (ssize h) (S n)) + O(1)
+                  = D (RPow h n) + O (n)
+\end{code}
+Thus,
+\begin{code}
+D (RPow h n) = O(pow n 2) = O(pow (log (ssize (RPow h n))) 2)
+\end{code}
+\note{I think FFT can have |O(log (ssize (RPow h n)))|) depth. Hm.}
 
-Unlike scan, top-down and bottom-up trees lead to exactly the same work and depth, due to symmetries in the FFT algorithm.
+Unlike scan, top-down and bottom-up trees lead to exactly the same work and depth, due to symmetries in |W (g :.: f)| and |D (g :.: f)|.
 
-
-\note{Working here. Solve the recurrences. Then |LPow|, and then |Bush|.}
+\todo{|W| and |D| for |Bush|.}
 
 \todo{Consistent structure for these proofs throughout the paper.}
 
-\todo{Instance and complexity for |Par1|.}
-
-\figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figreftwo{fft-bush2}{fft-bush3} for bushes of depth two and three.\notefoot{Probably drop |Bush N3|.}
-Each complex number appears as its real and imaginary components.\notefoot{Remove literals from counts, and maybe split counts into additions and multiplications.}
+\figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figreftwo{fft-bush2}{fft-bush3} for bushes of depth two and three.
+\notefoot{Probably drop |Bush N3|.}
+Each complex number appears as its real and imaginary components.
+\notefoot{Remove literals from counts, and maybe split counts into additions and multiplications.}
+\notefoot{Mention literals, many of which are near zeroes.}
 \figp{
 \circdef{fft-rb4}{|fft @(RBin N4)|}{197}{8}}{
 \circdef{fft-lb4}{|fft @(LBin N4)|}{197}{8}}
