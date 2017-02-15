@@ -611,16 +611,16 @@ The source of quadratic work is the product instance's \emph{right} adjustment c
 Each single element (left) is used to adjust the entire suffix (right), requiring linear work at each step, summing to quadratic.
 We can verify the complexity by using the definition of |RVec| and the complexities for the generic building blocks involved.
 \begin{code}
-W (RVec 0) == W U1 == 0
-W (RVec (S n)) == W (Par1 :*: RVec n) == W Par1 + W (RVec n) + ssize (RVec n) + 1 == W (RVec n) + O(n)
+W (RVec 0) = W U1 = 0
+W (RVec (S n)) = W (Par1 :*: RVec n) = W Par1 + W (RVec n) + ssize (RVec n) + 1 = W (RVec n) + O(n)
 
-D (RVec 0) == D U1 == 0
-D (RVec (S n)) == D (Par1 :*: RVec n) == D Par1 + D (RVec n) + 1 == D (RVec n) + 1
+D (RVec 0) = D U1 = 0
+D (RVec (S n)) = D (Par1 :*: RVec n) = D Par1 + D (RVec n) + 1 = D (RVec n) + 1
 \end{code}
 Thus
 \begin{code}
-W  (RVec n)  == O(pow n 2)
-D  (RVec n)  == O(n)
+W  (RVec n)  = O(pow n 2)
+D  (RVec n)  = O(n)
 \end{code}
 In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \figref{lsums-lv8-no-hash-no-opt} and \figref{lsums-lv8} (optimized).
 \figp{
@@ -628,16 +628,16 @@ In contrast, with left-associated vectors, each prefix summary (left) is used to
 \circdef{lsums-lv8}{|lscan| on |LVec N8|, optimized}{7}{7}
 }
 \begin{code}
-W (LVec 0) == W U1 == 0
-W (LVec (S n)) == W (LVec n :*: Par1) == W (LVec n) + W Par1 + ssize Par1 + 1 == W (LVec n) + 2
+W (LVec 0) = W U1 = 0
+W (LVec (S n)) = W (LVec n :*: Par1) = W (LVec n) + W Par1 + ssize Par1 + 1 = W (LVec n) + 2
 
-D  (RVec 0) == W U1 == 0
-D  (RVec (S n)) == D (Par1 :*: RVec n) == D Par1 + D (RVec n) + 1 == D (RVec n) + 1
+D  (RVec 0) = W U1 = 0
+D  (RVec (S n)) = D (Par1 :*: RVec n) = D Par1 + D (RVec n) + 1 = D (RVec n) + 1
 \end{code}
 Thus
 \begin{code}
-W  (LVec n) == O(n)
-D  (LVec n) == O(n)
+W  (LVec n) = O(n)
+D  (LVec n) = O(n)
 \end{code}
 Performing a suffix/right scan on a left vector also leads to quadratic work, reduced to linear by switching to right vectors.
 
@@ -719,30 +719,30 @@ We just saw the equivalent of |RPow (LVec N4) N2| (and |LPow (LVec N4) N2|) as \
 \circdef{lsums-lb4}{|LBin N4|}{26}{6}}
 Complexities for |RPow h|:
 \begin{code}
-W (RPow h 0) == W Par1 == 0
-W (RPow h (S n)) == W (h :.: RPow h n) == ssize h *. W (RPow h n) + W h + pow (ssize h) (S n)
+W (RPow h 0) = W Par1 = 0
+W (RPow h (S n)) = W (h :.: RPow h n) = ssize h *. W (RPow h n) + W h + pow (ssize h) (S n)
 
-D (RPow h 0) == D Par1 == 0
-D (RPow h (S n)) == D (h :.: RPow h n) == D h + D (RPow h n)
+D (RPow h 0) = D Par1 = 0
+D (RPow h (S n)) = D (h :.: RPow h n) = D h + D (RPow h n)
 \end{code}
-For any fixed |h|, |W h + pow (ssize h) (S n) == O(n)|, so the Master Theorem gives a solution \cite[Chapter 4]{Cormen:2009} for |W|.
-Since |D h == O (1)| (again, for fixed |h|) |D| has a simple solution.
+For any fixed |h|, |W h + pow (ssize h) (S n) = O(n)|, so the Master Theorem gives a solution \cite[Chapter 4]{Cormen:2009} for |W|.
+Since |D h = O (1)| (again, for fixed |h|) |D| has a simple solution.
 \begin{code}
-W  (RPow h n) == O (ssize (RPow h n) *. log (ssize (RPow h n)))
-D  (RPow h n) == O (n) == O (log (ssize (RPow h n)))
+W  (RPow h n) = O (ssize (RPow h n) *. log (ssize (RPow h n)))
+D  (RPow h n) = O (n) = O (log (ssize (RPow h n)))
 \end{code}
 Complexities for |LPow h|:
 \begin{code}
-W (LPow h 0) == W Par1 == 1
-W (LPow h (S n)) == W (LPow h n :.: h) == ssize (LPow h n) *. W h + W (LPow h n) + pow (ssize h) (S n)
+W (LPow h 0) = W Par1 = 1
+W (LPow h (S n)) = W (LPow h n :.: h) = ssize (LPow h n) *. W h + W (LPow h n) + pow (ssize h) (S n)
 
-D (LPow h 0) == D Par1 == 0
-D (LPow h (S n)) == D (LPow h n :.: h) == D (LPow h n) + D h
+D (LPow h 0) = D Par1 = 0
+D (LPow h (S n)) = D (LPow h n :.: h) = D (LPow h n) + D h
 \end{code}
-With a fixed |h|, |W h == O(1)|, and |ssize (LPow h n) *. W h + pow (ssize h) (S n) == O((ssize (LPow h n)))|, so the Master Theorem gives a solution \emph{linear} in |ssize (LPow h n)|, while the depth is again logarithmic:
+With a fixed |h|, |W h = O(1)|, and |ssize (LPow h n) *. W h + pow (ssize h) (S n) = O((ssize (LPow h n)))|, so the Master Theorem gives a solution \emph{linear} in |ssize (LPow h n)|, while the depth is again logarithmic:
 \begin{code}
-W  (LPow h n) == O ((ssize (LPow h n)))
-D  (LPow h n) == O (n) == O (log (ssize (LPow h n)))
+W  (LPow h n) = O ((ssize (LPow h n)))
+D  (LPow h n) = O (n) = O (log (ssize (LPow h n)))
 \end{code}
 For this reason, parallel scan on bottom-up trees can do much less work than on top-down trees.
 They also have fan-out bounded by |ssize h|, as contrasted with the linear fan-out for top-down trees which is an important consideration for hardware implementations.
@@ -752,35 +752,33 @@ These two scan algorithms are well-known: |lscan| on |RBin n| is from \citep{Skl
 
 Finally, consider the |Bush| type from \secref{bushes}.
 Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bushes of depth zero through three.
-Depth complexity:
+Depth complexity:\notefoot{I'm giving an exact analysis, not an asymptotic one. My conclusion doesn't match measurements for $n=2,3$. Find and fix my mistake.}
 \begin{code}
-D (Bush 0) == D Pair == 1
-D (Bush (S n)) == D (Bush n :.: Bush n) == D (Bush n) + D (Bush n) == 2 *. D (Bush n)
+D (Bush 0) = D Pair = 1
+D (Bush (S n)) = D (Bush n :.: Bush n) = D (Bush n) + D (Bush n) = 2 *. D (Bush n)
 \end{code}
 Hence
 \begin{code}
-D (Bush n) == O (pow 2 n) == O (pow 2 (log2 (log2 (ssize (Bush n))))) == O (log (ssize (Bush n)))
+D (Bush n) = pow 2 n = pow 2 (log2 (log2 (ssize (Bush n)))) = log2 (ssize (Bush n))
 \end{code}
 Work complexity is trickier:
 \begin{code}
-W (Bush 0) == W Pair == 1
-W (Bush (S n))  == W (Bush n :.: Bush n) == ssize (Bush n) *. W (Bush n) + W (Bush n) + ssize (Bush (S n))
-                == 2 *. ssize (Bush n) *. W (Bush n)
-                == 2 *. pow 2 (pow 2 n) *. W (Bush n)
+W (Bush 0) = W Pair = 1
+W (Bush (S n))  = W (Bush n :.: Bush n) = ssize (Bush n) *. W (Bush n) + W (Bush n) + ssize (Bush (S n))
+                = 2 *. ssize (Bush n) *. W (Bush n)
+                = 2 *. pow 2 (pow 2 n) *. W (Bush n)
 \end{code}
-Letting |W' n = W (Bush n)|,
-$$
-W' n
-= \prod_{0 \le i < n} 2 \cdot 2^{2^i}
-= 2^n \cdot 2^{\sum_{0 \le i < n} 2^i}
-= 2^n \cdot 2^{2^n - 1} = ...
-= 2^n \cdot 2^{2^n} / 2
-= O (2^{2^n} \cdot log_2 (2^{2^n}))
-$$
-Thus,
-\begin{code}
-W (Bush n) == O (ssize (Bush n) *. log (ssize (Bush n)))
-\end{code}
+\nc\Bush{\Varid{Bush}\;}
+Thus
+\begin{align*}
+  W (\Bush n)
+& = \prod_{0 \le i < n} 2 \cdot 2^{2^i}
+  = 2^n \cdot 2^{\sum_{0 \le i < n} 2^i}
+  = 2^n \cdot 2^{2^n - 1}
+  = 2^n \cdot 2^{2^n} / 2
+  = (2^{2^n} \cdot log_2 (2^{2^n})) / 2 \\
+& = \onehalf \cdot \size{\Bush n} \cdot log_2 \size{\Bush n}
+\end{align*}
 \figp{
 \circdef{lsums-bush0}{|Bush N0|}{1}{1}}{
 \circdef{lsums-bush1}{|Bush N1|}{4}{2}}
@@ -788,7 +786,7 @@ W (Bush n) == O (ssize (Bush n) *. log (ssize (Bush n)))
 \circdef{lsums-bush2}{|Bush N2|}{29}{5}}{
 \circdef{lsums-bush3}{|Bush N3|}{718}{10}}
 
-\figreftwo{lscan-stats-16}{lscan-stats-256} offer a more detailed comparison.
+\figreftwo{lscan-stats-16}{lscan-stats-256} offer an empirical comparison, including some optimizations not taken into account in the complexity analysis above.
 Note that top-down trees have the least depth, bottom-up trees have the least work.
 Bushes appear to provide a compromise, with less work than top-down trees and less depth than bottom-up trees.
 
@@ -957,6 +955,8 @@ Unsurprisingly, the size of a composition is the product of the sizes.
 Since |powers| (defined in \secref{Applications}) is a prefix scan, we can compute |omegas| efficiently in parallel.
 
 \subsection{Comparing data types}
+
+\todo{Complexity analysis. Perhaps simpler than |lscan| due to symmetry.}
 
 \figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figreftwo{fft-bush2}{fft-bush3} for bushes of depth two and three.\notefoot{Probably drop |Bush N3|.}
 Each complex number appears as its real and imaginary components.\notefoot{Remove literals from counts, and maybe split counts into additions and multiplications.}

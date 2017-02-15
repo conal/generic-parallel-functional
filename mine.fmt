@@ -79,7 +79,7 @@
 %format :< = " \triangleleft "
 %format >: = " \triangleright "
 
-%format (ssize (a)) = "\lvert "a" \rvert"
+%format (ssize (a)) = "\size{"a"}"
 
 %format pow a (n) = a "^{"n"}"
 

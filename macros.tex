@@ -56,7 +56,7 @@
   \centering
   \setlength\mathindent{0ex}
   #4
-  \vspace*{-4ex}
+  \vspace*{-5ex}
   \captionof{figure}{#3}
   \label{fig:#2}
 \end{minipage}
@@ -248,3 +248,7 @@
 \nc\circuitrefdef[4]{\circuitdef{#1}{#2}{#3}{#4} \figref{#1}}
 
 \nc\figneeded[1]{\figdef{needed}{#1}}
+
+\nc\size[1]{\lvert #1 \rvert}
+
+\nc\onehalf{\tfrac 1 2}
