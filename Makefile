@@ -12,7 +12,7 @@ $(targ).pdf: $(targ).tex Makefile
 
 # Was: pdflatex $*.tex
 
-%.tex: %.lhs macros.tex mine.fmt $(pdfs) Makefile
+%.tex: %.lhs macros.tex formatting.fmt $(pdfs) Makefile
 	lhs2TeX -o $*.tex $*.lhs
 
 dots = $(wildcard figures/*.dot)

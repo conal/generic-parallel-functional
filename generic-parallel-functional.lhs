@@ -7,7 +7,7 @@
 %include polycode.fmt
 %include forall.fmt
 %include greek.fmt
-%include mine.fmt
+%include formatting.fmt
 
 \input{macros}
 
