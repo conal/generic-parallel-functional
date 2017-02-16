@@ -85,3 +85,5 @@
 
 %format log2
 %format *. = "\cdot"
+
+%format O (z) = "O("z")"

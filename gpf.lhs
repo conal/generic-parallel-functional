@@ -611,15 +611,15 @@ Each single element (left) is used to adjust the entire suffix (right), requirin
 We can verify the complexity by using the definition of |RVec| and the complexities for the generic building blocks involved.
 \begin{code}
 W (RVec 0) = W U1 = 0
-W (RVec (S n)) = W (Par1 :*: RVec n) = W Par1 + W (RVec n) + ssize (RVec n) + 1 = W (RVec n) + O(n)
+W (RVec (S n)) = W (Par1 :*: RVec n) = W Par1 + W (RVec n) + ssize (RVec n) + 1 = W (RVec n) + O (n)
 
 D (RVec 0) = D U1 = 0
 D (RVec (S n)) = D (Par1 :*: RVec n) = D Par1 + D (RVec n) + 1 = D (RVec n) + 1
 \end{code}
 Thus
 \begin{code}
-W  (RVec n)  = O(pow n 2)
-D  (RVec n)  = O(n)
+W  (RVec n)  = O (pow n 2)
+D  (RVec n)  = O (n)
 \end{code}
 In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \figref{lsums-lv8-no-hash-no-opt} and \figref{lsums-lv8} (optimized).
 \figp{
@@ -635,8 +635,8 @@ D  (RVec (S n)) = D (Par1 :*: RVec n) = D Par1 + D (RVec n) + 1 = D (RVec n) + 1
 \end{code}
 Thus
 \begin{code}
-W  (LVec n) = O(n)
-D  (LVec n) = O(n)
+W  (LVec n) = O (n)
+D  (LVec n) = O (n)
 \end{code}
 Performing a suffix/right scan on a left vector also leads to quadratic work, reduced to linear by switching to right vectors.
 
@@ -724,7 +724,7 @@ W (RPow h (S n)) = W (h :.: RPow h n) = ssize h *. W (RPow h n) + W h + pow (ssi
 D (RPow h 0) = D Par1 = 0
 D (RPow h (S n)) = D (h :.: RPow h n) = D h + D (RPow h n)
 \end{code}
-For any fixed |h|, |W h + pow (ssize h) (S n) = O(n)|, so the Master Theorem gives a solution \cite[Chapter 4]{Cormen:2009} for |W|.
+For any fixed |h|, |W h + pow (ssize h) (S n) = O (n)|, so the Master Theorem gives a solution \cite[Chapter 4]{Cormen:2009} for |W|.
 Since |D h = O (1)| (again, for fixed |h|) |D| has a simple solution.
 \begin{code}
 W  (RPow h n) = O (ssize (RPow h n) *. log (ssize (RPow h n)))
@@ -738,9 +738,9 @@ W (LPow h (S n)) = W (LPow h n :.: h) = ssize (LPow h n) *. W h + W (LPow h n) +
 D (LPow h 0) = D Par1 = 0
 D (LPow h (S n)) = D (LPow h n :.: h) = D (LPow h n) + D h
 \end{code}
-With a fixed |h|, |W h = O(1)|, and |ssize (LPow h n) *. W h + pow (ssize h) (S n) = O((ssize (LPow h n)))|, so the Master Theorem gives a solution \emph{linear} in |ssize (LPow h n)|, while the depth is again logarithmic:
+With a fixed |h|, |W h = O (1)|, and |ssize (LPow h n) *. W h + pow (ssize h) (S n) = O (ssize (LPow h n))|, so the Master Theorem gives a solution \emph{linear} in |ssize (LPow h n)|, while the depth is again logarithmic:
 \begin{code}
-W  (LPow h n) = O ((ssize (LPow h n)))
+W  (LPow h n) = O (ssize (LPow h n))
 D  (LPow h n) = O (n) = O (log (ssize (LPow h n)))
 \end{code}
 For this reason, parallel scan on bottom-up trees can do much less work than on top-down trees.
@@ -882,7 +882,7 @@ See \figreftwo{evalPoly-rb4}{evalPoly-lb4}.
 
 \subsection{Background}
 
-The Fast Fourier Transform (FFT) algorithm computes the Discrete Fourier Transform (DFT), reducing work from $O(n^2)$ to $O(n \log n)$.
+The Fast Fourier Transform (FFT) algorithm computes the Discrete Fourier Transform (DFT), reducing work from $O (n^2)$ to $O (n \log n)$.
 First discovered by Gauss \cite{GaussFFTHistory}, the algorithm was rediscovered by \citet{danielson1942some}, and later by \citet{CooleyTukey}, who popularized the algorithm.
 
 Given a sequence of complex numbers, $x_0, \ldots, x_{N-1}$, the DFT is defined as
@@ -968,29 +968,31 @@ Constructing |omegas| requires one |powers| for |g| and then one more for each e
 Thanks scanning on constant structures, |powers| requires only linear work even on top-down trees.
 Depth of |powers| is logarithmic.
 \begin{code}
-WO  (g (f C))  = O (ssize g + ssize g *. ssize f) = O ((ssize (g :.: f)))
+WO  (g (f C))  = O (ssize g + ssize g *. ssize f) = O (ssize (g :.: f))
 DO  (g (f C))  = log2 (ssize g) + log2 (ssize f)
                = log2 (ssize g *. ssize f)
                = log2 (ssize (g :.: f)
 \end{code}
 After constructing |omegas|, |twiddle| multiplies two |g :.: f| structures element-wise, with linear work and constant depth.
 \begin{code}
-WT  (g (f C))  = WO (g (f C)) + O ((ssize (g :.: f)))
-               = O ((ssize (g :.: f))) + O ((ssize (g :.: f)))
-               = O ((ssize (g :.: f)))
-DT  (g (f C))  = DO (g (f C)) + O(1)
-               = log2 (ssize (g :.: f)) + O(1)
+WT  (g (f C))  = WO (g (f C)) + O (ssize (g :.: f))
+               = O (ssize (g :.: f)) + O (ssize (g :.: f))
+               = O (ssize (g :.: f))
+DT  (g (f C))  = DO (g (f C)) + O (1)
+               = log2 (ssize (g :.: f)) + O (1)
 \end{code}
 The first |ffts'|, on |g :.: f|, does |ssize f| many |fft| on |g| (thanks to |transpose|), in parallel (via |fmap|).
 The second |ffts'|, on |f :.: g|, does |ssize g| many |fft| on |f|, also in parallel.
 Altogether,
 \begin{code}
 W (g :.: f)  = ssize g *. W f + WT + ssize f *. W g
-             = ssize g *. W f + O ((ssize (g :.: f))) + ssize f *. W g
+             = ssize g *. W f + O (ssize (g :.: f)) + ssize f *. W g
 
 D (g :.: f)  = DFs (g (f C)) + DT (g :.: f) + DFs (f (g C))
-             = D g + log2 (ssize (g :.: f)) + O(1) + D f
+             = D g + log2 (ssize (g :.: f)) + O (1) + D f
 \end{code}
+Note the symmetry of these results, so that |W (g :.: f) = W (f :.: g)| and |D (g :.: f) = D (f :.: g)|.
+For this reason, top-down and bottom-up trees will have the same work and depth complexities.
 
 The definition of |fft| for |g :.: f| can be simplified (without changing complexity):
 \begin{code}
@@ -1012,31 +1014,40 @@ Work:\notefoot{To do: Instance and complexity for |Par1| earlier.}
 \begin{code}
 W (RPow h 0) = W Par1 = 0
 W (RPow h (S n))  = W (h :.: RPow h n)
-                  = ssize h *. W (RPow h n) + O ((ssize (h :.: RPow h n))) + ssize (RPow h n) *. W h
+                  = ssize h *. W (RPow h n) + O (ssize (h :.: RPow h n)) + ssize (RPow h n) *. W h
                   = ssize h *. W (RPow h n) + O (pow (ssize h) (S n)) + ssize (RPow h n) *. W h
-                  = ssize h *. W (RPow h n) + O ((ssize (RPow h n)))
+                  = ssize h *. W (RPow h n) + O (ssize (RPow h n))
 \end{code}
 By the Master Theorem,
 \begin{code}
-W (RPow h n) = O ((ssize (RPow h n)) *. log (ssize (RPow h n)))
+W (RPow h n) = O (ssize (RPow h n) *. log (ssize (RPow h n)))
 \end{code}
 Next, depth:
 \begin{code}
 D (RPow h 0) = D Par1 = 0
 D (RPow h (S n))  = D (h :.: RPow h n)
-                  = D h + D (RPow h n) + log2 (ssize (h :.: RPow h n)) + O(1)
-                  = D h + D (RPow h n) + log2 (pow (ssize h) (S n)) + O(1)
+                  = D h + D (RPow h n) + log2 (ssize (h :.: RPow h n)) + O (1)
+                  = D h + D (RPow h n) + log2 (pow (ssize h) (S n)) + O (1)
                   = D (RPow h n) + O (n)
 \end{code}
 Thus,
 \begin{code}
-D (RPow h n) = O(pow n 2) = O(pow (log (ssize (RPow h n))) 2)
+D (RPow h n) = O (pow n 2) = O (pow (log (ssize (RPow h n))) 2)
 \end{code}
-\note{I think FFT can have |O(log (ssize (RPow h n)))|) depth. Hm.}
+\note{I think FFT can have logarithmic depth. Hm.}
+As mentioned above, |W (g :.: f) = W (f :.: g)| and |D (g :.: f) = D (f :.: g)|, so top-down and bottom-up trees have the same work and depth complexities.
 
-Unlike scan, top-down and bottom-up trees lead to exactly the same work and depth, due to symmetries in |W (g :.: f)| and |D (g :.: f)|.
+Next, consider bushes.
+Work:
+\begin{code}
+W (Bush 0) = W Pair = 2
+W (Bush (S n))  = W (Bush n :.: Bush n)
+                = ssize (Bush n) *. W (Bush n) + O (ssize (Bush n :.: Bush n)) + ssize (Bush n) *. W (Bush n)
+                = 2 *. ssize (Bush n) *. W (Bush n) + O (ssize (Bush (S n)))
+\end{code}
 
-\todo{|W| and |D| for |Bush|.}
+\note{Working here.}
+
 
 \todo{Consistent structure for these proofs throughout the paper.}
 
