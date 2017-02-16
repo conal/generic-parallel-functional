@@ -1,11 +1,11 @@
-targ = gpf
+targ = generic-parallel-functional
 
 # .PRECIOUS: %.tex
 
 default: $(targ).pdf
 
-gpf.pdf: gpf.tex Makefile
-	latexmk -pdf gpf.tex
+$(targ).pdf: $(targ).tex Makefile
+	latexmk -pdf $(targ).tex
 
 # %.pdf: %.tex Makefile
 # 	latexmk -pdf $*.tex
