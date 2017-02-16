@@ -1030,11 +1030,10 @@ D (RPow h (S n))  = D (h :.: RPow h n)
                   = D h + D (RPow h n) + log2 (pow (ssize h) (S n)) + O (1)
                   = D (RPow h n) + O (n)
 \end{code}
-Thus,
+Thus,\notefoot{I think FFT can have logarithmic depth. Hm.}
 \begin{code}
 D (RPow h n) = O (pow n 2) = O (pow (log (ssize (RPow h n))) 2)
 \end{code}
-\note{I think FFT can have logarithmic depth. Hm.}
 As mentioned above, |W (g :.: f) = W (f :.: g)| and |D (g :.: f) = D (f :.: g)|, so top-down and bottom-up trees have the same work and depth complexities.
 
 Next, consider bushes.
