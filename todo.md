@@ -1,10 +1,14 @@
 # To do
 
+*   If I have room, do scan-based addition.
+
 *   Sections:
     *   Introduction
     *   Contributions
     *   Conclusions
-    *   Related work
+    *   Related work:
+        *   FFT in muFP, Ruby, and Lava.
+            See "The study of butterflies" by Geraint Jones and Mary Sheeran, 1990.
     *   Relation to known parallel scan algorithms.
     *   Complexity analysis
 *   Consistency of figure captions
@@ -30,6 +34,8 @@
     *   Abstract *before* `maketitle` (p 14). Really?
     *   "Thee captions for figures must be entered after the figure bodies, and for the tables before the table bodies." (p 15)
 *   Check for accidental paragraphs after `\\end{code}`.
+
+*   [Submit as a Pearl instead?](http://icfp17.sigplan.org/track/icfp-2017-papers#Call-for-Papers)
 
 # Done
 

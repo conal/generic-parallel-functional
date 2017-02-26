@@ -3,9 +3,15 @@
 
 %% spaces (in 18ths of a quad): \, = 3, \: = 4, \; = 5, \! = -3
 
-%format :*: = " \pmb{\times} "
-%format :+: = " \pmb{+} "
-%format :.: = " \pmb{\circ} "
+%% %format :*: = " \pmb{\times} "
+%% %format :+: = " \pmb{+} "
+%% %format :.: = " \pmb{\circ} "
+
+%% \pmb and \boldsymbol for these symbols look alike to me.
+
+%format :*: = " \boldsymbol{\times} "
+%format :+: = " \boldsymbol{+} "
+%format :.: = " \boldsymbol{\circ} "
 
 %format Generic1
 %format Rep1
@@ -20,6 +26,7 @@
 %format R1
 
 %format liftA2
+%format liftA3
 
 %format NOP = "{}"
 
@@ -87,3 +94,8 @@
 %format *. = "\cdot"
 
 %format O (z) = "O("z")"
+
+%% %% defaults to \mathord
+%% %format ~ = "\mathbin{\sim}"
+
+%format logSq = log"^2"

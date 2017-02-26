@@ -59,7 +59,7 @@ See, e.g., \cite{Gibbons06DatatypeGeneric,DatatypeGenericComparison2012}.
 The basic idea of most such designs is to relate a broad range of types to a small set of basic ones via isomorphism (or more accurately, embedding-projection pairs), particularly binary sums and products and their corresponding identities (``void'' and ``unit'').
 These type primitives serve to connect algorithms with data types in the following sense:
 \begin{itemize}
-\item Each data type of interest is somehow encoded into and decoded from these type primitives, and each algorithm is defined on the primitives.
+\item Each data type of interest is encoded into and decoded from these type primitives.
 \item Each (generic) algorithm is defined over these same primitives.
 \end{itemize}
 In this way, algorithms and data types are defined independently and then automatically work together.
@@ -98,7 +98,8 @@ The effectiveness of generic programming relies on having at our disposal a vari
 In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays.
 The various array algorithms involve idiosyncratic patterns of traversal and construction of this single data type.
 For instance, a parallel array reduction with an associative operator involves recursive or iterative generation of numeric indices for extracting elements, taking care that each element is visited exactly once and combined left-to-right.
-Typically, adjacent element pairs are combined, resulting in an array of half size, and the process repeats until there is only one value remaining.
+Frequently, adjacent element pairs are combined, resulting in an array of half size, and the process repeats until there is only one value remaining.
+Alternatively, the array is split, with each half processed independently and results combined later.
 (Often, such operations are performed in place, littering the original array with partial reduction results.)
 The essential idea of such an algorithm is the natural fold for perfect, binary leaf trees, but this essence is obscured by an \emph{encoding} of trees as arrays.
 The correctness of the algorithm depends on careful translation of the natural tree algorithm.
@@ -121,8 +122,6 @@ Given these severe drawbacks, why are arrays so widely used in designing, implem
 One benefit is a relatively straightforward mapping from algorithm to efficient implementation primitives.
 As we will see below, however, we can instead write algorithms in elegant, modular style using a variety of data types and the standard algebraic abstractions on those data types--such as |Functor|, |Applicative|, |Foldable|, and |Traversable| \cite{McBride:2008}---\emph{and} generate very efficient implementations.
 Better yet, we can define such algorithms generically.
-
-\note{That last paragraph needs work.}
 
 \todo{contributions}
 
@@ -177,16 +176,15 @@ lToR (as >: a)  = a :< lToR as
 \end{code}
 Since these list types are easily isomorphic, why would we want to distinguish between them?
 One reason is that they may capture different intentions.
-For instance, a zipper for right lists comprises a left-list for the (reversed) elements leading up to a position, a current element of focus, and a right-list for the not-yet-visited elements \cite{HuetZipper1997,McBride01derivative}:
+For instance, a zipper for right lists comprises a left-list for the (reversed) elements leading up to a position and a right-list for the not-yet-visited elements \cite{HuetZipper1997,McBride01derivative}:
 \begin{code}
-data ZipperList a = ZipperList (LList a) a (RList a)
+data ListZipper a = ListZipper (LList a) (RList a)
 \end{code}
 or
 \begin{code}
-type ZipperList = LList :*: Par1 :*: RList
+type ListZipper = LList :*: RList
 \end{code}
-In fact, |ZipperList| serves as a zipper for left-lists as well.
-\note{I guess only non-empty lists. Hm. Maybe remark that traversing a right-list to the right end yields a left-list, and conversely.}
+This same type serves as a zipper for left-lists as well.
 
 Another reason for distinguishing left- from right-lists is that they have usefully different instances for standard type classes, leading---as we will see---to different operational characteristics, especially with regard to parallelism.
 
@@ -265,7 +263,7 @@ For this reason, we can easily generalize from |Vec n| as follows:
 \begin{code}
 data Tree f a = Leaf a | Branch (f (Tree a))
 \end{code}
-The instance definitions for ``|f|-ary'' trees are exactly as with $n$-ary, except for making the requirements on |f| implicit:
+The instance definitions for ``|f|-ary'' trees are exactly as with $n$-ary, except for making the requirements on |f| explicit:
 \begin{code}
 instance Functor      f => Functor      (Tree f) where ...
 instance Foldable     f => Foldable     (Tree f) where ...
@@ -274,7 +272,7 @@ instance Traversable  f => Traversable  (Tree f) where ...
 This generalization covers ``list-ary'' (rose) trees and even ``tree-ary'' trees.
 With this functor-parametrized tree type, we can reconstruct $n$-ary trees as |Tree (Vec n)|.
 
-Just as there are both left- and right-growing lists, trees come in two flavors as well.
+Just as there are both left- and right-growing lists, |f|-ary trees come in two flavors as well.
 The forms above are all ``top-down'', in the sense that successive unwrappings of branch nodes reveal subtrees moving from the top downward.
 (No unwrapping for the top level, one unwrapping for the collection of next-to-top subtrees, another for the collection of next level down, etc.)
 There are also ``bottom-up'' trees, in which successive branch node unwrappings reveal the information in subtrees from the bottom moving upward.
@@ -291,7 +289,7 @@ data TTree f a = TLeaf a | TBranch (f (TTree a))
 
 data BTree f a = BLeaf a | BBranch (BTree (f a))
 \end{code}
-Bottom-up trees (|LTree|) are a canonical example of ``nested'' or ``non-regular'' data types, requiring polymorphic recursion \cite{Bird1998}.
+Bottom-up trees (|BTree|) are a canonical example of ``nested'' or ``non-regular'' data types, requiring polymorphic recursion \cite{Bird1998}.
 
 \subsection{Statically shaped variations}\seclabel{statically-shaped-types}
 
@@ -302,11 +300,11 @@ In array-based algorithms, these restrictions can be realized in one of two ways
 \item
   Check array sizes dynamically, incurring a performance penalty; or
 \item
-  Document the restriction, assume the best, and blame the library user if the assumption is violated.
+  Document the restriction, assume the best, and blame the library user when the assumption is violated.
 \end{itemize}
 A third---much less commonly used---option is to statically verify the size restriction at the call site, perhaps by using a dependently typed language and providing proofs as part of the call.
 
-A lightweight compromise is to simulate some of the power dependent types via type-level encodings of sizes, as with our use of |Nat| for indexing the |Vec| type above.
+A lightweight compromise is to simulate some of the power of dependent types via type-level encodings of sizes, as with our use of |Nat| for indexing the |Vec| type above.
 There are many possible definitions for |Nat|.
 For this paper, assume that |Nat| is a kind-promoted version of the following data type of Peano numbers (constructed via zero and successor):
 \begin{code}
@@ -327,7 +325,7 @@ instance Generic1 (RVec Z) where
   from RNil = U1
   to U1 = RNil
 instance Generic1 (RVec n) => Generic1 (RVec (S n)) where
-  type Rep1 (RVec Z) = Par1 :*: RVec n
+  type Rep1 (RVec (S n)) = Par1 :*: RVec n
   from (a :< as) = Par1 a :*: as
   to (Par1 a :*: as) = a :< as
 
@@ -336,14 +334,14 @@ instance Generic1 (LVec Z) where
   from RNil = U1
   to U1 = RNil
 instance Generic1 (LVec n) => Generic1 (LVec (S n)) where
-  type Rep1 (LVec Z) = LVec n :*: Par1
+  type Rep1 (LVec (S n)) = LVec n :*: Par1
   from (a :< as) = Par1 a :*: as
   to (Par1 a :*: as) = a :< as
 \end{code}
 
-For leaf trees, we have a choice between perfect and imperfect trees.
+For leaf trees, we have a choice between imperfect and perfect trees.
 A ``perfect'' leaf tree is one in which all leaves are at the same depth.
-Both forms can be ``statically shaped'', but we'll use just perfect trees in this paper, for which we need only a single type-level number signifying the depth of all leaves.
+Both imperfect and perfect can be ``statically shaped'', but we'll use just perfect trees in this paper, for which we need only a single type-level number signifying the depth of all leaves.
 For succinctness, rename |Leaf| and |Branch| to ``|L|'' and ``|B|''.
 For reasons soon to be explained, also rename the types |TTree| and |BTree| to ``|RPow|'' and ``|LPow|'':
 \begin{code}
@@ -458,7 +456,7 @@ While each |RBin n| and |LBin n| holds $2^n$ elements, each statically shaped |B
 Moreover, there's nothing special about |Pair| or \emph{binary} composition here.
 Either could be replaced or generalized.
 
-Our ``bush'' type is adapted from an example of nested data types that has a more less regular shape \cite{Bird1998}:
+Our ``bush'' type is adapted from an example of nested data types that has a less regular shape \cite{Bird1998}:
 \begin{code}
 data Bush a = NilB | ConsB a (Bush (Bush a))
 \end{code}
@@ -470,15 +468,13 @@ Likewise, functor composition is associative up to isomorphism.
 Where |RPow f| and |LPow f| are fully right- and left-associated compositions, |Bush f| forms balanced compositions.
 Many other variations are possible, but the |Bush| definition above will suffice for this paper.
 
-\note{The previous paragraph is somewhat redundant with the preceding paragraphs. Tighten.}
-
 \section{Parallel scan}
 
-Given $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ldots,b_n$ such that $b_k = \sum_{0 \le i < k}{a_i}$.
-More generally, given any associative operation $\oplus$, the ``prefix scan'' is defined by $b_k = \bigoplus_{0 \le i < k}{a_i}$, with $b_0$ being the identity for $\oplus$.
+Given a sequence $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ldots,b_n$ such that $b_k = \sum_{0 \le i < k}{a_i}$.
+More generally, for any associative operation $\oplus$, the ``prefix scan'' is defined by $b_k = \bigoplus_{0 \le i < k}{a_i}$, with $b_0$ being the identity for $\oplus$.
 (One can define a similar operation if we assume semigroup---lacking identity element---rather than monoid, but the development is more straightforward with identity.)
 
-Parallel scan has surprisingly broad applications, including the following, taken from a longer list in \cite{BlellochTR90}:
+Parallel scan has broad applications, including the following, taken from a longer list in \cite{BlellochTR90}:
 \begin{itemize}
 \item Adding multi-precision numbers
 \item Polynomial evaluation
@@ -495,11 +491,11 @@ We will just develop prefix scan, but generic suffix scan works out in the same 
 Note that $a_k$ does \emph{not} influence $b_k$.
 Often scans are classified as ``exclusive'', as above, or ``inclusive'', where $a_k$ does contribute to $b_k$.
 Note also that there is one more output element than input, which is atypical in the literature on parallel prefix algorithms, perhaps because scans are often performed in place.
-As we will see below, the choice of exclusive+total above makes for a more elegant generic decomposition.
+As we will see below, the unconventional choice of exclusive+total above makes for an elegant generic decomposition.
 
 The standard list prefix scans in Haskell, |scanl| and |scanr|, also yield one more output element than input, which is possible for lists.
 For other data types, such as trees and especially perfect ones, there may not be a place to stash the extra value.
-For a generic scan applying to many different data types, we can simply form a product, so that scanning maps |f a| to |f a :* a|.\footnote{Please forgive the overloading of ``|:*|'' for infix type-level and functor-level products throughout the paper.}
+For a generic scan applying to many different data types, we can simply form a product, so that scanning maps |f a| to |f a :* a|.
 The extra summary value is the fold over the whole input structure.
 Thus, we have the following class for left-scannable functors:
 \begin{code}
@@ -511,11 +507,11 @@ When |f| is in |Traversable|, there is simple and general specification using op
 \begin{code}
 lscan == swap . mapAccumL (\ acc a -> (acc <> a,acc)) mempty
 \end{code}
-where |mapAccumL| has type
+where |(<>)| and |mempty| are the combining operation and its identity from |Monoid|, and
 \begin{code}
-Traversable t => (b -> a -> b :* c) -> b -> t a -> b :* t c
+mapAccumL :: Traversable t => (b -> a -> b :* c) -> b -> t a -> b :* t c
 \end{code}
-Although all of the example types in this paper are indeed in |Traversable|, using this |lscan| specification as an implementation results in an entirely sequential implementation, since data dependencies are \emph{linearly} threaded through the whole computation.
+Although all of the example types in this paper are indeed in |Traversable|, using this |lscan| specification as an implementation would result in an entirely sequential implementation, since data dependencies are \emph{linearly} threaded through the whole computation.
 
 Rather than defining |LScan| instances for all of our data types, the idea of generic programming is to define instances only for the small set of fundamental functor combinators and then automatically compose instances for other types via the generic encodings (derived automatically when possible).
 To do so, provide a default signature and definition for functors with such encodings:
@@ -552,13 +548,21 @@ Comments:
 \item For a sum, scan whichever structure is present, and re-tag.
 (The higher-order function |first| applies a function to the first element of a pair, carrying the second element along unchanged.)
 \end{itemize}
-Work and depth for |U1|, |V1|, and |Par1| are all zero.
+
+Just as the six functor combinators guide the composition of parallel algorithms, they also determine the performance characteristics of those parallel algorithms in a compositional manner.
+Following \cite{Blelloch96programmingparallel}, consider two aspect of performance:
+\begin{itemize}
+\item \emph{work}, the total number of primitive operations performed, and
+\item \emph{depth}, the longest dependency chain, and hence a measure of ideal parallel. computation time 
+\end{itemize}
+For parallel scan, work and depth of |U1|, |V1|, and |Par1| are all zero.
 For sums,
 \begin{code}
 W  (f :+: g)  = W  f `max` W  g
 D  (f :+: g)  = D  f `max` D  g
 \end{code}
 
+\noindent
 With the four easy instances out of the way, we have only two left to define: product and composition.
 
 \subsection{Product}
@@ -569,7 +573,7 @@ To understand |lscan| on functor products, consider how to combine the scans of 
 
 Because we are left-scanning, every prefix of |f| is also a prefix of |f :*: g|, so the |lscan| results for |f| are also correct results for |f :*: g|.
 The prefixes of |g| are not prefixes of |f :*: g|, however, since each |g|-prefix misses all of |f|.
-The prefix \emph{sums}, therefore, are lacking the sum of all of |f|, which corresponds to the last output of the |lscan| result for |f|.
+The prefix \emph{sums}, therefore, are lacking the summary (fold) of all of |f|, which corresponds to the last output of the |lscan| result for |f|.
 All we need to do, therefore, is adjust each |g| result by the final |f| result, as shown in \figref{lsums-lv5xlv11-highlight}.
 \figpair{two-scans}{|lscan @(RVec N5)| and |lscan @(RVec N11)|}{
 \vspace{1.8ex}
@@ -586,7 +590,7 @@ instance (LScan f, LScan g) => LScan (f :*: g) where
      (fa'  , fx)  = lscan fa
      (ga'  , gx)  = lscan ga
 \end{code}
-The work for |f :*: g| is the combine work for each, plus the cost of adjusting the result for |g|.
+The work for |f :*: g| is the combined work for each, plus the cost of adjusting the result for |g|.
 The depth is the maximum depth for |f| and |g|, plus one more step to adjust the final |g| result.
 \begin{code}
 W  (f :*: g) = W f + W g + ssize g + 1
@@ -595,9 +599,8 @@ D  (f :*: g) = (D f `max` D g) + 1
 
 We now have enough functionality for scanning vectors using either the GADT or type family definitions from \secref{statically-shaped-types}.
 \figref{lsums-rv8-no-hash-no-opt} shows |lscan| for |RVec N8| (\emph{right} vector of length 8).
-There are some zero-additions that can be easily optimized away, resulting in \figref{lsums-rv8}.
+The zero-additions can be easily optimized away, resulting in \figref{lsums-rv8}.
 In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|), and the work and depth are shown in the caption (as \emph{W} and \emph{D}).
-``Work'' is the total number of primitive operations performed, while ``depth'' is the longest dependency chain, and hence a measure of ideal parallel computation time \needcite{}.
 As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
 
 \figp{
@@ -614,14 +617,14 @@ W (RVec 0) = W U1 = 0
 W (RVec (S n)) = W (Par1 :*: RVec n) = W Par1 + W (RVec n) + ssize (RVec n) + 1 = W (RVec n) + O (n)
 
 D (RVec 0) = D U1 = 0
-D (RVec (S n)) = D (Par1 :*: RVec n) = D Par1 + D (RVec n) + 1 = D (RVec n) + 1
+D (RVec (S n)) = D (Par1 :*: RVec n) = (D Par1 `max` D (RVec n)) + 1 = D (RVec n) + O(1)
 \end{code}
 Thus
 \begin{code}
 W  (RVec n)  = O (pow n 2)
 D  (RVec n)  = O (n)
 \end{code}
-In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \figref{lsums-lv8-no-hash-no-opt} and \figref{lsums-lv8} (optimized).
+In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \figref{lsums-lv8-no-hash-no-opt} and (optimized) \figref{lsums-lv8}.
 \figp{
 \circdef{lsums-lv8-no-hash-no-opt}{|lscan @(LVec N8)|, unoptimized}{16}{8}}{
 \circdef{lsums-lv8}{|lscan @(LVec N8)|, optimized}{7}{7}
@@ -631,7 +634,7 @@ W (LVec 0) = W U1 = 0
 W (LVec (S n)) = W (LVec n :*: Par1) = W (LVec n) + W Par1 + ssize Par1 + 1 = W (LVec n) + 2
 
 D  (RVec 0) = W U1 = 0
-D  (RVec (S n)) = D (Par1 :*: RVec n) = D Par1 + D (RVec n) + 1 = D (RVec n) + 1
+D  (RVec (S n)) = D (Par1 :*: RVec n) = (D Par1 `max` D (RVec n)) + 1 = D (RVec n) + O(1)
 \end{code}
 Thus
 \begin{code}
@@ -640,16 +643,15 @@ D  (LVec n) = O (n)
 \end{code}
 Performing a suffix/right scan on a left vector also leads to quadratic work, reduced to linear by switching to right vectors.
 
-Although work is greatly reduced (from quadratic to linear), depth remains at linear.
-The reason is that unbalanced data types lead to unbalanced parallelism.
-Both |RVec| and |LVec| are ``parallel'' in a sense, but we only get to perform small computations in parallel with large one (more apparent in \figreftwo{lsums-rv8-no-hash-no-opt}{lsums-lv8-no-hash-no-opt}), so that the result is essentially sequential.
+Although work is greatly reduced (from quadratic to linear), depth remains at linear, because unbalanced data types lead to unbalanced parallelism.
+Both |RVec| and |LVec| are ``parallel'' in a sense, but we only get to perform small computations in parallel with large one (especially apparent in the unoptimized \figreftwo{lsums-rv8-no-hash-no-opt}{lsums-lv8-no-hash-no-opt}), so that the result is essentially sequential.
 
 To get a more parallelism, we could replace a type like |LVec N16| with a isomorphic product such as |LVec N5 :*: LVec N11|, resulting in \figref{lsums-lv5xlv11-highlight}, reducing depth from 15 to 11.
-More generally, scan on |LVec m :*: LVec n| has depth |max (m-1) (n-1) + 1 = max m n|.
+More generally, scan on |LVec m :*: LVec n| has depth |((m-1) `max` (n-1)) + 1 = max m n|.
 For an ideal partition adding up to |p|, we'll want |m = n = p/2|.
-For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \figref{lsums-lv8xlv8}.
-Can we do better?
-Not as a single product, but we can as more than one product, as shown in \figref{lsums-lv5-5-6-l}.
+For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \figref{lsums-lv8xlv8} with depth eight.
+Can we decrease the depth any further?
+Not as a single product, but we can as more than one product, as shown in \figref{lsums-lv5-5-6-l} with depth six.
 Again, the more balance, the better.
 \figp{
 \circdef{lsums-lv8xlv8}{|lscan @(LVec N8 :*: LVec N8)|}{22}{8}}{
@@ -676,7 +678,7 @@ The prefixes of the first quadruple are all prefixes of the composite structure,
 For every following quadruple, the prefix sums are lacking the sum of all elements from the earlier quadruples and so must be adjusted accordingly, as emphasized in \figref{lsums-lv3olv4-highlight}.
 
 Now we get to the surprising heart of generic parallel scan!
-Observe that the sums of elements from earlier quadruples are computed entirely from the final summary results from each quadruple.
+Observe that the sums of elements from all earlier quadruples are computed entirely from the final summary results from each quadruple.
 We end up needing the sum of every \emph{prefix} of the triple of summaries, and so we are computing not just three prefix scans over |LVec N4| but also \emph{one additional scan} over |LVec N3|.
 Moreover, the apparent inconsistency of adjusting all quadruples \emph{except} for the first one is an illusion brought on by premature optimization.
 We can instead adjust \emph{every} quadruple by the corresponding result of this final scan of summaries, the first summary being zero.
@@ -693,7 +695,7 @@ instance (LScan g, LScan f, Zip g) =>  LScan (g :.: f) where
      adjustl t     = fmap (t NOP <>)
 \end{code}
 The work for scanning |g :.: f| includes work for each |f|, work for the |g| of summaries, and updates to all results (before optimizing away the zero adjust, which doesn't change order).
-The depth is the depth of |f| (since each |f| is handled in parallel with the others), followed by the depth of a single |g| scan.
+The depth is the depth of |f| (since each |f| is handled in parallel with the others), followed by the depth of a single |g| scan.\footnote{This simple depth analysis is pessimistic in that it does not account for the fact that some |g| work can begin before all |f| work is complete.}
 \begin{code}
 W  (g :.: f) = ssize g *. W f + W g + ssize g *. ssize f
 D  (g :.: f) = D f + D g
@@ -725,33 +727,33 @@ D (RPow h 0) = D Par1 = 0
 D (RPow h (S n)) = D (h :.: RPow h n) = D h + D (RPow h n)
 \end{code}
 For any fixed |h|, |W h + pow (ssize h) (S n) = O (n)|, so the Master Theorem gives a solution \cite[Chapter 4]{Cormen:2009} for |W|.
-Since |D h = O (1)| (again, for fixed |h|) |D| has a simple solution.
+Since |D h = O (1)| (again, for fixed |h|), |D| has a simple solution.
 \begin{code}
 W  (RPow h n) = O (ssize (RPow h n) *. log (ssize (RPow h n)))
 D  (RPow h n) = O (n) = O (log (ssize (RPow h n)))
 \end{code}
-Complexities for |LPow h|:
+Complexity for |LPow h| work out somewhat differently:
 \begin{code}
-W (LPow h 0) = W Par1 = 1
+W (LPow h 0) = W Par1 = 0
 W (LPow h (S n)) = W (LPow h n :.: h) = ssize (LPow h n) *. W h + W (LPow h n) + pow (ssize h) (S n)
 
 D (LPow h 0) = D Par1 = 0
 D (LPow h (S n)) = D (LPow h n :.: h) = D (LPow h n) + D h
 \end{code}
-With a fixed |h|, |W h = O (1)|, and |ssize (LPow h n) *. W h + pow (ssize h) (S n) = O (ssize (LPow h n))|, so the Master Theorem gives a solution \emph{linear} in |ssize (LPow h n)|, while the depth is again logarithmic:
+With a fixed |h|, |ssize (LPow h n) *. W h + pow (ssize h) (S n) = O (ssize (LPow h n))|, so the Master Theorem gives a solution \emph{linear} in |ssize (LPow h n)|, while the depth is again logarithmic:
 \begin{code}
 W  (LPow h n) = O (ssize (LPow h n))
 D  (LPow h n) = O (n) = O (log (ssize (LPow h n)))
 \end{code}
 For this reason, parallel scan on bottom-up trees can do much less work than on top-down trees.
-They also have fan-out bounded by |ssize h|, as contrasted with the linear fan-out for top-down trees which is an important consideration for hardware implementations.
+They also have fan-out bounded by |ssize h|, as contrasted with the linear fan-out for top-down trees---an important consideration for hardware implementations.
 On the other hand, the depth for bottom-up trees is about twice the depth for top-down trees.
 
-These two scan algorithms are well-known: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
+Specializing these |RPow h| and |RPow h| scan algorithms to |h = Pair| yields two well-known algorithms: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
 
 Finally, consider the |Bush| type from \secref{bushes}.
 Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bushes of depth zero through three.
-Depth complexity:\notefoot{I'm giving an exact analysis, not an asymptotic one. My conclusion doesn't match measurements for $n=2,3$. Find and fix my mistake.}
+Depth complexity:\out{\notefoot{I'm giving an exact analysis, not an asymptotic one. My conclusion doesn't match measurements for $n=2,3$. Find and fix my mistake.}}
 \begin{code}
 D (Bush 0) = D Pair = 1
 D (Bush (S n)) = D (Bush n :.: Bush n) = D (Bush n) + D (Bush n) = 2 *. D (Bush n)
@@ -764,27 +766,16 @@ Work complexity is trickier:
 \begin{code}
 W (Bush 0) = W Pair = 1
 W (Bush (S n))  = W (Bush n :.: Bush n) = ssize (Bush n) *. W (Bush n) + W (Bush n) + ssize (Bush (S n))
-                = 2 *. ssize (Bush n) *. W (Bush n)
-                = 2 *. pow 2 (pow 2 n) *. W (Bush n)
+                = pow 2 (pow 2 n) *. W (Bush n) + W (Bush n) + pow 2 (pow 2 (n+1))
+                = (pow 2 (pow 2 n) + 1) *. W (Bush n) + pow 2 (pow 2 (n+1))
 \end{code}
-\nc\Bush{\Varid{Bush}\;}
-Thus
-\begin{align*}
-  W (\Bush n)
-& = \prod_{0 \le i < n} 2 \cdot 2^{2^i}
-  = 2^n \cdot 2^{\sum_{0 \le i < n} 2^i}
-  = 2^n \cdot 2^{2^n - 1}
-  = 2^n \cdot 2^{2^n} / 2
-  = (2^{2^n} \cdot log_2 (2^{2^n})) / 2 \\
-& = \onehalf \cdot \size{\Bush n} \cdot log_2 \size{\Bush n}
-\end{align*}
+A closed form solution is left for later work.
 \figp{
 \circdef{lsums-bush0}{|lscan @(Bush N0)|}{1}{1}}{
-\circdef{lsums-bush1}{|lscan @(Bush N1)|}{4}{2}}
+\circdef{lsums-bush1}{|lscan @(Bush N1)|}{4}{2}}%
 \figp{
 \circdef{lsums-bush2}{|lscan @(Bush N2)|}{29}{5}}{
-\circdef{lsums-bush3}{|lscan @(Bush N3)|}{718}{10}}
-
+\circdef{lsums-bush3}{|lscan @(Bush N3)|}{718}{10}}%
 \figreftwo{lscan-stats-16}{lscan-stats-256} offer an empirical comparison, including some optimizations not taken into account in the complexity analysis above.
 Note that top-down trees have the least depth, bottom-up trees have the least work.
 Bushes appear to provide a compromise, with less work than top-down trees and less depth than bottom-up trees.
@@ -818,7 +809,7 @@ Bushes appear to provide a compromise, with less work than top-down trees and le
 
 For generality, |lscan| works on arbitrary monoids.
 For convenience, let's define some specializations.
-One way to do so is to provide functions that map non-monoidal values to and from monoids.
+One way to do so is to provide functions that map between non-monoids and monoids.
 Start with a class similar to |Generic| for providing alternative representations:
 \begin{code}
 class Newtype n where
@@ -827,7 +818,7 @@ class Newtype n where
   unpack  :: n -> O n
 \end{code}
 This class is from \cite{newtype-generics}, which also defines many instances for commonly used types.
-Given this vocabulary, we can scan structures of non-monoidal values by packing values into a chosen monoid, scanning, and then unpacking:
+Given this vocabulary, we can scan structures over a non-monoid by packing values into a chosen monoid, scanning, and then unpacking:\footnote{The |(***)| operation applies two given functions to the respective components of a pair, and the ``|@@|'' notation is visible type application \cite{eisenberg2016visible}.}
 \begin{code}
 lscanNew  ::  forall n o f. (Newtype n, o ~ O n, LScan f, Monoid n) =>  f o -> f o :* o
 lscanNew = (fmap unpack *** unpack) . lscan . fmap (pack @n)
@@ -841,7 +832,6 @@ lproducts  = lscanNew @(Product a)
 lalls      = lscanNew @All
 ...
 \end{code}
-The |(***)| operation applies two given functions to the respective components of a pair, and the ``|@@|'' notation is visible type application \cite{eisenberg2016visible}.
 
 \subsectiondef{Applications}
 
@@ -874,6 +864,8 @@ See \figreftwo{evalPoly-rb4}{evalPoly-lb4}.
 \circdef{evalPoly-rb4}{|evalPoly @(RBin N4)|}{29+15}{9}}{
 \circdef{evalPoly-lb4}{|evalPoly @(LBin N4)|}{29+15}{11}}
 
+\note{If I have room, do scan-based addition.}
+
 \subsection{Relation to known parallel scan algorithms}
 
 \section{FFT}
@@ -883,7 +875,7 @@ See \figreftwo{evalPoly-rb4}{evalPoly-lb4}.
 \subsection{Background}
 
 The Fast Fourier Transform (FFT) algorithm computes the Discrete Fourier Transform (DFT), reducing work from $O (n^2)$ to $O (n \log n)$.
-First discovered by Gauss \cite{GaussFFTHistory}, the algorithm was rediscovered by \citet{danielson1942some}, and later by \citet{CooleyTukey}, who popularized the algorithm.
+First discovered by Gauss \cite{GaussFFTHistory}, the algorithm was rediscovered by \citet{danielson1942some}, and later by \citet{CooleyTukey}, whose work popularized the algorithm.
 
 Given a sequence of complex numbers, $x_0, \ldots, x_{N-1}$, the DFT is defined as
 $$ X_k =  \sum\limits_{n=0}^{N-1} x_n e^{\frac{-i2\pi kn}{N}} \text{, \quad for\ } 0 \le k < N $$
@@ -897,7 +889,7 @@ $$ X_k =
                   e^{-\frac{2\pi i}{N_2} n_2 k_2 } \right)
         e^{-\frac{2\pi i}{N_1} n_1 k_1}
 $$
-In this form, we have two smaller sets of DFTs: $N_1$ of size $N_2$ each, and $N_2$ of size $N_1$ each.
+In this form, we can see two smaller sets of DFTs: $N_1$ of size $N_2$ each, and $N_2$ of size $N_1$ each.
 If we use the same method for solving these $N_1 + N_2$ smaller DFTs, we get a recursive FFT algorithm.
 See \figrefdef{factored-dft}{Factored DFT \cite{JohnsonCooleyTukeyPic}}{\pic{cooley-tukey-general}}.
 
@@ -938,22 +930,21 @@ The final case is |g :.: f|, which is the heart of FFT.
 >   type FFO (g :.: f) = FFO f :.: FFO g
 >   fft = Comp1 . ffts' . transpose . twiddle . ffts' . unComp1
 
-where |ffts'| performs several non-contiguous FFTs:
+where |ffts'| performs several non-contiguous FFTs in parallel:
 
 > ffts' :: ... => g (f C) -> FFO g (f C)
 > ffts' = transpose . fmap fft . transpose
 
-Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ root of unity:\notefoot{Maybe have |omegas| compute |n| for itself.}
+Finally, the ``twiddle factors'' are all powers of a primitive $N^{\text{th}}$ root of unity:
 
 > twiddle :: ... => g (f C) -> g (f C)
-> twiddle = (liftA2.liftA2) (*) (omegas (size @(g :.: f)))
+> twiddle = (liftA2.liftA2) (*) omegas
 >
-> omegas :: ... => Int -> g (f (Complex a))
-> omegas n = fmap powers (powers (exp (- i * 2 * pi / fromIntegral n)))
+> omegas :: ... => g (f (Complex a))
+> omegas = fmap powers (powers (exp (- i * 2 * pi / fromIntegral (size @(g :.: f)))))
 
 The |size| method calculates the size of a structure.
-Unsurprisingly, the size of a composition is the product of the sizes.
-\notefoot{Define much earlier for use in complexity analyses, and drop this paragraph.}
+Unsurprisingly, the size of a composition is the product of the sizes.\notefoot{Define much earlier for use in complexity analyses, and drop this paragraph.}
 
 %format WO = W"_"omegas
 %format DO = D"_"omegas
@@ -963,9 +954,8 @@ Unsurprisingly, the size of a composition is the product of the sizes.
 %format DFs = D"_"ffts'
 
 Complexity of |fft| depends on complexity of |twiddle| and |omegas|.
-Since |powers| (defined in \secref{Applications}) is a prefix scan, we can compute |omegas| efficiently in parallel.
-Constructing |omegas| requires one |powers| for |g| and then one more for each element of the resulting |g C|, with the latter collection constructed in parallel.
-Thanks scanning on constant structures, |powers| requires only linear work even on top-down trees.
+Since |powers| (defined in \secref{Applications}) is a prefix scan, we can compute |omegas| efficiently in parallel, with one |powers| for |g| and then one more for each element of the resulting |g C|, the latter collection being constructed in parallel.
+Thanks to scanning on constant structures, |powers| requires only linear work even on top-down trees.
 Depth of |powers| is logarithmic.
 \begin{code}
 WO  (g (f C))  = O (ssize g + ssize g *. ssize f) = O (ssize (g :.: f))
@@ -973,7 +963,7 @@ DO  (g (f C))  = log2 (ssize g) + log2 (ssize f)
                = log2 (ssize g *. ssize f)
                = log2 (ssize (g :.: f)
 \end{code}
-After constructing |omegas|, |twiddle| multiplies two |g :.: f| structures element-wise, with linear work and constant depth.
+After constructing |omegas|, |twiddle| multiplies two |g :.: f| structures element-wise, with linear work and constant depth.\notefoot{Probably replace |WT (g (f C))| with |WT f g| and likewise for |DT|.}
 \begin{code}
 WT  (g (f C))  = WO (g (f C)) + O (ssize (g :.: f))
                = O (ssize (g :.: f)) + O (ssize (g :.: f))
@@ -981,14 +971,14 @@ WT  (g (f C))  = WO (g (f C)) + O (ssize (g :.: f))
 DT  (g (f C))  = DO (g (f C)) + O (1)
                = log2 (ssize (g :.: f)) + O (1)
 \end{code}
-The first |ffts'|, on |g :.: f|, does |ssize f| many |fft| on |g| (thanks to |transpose|), in parallel (via |fmap|).
+Returning to |fft @(g :.: f)|, the first |ffts'|, on |g :.: f|, does |ssize f| many |fft| on |g| (thanks to |transpose|), in parallel (via |fmap|).
 The second |ffts'|, on |f :.: g|, does |ssize g| many |fft| on |f|, also in parallel.
 Altogether,
 \begin{code}
-W (g :.: f)  = ssize g *. W f + WT + ssize f *. W g
+W (g :.: f)  = ssize g *. W f + WT (g (f C)) + ssize f *. W g
              = ssize g *. W f + O (ssize (g :.: f)) + ssize f *. W g
 
-D (g :.: f)  = DFs (g (f C)) + DT (g :.: f) + DFs (f (g C))
+D (g :.: f)  = DFs (g (f C)) + DT (g (f C)) + DFs (f (g C))
              = D g + log2 (ssize (g :.: f)) + O (1) + D f
 \end{code}
 Note the symmetry of these results, so that |W (g :.: f) = W (f :.: g)| and |D (g :.: f) = D (f :.: g)|.
@@ -1008,9 +998,8 @@ The definition of |fft| for |g :.: f| can be simplified (without changing comple
 \subsection{Comparing data types}
 
 The top-down and bottom-up tree algorithms correspond to two popular binary FFT variations known as ``decimation in time'' and ``decimation in frequency'' (``DIT'' and ``DIF''), respectively.
-In the array formulation, these variations arise from choosing $N_1=2$ or $N_2=2$.
-Consider top-down trees first.
-Work:\notefoot{To do: Instance and complexity for |Par1| earlier.}
+In the array formulation, these variations arise from choosing $N_1$ small or $N_2$ small, respectively (most commonly 2 or 4).
+Consider top-down trees first, starting with work:\notefoot{To do: Instance and complexity for |Par1| earlier.}
 \begin{code}
 W (RPow h 0) = W Par1 = 0
 W (RPow h (S n))  = W (h :.: RPow h n)
@@ -1032,7 +1021,7 @@ D (RPow h (S n))  = D (h :.: RPow h n)
 \end{code}
 Thus,\notefoot{I think FFT can have logarithmic depth. Hm.}
 \begin{code}
-D (RPow h n) = O (pow n 2) = O (pow (log (ssize (RPow h n))) 2)
+D (RPow h n) = O (pow n 2) = O (logSq (ssize (RPow h n)))
 \end{code}
 As mentioned above, |W (g :.: f) = W (f :.: g)| and |D (g :.: f) = D (f :.: g)|, so top-down and bottom-up trees have the same work and depth complexities.
 
@@ -1044,17 +1033,13 @@ W (Bush (S n))  = W (Bush n :.: Bush n)
                 = ssize (Bush n) *. W (Bush n) + O (ssize (Bush n :.: Bush n)) + ssize (Bush n) *. W (Bush n)
                 = 2 *. ssize (Bush n) *. W (Bush n) + O (ssize (Bush (S n)))
 \end{code}
-
-\note{Working here.}
-
+A closed form solution is left for later work.
 
 \todo{Consistent structure for these proofs throughout the paper.}
 
 \figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figreftwo{fft-bush2}{fft-bush3} for bushes of depth two and three.
 \notefoot{Probably drop |Bush N3|.}
 Each complex number appears as its real and imaginary components.
-\notefoot{Remove literals from counts, and maybe split counts into additions and multiplications.}
-\notefoot{Mention literals, many of which are near zeroes.}
 \figp{
 \circdef{fft-rb4}{|fft @(RBin N4)|}{197}{8}}{
 \circdef{fft-lb4}{|fft @(LBin N4)|}{197}{8}}
@@ -1088,7 +1073,7 @@ Each complex number appears as its real and imaginary components.
   \label{fig:fft-stats-256}
 \end{minipage}
 \end{figure}
-(The total operation counts include constants.\notefoot{Maybe remove them.})
+The total counts include literals, many of which are non-zero only due to numerical inexactness.
 Pleasantly, the |Bush| instance of generic FFT appears to improve over the classic DIT and DIF algorithms in both work and depth.
 
 \section{Related work}
