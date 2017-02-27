@@ -66,11 +66,10 @@ In this way, algorithms and data types are defined independently and then automa
 
 One version of this general scheme is found in |GHC.Generics|, in which the type primitives are really \emph{functor} building blocks \cite{HaskellWikiGhcGenerics}.
 For this paper, we'll use six: sum, product, composition, and their three corresponding identities, as in \figref{ghc-generics}.
-
 There are additional definitions that capture recursion and meta-data such as field names and operator fixity, but the collection in \figref{ghc-generics} suffices for this paper.
 To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| flag), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*| \cite{Magalhaes:2010}.
 For type constructors of kind |* -> *|, as in this paper, one derives |Generic1| instead.
-Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving an encoding functor |Rep f| and encoding and decoding operations |to1| and |from1|, as in \figref{Generic1}.
+Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving a representation functor |Rep f| along with encoding and decoding operations |to1| and |from1|, as in \figref{Generic1}.
 \figpairW{0.52}{0.40}{ghc-generics}{Functor building blocks}{
 \begin{code}
 data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  SPC  -- sum
@@ -94,14 +93,14 @@ class Generic1 f where
 }
 To define a generic algorithm, one provides class instances for these primitives and writes a default definition for each method in terms of |from1| and |to1|.
 
-The effectiveness of generic programming relies on having at our disposal a variety of data types, each corresponding to a unique composition of the small set of generic type building blocks.
+The effectiveness of generic programming relies on having at our disposal a variety of data types, each corresponding to a unique composition of the generic type building blocks.
 In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays.
 The various array algorithms involve idiosyncratic patterns of traversal and construction of this single data type.
 For instance, a parallel array reduction with an associative operator involves recursive or iterative generation of numeric indices for extracting elements, taking care that each element is visited exactly once and combined left-to-right.
 Frequently, adjacent element pairs are combined, resulting in an array of half size, and the process repeats until there is only one value remaining.
 Alternatively, the array is split, with each half processed independently and results combined later.
 (Often, such operations are performed in place, littering the original array with partial reduction results.)
-The essential idea of such an algorithm is the natural fold for perfect, binary leaf trees, but this essence is obscured by an \emph{encoding} of trees as arrays.
+The essential idea of such an algorithm is the natural fold for perfect, binary leaf trees, but this essence is obscured by an implicit \emph{encoding} of trees as arrays.
 The correctness of the algorithm depends on careful translation of the natural tree algorithm.
 Mistakes typically hide in the tedious details of index arithmetic, which must be perfectly consistent with the particular encoding chosen.
 Those mistakes will not be caught by a type-checker (unless programmed with dependent types and full correctness proofs), instead manifesting at run-time in the form of incorrect results and/or index out-of-bound errors.
@@ -133,14 +132,14 @@ Concretely, this paper makes the following contributions:
   Demonstration of functor composition as the heart of both scan and FFT.
   Functor composition provides a statically typed alternative to run-time factoring of array sizes often used in FFT algorithms.
 \item
-  A simple duality between the well-known scan algorithms of \cite{Sklansky1960} and \cite{LadnerFischer1980}, revealed by the  generic decomposition. 
+  A simple duality between the well-known scan algorithms of \citet{Sklansky1960} and of \citet{LadnerFischer1980}, revealed by the  generic decomposition. 
   This duality is much more difficult to spot in conventional presentations.
-  Exactly the same duality exists between the two known FFT algorithms and is perhaps made more clear in the generic formulation.
+  Exactly the same duality exists between the two known FFT algorithms and is shown clear and simply in the generic formulation.
 \item
   Compositional complexity analysis (work and depth), also based on functor combinators.
 \end{itemize}
 
-The figures in this paper are generated automatically from the given Haskell code using the compiler plugin described in \cite{Elliott-2017-compiling}, which also generates synthesizable descriptions in Verilog for parallel, hardware-based evaluation.
+The figures in this paper are generated automatically (including optimizations) from the given Haskell code using the compiler plugin described in \cite{Elliott-2017-compiling}, which also generates synthesizable descriptions in Verilog for parallel, hardware-based evaluation.
 
 
 \section{Some useful data types}
@@ -395,7 +394,7 @@ instance  Generic1 (LPow f n) => Generic1 (LPow f (S n)) where
   to1 (Comp1 ts) = B ts
 \end{code}
 
-We can then give these statically shaped data types |Functor|, |Foldable|, and |Traversable| instances exactly matching the dynamically shaped versions given above.
+We can then give these statically shaped data types |Functor|, |Foldable|, and |Traversable| instances matching the dynamically shaped versions given above.
 In addition, they have |Applicative| and |Monad| instances, left as an exercise for the reader.
 Since all of these types are memo tries \cite{Hinze00memofunctions}, their class instances instance follow homomorphically from the corresponding instances for functions \cite{long-type-class-morphisms}.
 
@@ -462,7 +461,7 @@ For convenience, define top-down and bottom-up \emph{binary} trees:
 \subsection{Bushes}\seclabel{bushes}
 
 In contrast to vectors, the tree types above are perfectly balanced, as is helpful in obtaining naturally parallel algorithms.
-From another perspective, however, they are quite imbalanced.
+From another perspective, however, they are quite unbalanced.
 The functor composition operator is used fully left-associated for |LPow| and fully right-associated for |RPow| (hence the names).
 It's easy to define a composition-balanced type as well:
 \begin{code}
@@ -516,7 +515,7 @@ The standard list prefix scans in Haskell, |scanl| and |scanr|, also yield one m
 For other data types, such as trees and especially perfect ones, there may not be a place to stash the extra value.
 For a generic scan applying to many different data types, we can simply form a product, so that scanning maps |f a| to |f a :* a|.
 The extra summary value is the fold over the whole input structure.
-Thus, we have the following class for left-scannable functors:
+We thus have the following class for left-scannable functors:
 \begin{code}
 class Functor f => LScan f where lscan :: Monoid a => f a -> f a :* a
 \end{code}
@@ -652,7 +651,7 @@ In contrast, with left-associated vectors, each prefix summary (left) is used to
 W (LVec 0) = W U1 = 0
 W (LVec (S n)) = W (LVec n :*: Par1) = W (LVec n) + W Par1 + ssize Par1 + 1 = W (LVec n) + 2
 
-D  (RVec 0) = W U1 = 0
+D  (RVec 0) = D U1 = 0
 D  (RVec (S n)) = D (Par1 :*: RVec n) = (D Par1 `max` D (RVec n)) + 1 = D (RVec n) + O(1)
 \end{code}
 Thus
@@ -682,7 +681,7 @@ We now come to the last of our six functor combinators, namely composition, i.e.
 Suppose we have a triple of quadruples: |LVec N3 :.: LVec N4|.
 We know how to scan each quadruple, as in \figref{triple-scan}.
 How can we combine the results of each scan into a scan for |LVec N3 :.: LVec N4|?
-We already know the answer, since this composite type is essentially |(LVec N4 :*: LVec N4) :*: LVec N4|, the scan for which is determined by the |Par1| and product instances and is shown in \figref{lsums-lv3olv4-highlight}.
+We already know the answer, since this composite type is essentially |(LVec N4 :*: LVec N4) :*: LVec N4|, the scan for which is fully determined by the |Par1| and product instances and is shown in \figref{lsums-lv3olv4-highlight}.
 
 \figpairW{0.34}{0.58}{triple-scan}{triple |lscan @(LVec N4)|}{
 \incpic{lsums-lv4}
@@ -696,12 +695,12 @@ Let's reflect on this example as we did with binary products above.
 The prefixes of the first quadruple are all prefixes of the composite structure, so their prefix sums are prefix sums of the composite and so are used as they are.
 For every following quadruple, the prefix sums are lacking the sum of all elements from the earlier quadruples and so must be adjusted accordingly, as emphasized in \figref{lsums-lv3olv4-highlight}.
 
-Now we get to the surprising heart of generic parallel scan!
+\emph{Now we get to the surprising heart of generic parallel scan}.
 Observe that the sums of elements from all earlier quadruples are computed entirely from the final summary results from each quadruple.
 We end up needing the sum of every \emph{prefix} of the triple of summaries, and so we are computing not just three prefix scans over |LVec N4| but also \emph{one additional scan} over |LVec N3|.
 Moreover, the apparent inconsistency of adjusting all quadruples \emph{except} for the first one is an illusion brought on by premature optimization.
 We can instead adjust \emph{every} quadruple by the corresponding result of this final scan of summaries, the first summary being zero.
-These zero-additions can then be optimized away later.
+These zero-additions can be optimized away later.
 \out{See \circuitrefdef{lsums-lv5olv7-highlight}{Scan for |LVec N5 :.: LVec N7|}{59}{10} for a larger example showing this same pattern.}
 
 The general case is captured in an |LScan| instance for functor composition:
@@ -745,13 +744,13 @@ W (RPow h (S n)) = W (h :.: RPow h n) = ssize h *. W (RPow h n) + W h + pow (ssi
 D (RPow h 0) = D Par1 = 0
 D (RPow h (S n)) = D (h :.: RPow h n) = D h + D (RPow h n)
 \end{code}
-For any fixed |h|, |W h + pow (ssize h) (S n) = O (n)|, so the Master Theorem gives a solution \cite[Chapter 4]{Cormen:2009} for |W|.
+For any fixed |h|, |W h + pow (ssize h) (S n) = O (n)|, so the Master Theorem \cite[Chapter 4]{Cormen:2009} gives a solution for |W|.
 Since |D h = O (1)| (again, for fixed |h|), |D| has a simple solution.
 \begin{code}
 W  (RPow h n) = O (ssize (RPow h n) *. log (ssize (RPow h n)))
 D  (RPow h n) = O (n) = O (log (ssize (RPow h n)))
 \end{code}
-Complexity for |LPow h| work out somewhat differently:
+Complexity for |LPow h| works out somewhat differently:
 \begin{code}
 W (LPow h 0) = W Par1 = 0
 W (LPow h (S n)) = W (LPow h n :.: h) = ssize (LPow h n) *. W h + W (LPow h n) + pow (ssize h) (S n)
@@ -768,7 +767,7 @@ For this reason, parallel scan on bottom-up trees can do much less work than on 
 They also have fan-out bounded by |ssize h|, as contrasted with the linear fan-out for top-down trees---an important consideration for hardware implementations.
 On the other hand, the depth for bottom-up trees is about twice the depth for top-down trees.
 
-Specializing these |RPow h| and |RPow h| scan algorithms to |h = Pair| and then optimizing away zero-additions yields two well-known algorithms: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
+Specializing these |RPow h| and |RPow h| scan algorithms to |h = Pair| and then optimizing away zero-additions (as in \figreftwo{lsums-rb4}{lsums-lb4}) yields two well-known algorithms: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
 
 Finally, consider the |Bush| type from \secref{bushes}.
 Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bushes of depth zero through three.
@@ -795,9 +794,8 @@ A closed form solution is left for later work.
 \figp{
 \circdef{lsums-bush2}{|lscan @(Bush N2)|}{29}{5}}{
 \circdef{lsums-bush3}{|lscan @(Bush N3)|}{718}{10}}%
-\figreftwo{lscan-stats-16}{lscan-stats-256} offer an empirical comparison, including some optimizations not taken into account in the complexity analysis above.
-Note that top-down trees have the least depth, bottom-up trees have the least work.
-Bushes appear to provide a compromise, with less work than top-down trees and less depth than bottom-up trees.
+\figreftwo{lscan-stats-16}{lscan-stats-256} offer an empirical comparison, including some optimizations not taken into account in the complexity analyses above.
+Note that top-down trees have the least depth, bottom-up trees have the least work, and bushes provide a compromise, with less work than top-down trees and less depth than bottom-up trees.
 
 \begin{figure}
 \begin{minipage}{0.43\linewidth}
@@ -830,12 +828,14 @@ For generality, |lscan| works on arbitrary monoids.
 For convenience, let's define some specializations.
 One way to do so is to provide functions that map between non-monoids and monoids.
 Start with a class similar to |Generic| for providing alternative representations:
+\begin{samepage}
 \begin{code}
 class Newtype n where
   type O n :: *
   pack    :: O n -> n
   unpack  :: n -> O n
 \end{code}
+\end{samepage}
 This class is from \cite{newtype-generics}, which also defines many instances for commonly used types.
 Given this vocabulary, we can scan structures over a non-monoid by packing values into a chosen monoid, scanning, and then unpacking:\footnote{The |(***)| operation applies two given functions to the respective components of a pair, and the ``|@@|'' notation is visible type application \cite{eisenberg2016visible}.}
 \begin{code}
@@ -863,7 +863,7 @@ A simple implementation builds a structure with identical values using |pure| (f
 \figref{powers-rb4-no-hash} shows one instance of |powers|.
 A quick examination shows that there is a lot of redundant computation due to the special context of scanning over identical values.
 For instance, for an input $x$, we compute $x^2$ eight times and $x^4$ four times.
-Fortunately, automatic common subexpression elimination (CSE) removes these redundancies easily, resulting in \figref{powers-rb4}.
+Fortunately, automatic common subexpression elimination (CSE) removes such redundancies easily, resulting in \figref{powers-rb4}.
 \figp{
 \circdef{powers-rb4-no-hash}{|powers @(RBin N4)| --- without CSE}{32}{4}}{
 \circdef{powers-rb4}{|powers @(RBin N4)| --- with CSE}{15}{4}}
@@ -913,7 +913,7 @@ In this form, we can see two smaller sets of DFTs: $N_1$ of size $N_2$ each, and
 If we use the same method for solving these $N_1 + N_2$ smaller DFTs, we get a recursive FFT algorithm.
 See \figrefdef{factored-dft}{Factored DFT \cite{JohnsonCooleyTukeyPic}}{\pic{cooley-tukey-general}}.
 
-Rather than implementing FFT via sequences/arrays as usual, let's take a step back and consider a more structured approach.
+Rather than implementing FFT via sequences or arrays as usual, let's take a step back and consider a more structured approach.
 
 \subsection{Factor types, not numbers!}
 
@@ -993,6 +993,7 @@ DT  (g (f C))  = DO (g (f C)) + O (1)
 \end{code}
 Returning to |fft @(g :.: f)|, the first |ffts'|, on |g :.: f|, does |ssize f| many |fft| on |g| (thanks to |transpose|), in parallel (via |fmap|).
 The second |ffts'|, on |f :.: g|, does |ssize g| many |fft| on |f|, also in parallel.
+(Since |transpose| is optimized away entirely, it is assigned no cost.)
 Altogether,
 \begin{code}
 W (g :.: f)  = ssize g *. W f + WT (g (f C)) + ssize f *. W g
@@ -1002,7 +1003,7 @@ D (g :.: f)  = DFs (g (f C)) + DT (g (f C)) + DFs (f (g C))
              = D g + log2 (ssize (g :.: f)) + O (1) + D f
 \end{code}
 Note the symmetry of these results, so that |W (g :.: f) = W (f :.: g)| and |D (g :.: f) = D (f :.: g)|.
-For this reason, top-down and bottom-up trees will have the same work and depth complexities.
+For this reason, FFT on top-down and bottom-up trees will have the same work and depth complexities.
 
 The definition of |fft| for |g :.: f| can be simplified (without changing complexity):
 \begin{code}
@@ -1104,8 +1105,8 @@ The techniques and examples in this paper illustrate programming parallel algori
 This ``generic'' style has several advantages over the conventional practice of designing and implementing parallel algorithms in terms of arrays.
 Banishing arrays does away with index calculations that obscure most presentations and open the door to run-time errors.
 Those dynamic errors are instead prevented by static typing, and the consequent index-free formulations more simply and directly capture the essential idea of the algorithm.
-The standard functor building blocks also invite use of functionality of standard type classes such as |Functor|, |Foldable|, |Traversable|, and |Applicative|, along with the elegant and familiar programming and reasoning tools available for those patterns of computation, again sweeping away details to reveal essence.
-In contrast, array-based formulations involve indirect and error-prone emulations of operations on implicit compositions of simpler types, hiding behind index calculations for reading and writing array elements.
+The standard functor building blocks also invite use of the functionality of standard type classes such as |Functor|, |Foldable|, |Traversable|, and |Applicative|, along with the elegant and familiar programming and reasoning tools available for those patterns of computation, again sweeping away details to reveal essence.
+In contrast, array-based formulations involve indirect and error-prone emulations of operations on implicit compositions of the simpler types hiding behind index calculations for reading and writing array elements.
 
 A strength of the generic approach to algorithms is that it is much easier to formulate data types than correct algorithms.
 As long as a data type can be modeled in terms of generic components having instances for the problem being solved, a correct, custom algorithm is assembled for that type automatically.
@@ -1113,27 +1114,28 @@ The result may or may not be very parallel, but it is easy to experiment.
 Moreover, the same recipes that assemble data types and algorithms, also assemble analyses of work and depth complexity in the form of recurrences to be solved.
 
 Of the six generic building blocks, the star of the show in this paper is functor composition, where the hearts of scan and FFT are both to be found.
-By using just compositions of uniform pairs, we are led to rediscover two well-known, parallel-friendly algorithms for each scan and FFT.
+By using just compositions of uniform pairs, we are led to rediscover two well-known, parallel-friendly algorithms for each of scan and FFT.
 While functor composition is associative up to isomorphism, different associations give rise to different performance properties.
 Consistent right association leads to the common ``top-down'' form of perfect binary leaf trees, while consistent left association leads to a less common ``bottom-up'' form.
 For generic scan, the purely right-associated compositions followed by simple automatic optimizations become the well-known algorithm first discovered by \citet{Sklansky1960}, while the purely left-associated compositions and automatic optimizations become the more work-efficient algorithm of \citet{LadnerFischer1980}.
 Conventional formulations of these algorithms center on arrays and, in retrospect, contain optimizations that obscure their essential natures and the simple, deep duality between them.
-In particular, Sklansky's scan algorithm splits an array of size $N$ into two, performs two recursive scans, and adjusts the second resulting array; while Ladner and Fischer's scan algorithm sums adjacent pairs, performs \emph{one} recursive scan, and then interleaves the one resulting array with a modified version of it.
+Sklansky's scan algorithm splits an array of size $N$ into two, performs two recursive scans, and adjusts the second resulting array.
+Ladner and Fischer's scan algorithm sums adjacent pairs, performs \emph{one} recursive scan, and then interleaves the one resulting array with a modified version of it.
 In both cases, the post-recursion adjustment step turns out to be optimized versions of additional recursive scans, followed by the same kind of simple, uniform adjustment.
 Making these extra, hidden scans explicit reveals the close relationship between these two algorithms.
-These applied optimization is merely removal of zero additions (more generally combinations with monoid identity) and is easily automated.
+The applied optimization is merely removal of zero additions (more generally combinations with monoid identity) and is easily automated.
 The duality between the Sklansky's parallel scan and Ladner and Fischer's is exactly mirrored in the duality between two of the FFT algorithms, commonly known as ``decimation in time'' (right-associated functor composition) and ``decimation in frequency (left-associated functor composition).
 
-Not only do we see the elegant essence and common connections between known algorithms, satisfying enough in its own right, this insight points the way to many infinitely many variations of these algorithms by varying the functors being composed beyond uniform pairs \emph{and} varying the pattern of composition beyond \emph{uniform} right or left association.
+Not only do we see the elegant essence and common connections between known algorithms, satisfying enough in its own right, but this insight also points the way to many infinitely many variations of these algorithms by varying the functors being composed beyond uniform pairs \emph{and} varying the pattern of composition beyond \emph{uniform} right or left association.
 This paper merely scratches the surface of the possible additional variations in the form of fully balanced compositions of the pair functor, as a type of uniform ``bushes''.
 Even this simple and perhaps obvious idea appears to offer a useful alternative.
 For scan, bushes offer a different compromise between top-down trees (best in work and worst in depth) vs bottom-up trees (best in depth and worst in work), coming in second place for both work and depth.
-With FFT, the complexity story seems to be uniformly positive, beating top-down and bottom-up in both work and depth, though at the cost of less flexibility in data set size, since bushes of have sizes of the form $2^{2^n}$, compared with $2^n$ for binary trees.
+With FFT, the complexity story seems to be uniformly positive, besting top-down and bottom-up in both work and depth, though at the cost of less flexibility in data set size, since bushes of have sizes of the form $2^{2^n}$, compared with $2^n$ for binary trees.
 
 There are many more interesting questions to explore.
 Which other known scan and FFT algorithms emerge from the generic versions defined in this paper, specialized to other data types.
 Are there different instances for the \emph{generic} functor combinators that lead to different algorithms for the data types used above?
-How does generic scan relate to the scan algebra of \cite{Hinze04Scan}, which is another systematic way to generate scan algorithms?
+How does generic scan relate to the scan algebra in \cite{Hinze04Scan}, which is another systematic way to generate scan algorithms?
 What other problems are amenable to the sort of generic formulation in this paper?
 What other data types (functor assembly patterns) explain known algorithms and point to new ones?
 

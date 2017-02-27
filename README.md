@@ -1,4 +1,4 @@
-## Paper: Generic parallel functional programming
+## Paper: *Generic parallel functional programming*
 
 Submitted to ICFP 2017
 

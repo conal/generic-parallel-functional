@@ -1,10 +1,17 @@
 # To do
 
+*   How I might shorten the conference submission:
+    *   Side-by-side code.
+        Would save a lot of vertical space.
+    *   Tighten prose
+    *   Drop:
+        *   Explicit `RList`/`LList` isomorphism.
+        *   Zipper discussion.
+
 *   Scan-based addition.
 *   Related work:
     *   FFT in muFP, Ruby, and Lava.
     *   See "The study of butterflies" by Geraint Jones and Mary Sheeran, 1990.
-
 
 *   Sections:
     *   Introduction
