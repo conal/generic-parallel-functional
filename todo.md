@@ -1,8 +1,6 @@
 # To do
 
 *   Scan-based addition.
-*   Point to "Compiling to categories" as an explanation of the figures in the paper.
-    Mention that the compiler generates not only figures but synthesizable Verilog.
 *   Related work:
     *   FFT in muFP, Ruby, and Lava.
     *   See "The study of butterflies" by Geraint Jones and Mary Sheeran, 1990.
@@ -44,6 +42,8 @@
 
 # Done
 
+*   Point to "Compiling to categories" as an explanation of the figures in the paper.
+    Mention that the compiler generates not only figures but synthesizable Verilog.
 *   Consistency of figure captions
 *   Cite "work" and "depth"
 *   Update from old sigplanconf.cls
