@@ -1,6 +1,6 @@
 % -*- latex -*-
 
-\documentclass[acmlarge,authorversion]{acmart} % ,anonymous,draft
+\documentclass[acmlarge,authorversion,anonymous]{acmart} % ,draft
 
 %% \usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
 
@@ -139,6 +139,8 @@ Concretely, this paper makes the following contributions:
 \item
   Compositional complexity analysis (work and depth), also based on functor combinators.
 \end{itemize}
+
+The figures in this paper are generated automatically from the given Haskell code using the compiler plugin described in \cite{Elliott-2017-compiling}, which also generates synthesizable descriptions in Verilog for parallel, hardware-based evaluation.
 
 
 \section{Some useful data types}
