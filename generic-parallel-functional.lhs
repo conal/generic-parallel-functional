@@ -123,7 +123,23 @@ One benefit is a relatively straightforward mapping from algorithm to efficient 
 As we will see below, however, we can instead write algorithms in elegant, modular style using a variety of data types and the standard algebraic abstractions on those data types--such as |Functor|, |Applicative|, |Foldable|, and |Traversable| \cite{McBride:2008}---\emph{and} generate very efficient implementations.
 Better yet, we can define such algorithms generically.
 
-\todo{contributions}
+Concretely, this paper makes the following contributions:
+\begin{itemize}
+\item
+  Simple specification of an infinite family of (correct) parallel algorithms for each of scan and FFT, indexed by data type and composed out of six generic functor combinators.
+  Two familiar algorithms emerge as the instances of scan and FFT for the common, ``top-down'' form of perfect binary leaf trees, and likewise two other familiar algorithms for the less common, ``bottom-up'' form, which is dual to top-down.
+  In addition, two compelling and apparently new algorithms arise from a related third form of perfect ``bushes''.
+\item
+  Demonstration of functor composition as the heart of both scan and FFT.
+  Functor composition provides a statically typed alternative to run-time factoring of array sizes often used in FFT algorithms.
+\item
+  A simple duality between the well-known scan algorithms of \cite{Sklansky1960} and \cite{LadnerFischer1980}, revealed by the  generic decomposition. 
+  This duality is much more difficult to spot in conventional presentations.
+  Exactly the same duality exists between the two known FFT algorithms and is perhaps made more clear in the generic formulation.
+\item
+  Compositional complexity analysis (work and depth), also based on functor combinators.
+\end{itemize}
+
 
 \section{Some useful data types}
 
@@ -468,6 +484,7 @@ Likewise, functor composition is associative up to isomorphism.
 Where |RPow f| and |LPow f| are fully right- and left-associated compositions, |Bush f| forms balanced compositions.
 Many other variations are possible, but the |Bush| definition above will suffice for this paper.
 
+
 \section{Parallel scan}
 
 Given a sequence $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ldots,b_n$ such that $b_k = \sum_{0 \le i < k}{a_i}$.
@@ -553,7 +570,7 @@ Just as the six functor combinators guide the composition of parallel algorithms
 Following \cite{Blelloch96programmingparallel}, consider two aspect of performance:
 \begin{itemize}
 \item \emph{work}, the total number of primitive operations performed, and
-\item \emph{depth}, the longest dependency chain, and hence a measure of ideal parallel. computation time 
+\item \emph{depth}, the longest dependency chain, and hence a measure of ideal parallel computation time.
 \end{itemize}
 For parallel scan, work and depth of |U1|, |V1|, and |Par1| are all zero.
 For sums,
@@ -749,7 +766,7 @@ For this reason, parallel scan on bottom-up trees can do much less work than on 
 They also have fan-out bounded by |ssize h|, as contrasted with the linear fan-out for top-down trees---an important consideration for hardware implementations.
 On the other hand, the depth for bottom-up trees is about twice the depth for top-down trees.
 
-Specializing these |RPow h| and |RPow h| scan algorithms to |h = Pair| yields two well-known algorithms: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
+Specializing these |RPow h| and |RPow h| scan algorithms to |h = Pair| and then optimizing away zero-additions yields two well-known algorithms: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
 
 Finally, consider the |Bush| type from \secref{bushes}.
 Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bushes of depth zero through three.
@@ -864,9 +881,10 @@ See \figreftwo{evalPoly-rb4}{evalPoly-lb4}.
 \circdef{evalPoly-rb4}{|evalPoly @(RBin N4)|}{29+15}{9}}{
 \circdef{evalPoly-lb4}{|evalPoly @(LBin N4)|}{29+15}{11}}
 
-\note{If I have room, do scan-based addition.}
+\note{Scan-based addition.}
 
-\subsection{Relation to known parallel scan algorithms}
+%% \subsection{Relation to known parallel scan algorithms}
+
 
 \section{FFT}
 
@@ -1080,10 +1098,44 @@ Pleasantly, the |Bush| instance of generic FFT appears to improve over the class
 
 \section{Reflections/conclusions}
 
+The techniques and examples in this paper illustrate programming parallel algorithms in terms of six simple, fundamental functor building blocks (sum, product, composition, and the three corresponding identities).
+This ``generic'' style has several advantages over the conventional practice of designing and implementing parallel algorithms around arrays.
+Banishing arrays does away with index calculations that obscure most presentations and open the door to run-time errors.
+Those dynamic errors are instead prevented by static typing, and the consequent index-free algorithms more simply and directly capture the essential idea of the algorithm.
+The standard functor building blocks also support and invite use of functionality of standard type classes such as |Functor|, |Foldable|, |Traversable|, and |Applicative|, along with the elegant and familiar programming and reasoning tools available for those patterns of computation, again sweeping away details to reveal essence.
+
+A strength of the generic approach to algorithms is that it is much easier to formulate data types than correct algorithms.
+As long as a data type is expressible in terms of generic components having instances for the problem being solved, a correct, custom algorithm is assembled for it automatically.
+The result may or may not be very parallel, but it is easy to experiment.
+Moreover, the same recipes that assemble data types and algorithms, also assemble work and depth complexity analyses in the form of recurrences to be solved.
+
+Of the six generic building blocks, functor composition steals the show.
+The hearts of scan and FFT are both to be found in the instances for composition.
+By using just compositions of uniform pairs, we rediscover two well-known, parallel-friendly algorithms for each scan and FFT.
+While functor composition is associative up to isomorphism, consistent right association leads to the common ``top-down'' form of perfect binary leaf trees, while consistent left association leads to a less common ``bottom-up'' form.
+For generic scan, the purely right-associated compositions followed by simple automatic optimizations rediscover the well-known algorithm first discovered by \citet{Sklansky1960}, while the purely left-associated compositions and automatic optimizations rediscover a more subtle algorithm of \citet{LadnerFischer1980}.
+Conventional formulations of these algorithms center on arrays and, in retrospect, contain optimizations that obscure their essential nature and the simple, deep duality between them.
+In particular, Sklansky's scan algorithm splits an array of size $N$ into two, performs two recursive scans, and adjusts the second resulting array; while Ladner and Fischer's scan algorithm sums adjacent pairs, performs \emph{one} recursive scan, and then merges the one resulting array with a modified version of it.
+In both cases, the post-recursion adjustment step turns out to be (differently) optimized versions of additional recursive scans, followed by the same kind of simple, uniform adjustment.
+Making these extra, hidden scans explicit reveals the close relationship between these two algorithms.
+The original algorithms result from optimizations on the common generic form.
+These optimizations are of the simplest sort---simplifying away zero additions (more generally combining with monoid identity)---and are easily automated.
+The duality between the Sklansky's parallel scan and Ladner and Fischer's is exactly mirrored in the duality between two of the FFT algorithms, commonly known as ``decimation in time'' (right-associated functor composition) and ``decimation in frequency (left-associated functor composition).
+
+Not only do we see the elegant essence and common connections between known algorithms, satisfying enough in its own right, this insight points the way to many infinitely many variations of these algorithms by varying the functors being composed beyond uniform pairs \emph{and} varying the pattern of composition beyond \emph{uniform} right or left association.
+This paper merely scratches the surface of the possible variations in the form of fully balanced compositions of the pair functor, as a type of uniform ``bushes''.
+Even this simple and perhaps obvious idea appears to offer a useful alternative.
+For scan, bushes offer a different compromise between top-down trees (best in work and worst in depth) vs bottom-up trees (best in depth and worst in work), coming in second place for both work and depth.
+With FFT, the complexity story seems to be uniformly positive, beating top-down and bottom-up in both work and depth, though at the cost of less flexibility in data set size, since bushes of have sizes of the form $2^{2^n}$, compared with binary tree's $2^n$.
+
+
+
+\out{
 \begin{itemize}
 \item
   How would this work look with full dependent types?
 \end{itemize}
+}
 
 %% \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
