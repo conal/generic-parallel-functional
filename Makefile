@@ -4,13 +4,11 @@ targ = generic-parallel-functional
 
 default: $(targ).pdf
 
-$(targ).pdf: $(targ).tex Makefile
-	latexmk -pdf $(targ).tex
+#latex=pdflatex
+latex=latexmk -pdf
 
-# %.pdf: %.tex Makefile
-# 	latexmk -pdf $*.tex
-
-# Was: pdflatex $*.tex
+%.pdf: %.tex bib.bib $(figures) Makefile
+	$(latex) $*.tex
 
 %.tex: %.lhs macros.tex formatting.fmt $(pdfs) Makefile
 	lhs2TeX -o $*.tex $*.lhs
