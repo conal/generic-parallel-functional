@@ -39,6 +39,9 @@
 %% Temporary
 \setcopyright{rightsretained}
 \settopmatter{printacmref=false, printccs=true, printfolios=true}
+\acmYear{2017 (submitted)}
+\acmMonth{2}
+\acmDOI{}
 
 \begin{document}
 
@@ -49,7 +52,7 @@
 Parallel programming, whether imperative or functional, has long focused on arrays as the central data type.
 Meanwhile, typed functional programming has explored a variety of data types, including lists and various forms of trees.
 \emph{Generic} functional programming decomposes these data types into a small set of fundamental building blocks: sum, product, composition, and their associated identities.
-Definitions over these few fundamental type constructions then automatically assemble into algorithms for an infinite set of data types---some familiar and some new.
+Definitions over these few fundamental type constructions then automatically assemble into algorithms for an infinite variety of data types---some familiar and some new.
 This paper presents generic functional formulations for two important and well-known classes of parallel algorithms: parallel scan (generalized prefix sum) and Fast Fourier Transform (FFT).
 Notably, arrays play no role in these formulations.
 Consequent benefits include a simpler and more compositional style, much use of common algebraic patterns---such as |Functor|, |Applicative|, |Foldable|, and |Traversable|\out{ \cite{McBride:2008}}---and freedom from possibility of run-time indexing errors.
@@ -70,12 +73,12 @@ These type primitives serve to connect algorithms with data types in the followi
 \end{itemize}
 In this way, algorithms and data types are defined independently and then automatically work together.
 
-One version of this general scheme is found in |GHC.Generics|, in which the type primitives are really \emph{functor} building blocks \cite{HaskellWikiGhcGenerics}.
+One version of this general scheme is found in |GHC.Generics|, in which the type primitives are \emph{functor-level} building blocks \cite{HaskellWikiGhcGenerics}.
 For this paper, we'll use six: sum, product, composition, and their three corresponding identities, as in \figref{ghc-generics}.
 There are additional definitions that capture recursion and meta-data such as field names and operator fixity, but the collection in \figref{ghc-generics} suffices for this paper.
-To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| flag), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*| \cite{Magalhaes:2010}.
+To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| language extension), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*| \cite{Magalhaes:2010}.
 For type constructors of kind |* -> *|, as in this paper, one derives |Generic1| instead.
-Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving a representation functor |Rep f| along with encoding and decoding operations |to1| and |from1|, as in \figref{Generic1}.
+Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving a representation functor |Rep1 f| along with encoding and decoding operations |to1| and |from1|, as in \figref{Generic1}.
 \figpairW{0.52}{0.40}{ghc-generics}{Functor building blocks}{
 \begin{code}
 data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  SPC  -- sum
@@ -103,10 +106,10 @@ The effectiveness of generic programming relies on having at our disposal a vari
 In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays.
 The various array algorithms involve idiosyncratic patterns of traversal and construction of this single data type.
 For instance, a parallel array reduction with an associative operator involves recursive or iterative generation of numeric indices for extracting elements, taking care that each element is visited exactly once and combined left-to-right.
-Frequently, adjacent element pairs are combined, resulting in an array of half size, and the process repeats until there is only one value remaining.
-Alternatively, the array is split, with each half processed independently and results combined later.
+Frequently, an array is split, each half processed recursively and independently, and results combined later.
+Alternatively, adjacent element pairs are combined, resulting in an array of half size for further processing.
 (Often, such operations are performed in place, littering the original array with partial reduction results.)
-The essential idea of such an algorithm is the natural fold for perfect, binary leaf trees, but this essence is obscured by an implicit \emph{encoding} of trees as arrays.
+The essential idea of these two patterns is the natural fold for perfect, binary leaf trees of two different varieties, but this essence is obscured by implicit \emph{encodings} of trees as arrays.
 The correctness of the algorithm depends on careful translation of the natural tree algorithm.
 Mistakes typically hide in the tedious details of index arithmetic, which must be perfectly consistent with the particular encoding chosen.
 Those mistakes will not be caught by a type-checker (unless programmed with dependent types and full correctness proofs), instead manifesting at run-time in the form of incorrect results and/or index out-of-bound errors.
@@ -117,21 +120,21 @@ The Haskell-based formulations below use GADTs (generalized algebraic data types
 
 When we use natural, recursively defined data types \emph{explicitly}, we can use standard programming patterns such as folds and traversals \out{\cite{McBride:2008}} directly.
 In a language like Haskell, those patterns follow known laws and are well supported by the programming ecosystem.
-The use of array encodings makes those patterns \emph{implicit}, as a sort of informal guide only, distancing programs from the elegant and well-understood laws and abstractions that motivate the programs, justify their correctness, and point to algorithmic variations that solve related problems or make different implementation trade-offs.
+The use of array encodings makes those patterns \emph{implicit}, as a sort of informal guide only, distancing programs from the elegant and well-understood laws and abstractions that motivate those programs, justify their correctness, and point to algorithmic variations that solve related problems or make different implementation trade-offs.
 
-Even the \emph{determinacy} of an array-based parallel algorithm can be difficult to ensure or validate.
+Even the \emph{determinacy} of an array-based parallel algorithm can be difficult to ensure or verify.
 When the result is an array rather than a single value, as in scans and FFTs, values are written to indexed locations.
 In the presence of parallelism, determinacy depends on those write indices being distinct, which again is a subtle, encoding-specific property, unlikely to be verified automatically.
 
 Given these severe drawbacks, why are arrays so widely used in designing, implementing, and explaining parallel algorithms?
 One benefit is a relatively straightforward mapping from algorithm to efficient implementation primitives.
-As we will see below, however, we can instead write algorithms in elegant, modular style using a variety of data types and the standard algebraic abstractions on those data types--such as |Functor|, |Applicative|, |Foldable|, and |Traversable| \cite{McBride:2008}---\emph{and} generate very efficient implementations.
+As we will see below, however, we can instead write algorithms in an elegant, modular style using a variety of data types and the standard algebraic abstractions on those data types--such as |Functor|, |Applicative|, |Foldable|, and |Traversable| \cite{McBride:2008}---\emph{and} generate very efficient implementations.
 Better yet, we can define such algorithms generically.
 
 Concretely, this paper makes the following contributions:
 \begin{itemize}
 \item
-  Simple specification of an infinite family of (correct) parallel algorithms for each of scan and FFT, indexed by data type and composed out of six generic functor combinators.
+  Simple specification of an infinite family of parallel algorithms for each of scan and FFT, indexed by data type and composed out of six generic functor combinators.
   Two familiar algorithms emerge as the instances of scan and FFT for the common, ``top-down'' form of perfect binary leaf trees, and likewise two other familiar algorithms for the less common, ``bottom-up'' form, which is dual to top-down.
   In addition, two compelling and apparently new algorithms arise from a related third form of perfect ``bushes''.
 \item
@@ -140,12 +143,12 @@ Concretely, this paper makes the following contributions:
 \item
   A simple duality between the well-known scan algorithms of \citet{Sklansky1960} and of \citet{LadnerFischer1980}, revealed by the  generic decomposition. 
   This duality is much more difficult to spot in conventional presentations.
-  Exactly the same duality exists between the two known FFT algorithms and is shown clear and simply in the generic formulation.
+  Exactly the same duality exists between the two known FFT algorithms and is shown clearly and simply in the generic formulation.
 \item
   Compositional complexity analysis (work and depth), also based on functor combinators.
 \end{itemize}
 
-The figures in this paper are generated automatically (including optimizations) from the given Haskell code using the compiler plugin described in \cite{\compilingToCats}, which also generates synthesizable descriptions in Verilog for parallel, hardware-based evaluation.
+The figures in this paper are generated automatically (including optimizations) from the given Haskell code, using a compiler plugin described in \cite{\compilingToCats}, which also generates synthesizable descriptions in Verilog for massively parallel, hardware-based evaluation.
 
 
 \section{Some useful data types}
@@ -321,11 +324,11 @@ For instance, the most common parallel scan and FFT algorithms are limited to ar
 In array-based algorithms, these restrictions can be realized in one of two ways:
 \begin{itemize}
 \item
-  Check array sizes dynamically, incurring a performance penalty; or
+  check array sizes dynamically, incurring a performance penalty; or
 \item
-  Document the restriction, assume the best, and blame the library user when the assumption is violated.
+  document the restriction, assume the best, and blame the library user when the assumption is violated.
 \end{itemize}
-A third---much less commonly used---option is to statically verify the size restriction at the call site, perhaps by using a dependently typed language and providing proofs as part of the call.
+A third option---much less commonly used---is to statically verify the size restriction at the call site, perhaps by using a dependently typed language and providing proofs as part of the call.
 
 A lightweight compromise is to simulate some of the power of dependent types via type-level encodings of sizes, as with our use of |Nat| for indexing the |Vec| type above.
 There are many possible definitions for |Nat|.
@@ -338,8 +341,16 @@ Thanks to promotion, |Nat| is not only a new data type with value-level construc
 \subsubsection{GADT formulation}
 
 Now we can define the length-indexed |Vec| type mentioned above, which is the canonical example of dependent types in either full dependently typed languages or as simulated with generalized algebraic data types (GADTs).
-As with lists, there are right- and left-growing versions: The former (borrowing constructor names from right- and left-lists):
+As with lists, there are right- and left-growing versions:
+\begin{code}
+data RVec :: Nat -> * -> * NOP where
+  RNil  :: RVec Z a 
+  (:<)  :: a -> RVec n a -> RVec (S n) a
 
+data LVec :: Nat -> * -> * NOP where
+  LNil  :: LVec Z a 
+  (>:)  :: LVec n a -> a -> LVec (S n) a
+\end{code}
 Recall that the generic representations of |RList| and |LList| were built out of sum, unit, identity, and product.
 With static shaping, the sum disappears from the representation, moving from dynamic to static choice:
 \begin{code}
@@ -773,7 +784,7 @@ For this reason, parallel scan on bottom-up trees can do much less work than on 
 They also have fan-out bounded by |ssize h|, as contrasted with the linear fan-out for top-down trees---an important consideration for hardware implementations.
 On the other hand, the depth for bottom-up trees is about twice the depth for top-down trees.
 
-Specializing these |RPow h| and |RPow h| scan algorithms to |h = Pair| and then optimizing away zero-additions (as in \figreftwo{lsums-rb4}{lsums-lb4}) yields two well-known algorithms: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
+Specializing these |RPow h| and |LPow h| scan algorithms to |h = Pair| and then optimizing away zero-additions (as in \figreftwo{lsums-rb4}{lsums-lb4}) yields two well-known algorithms: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
 
 Finally, consider the |Bush| type from \secref{bushes}.
 Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bushes of depth zero through three.
@@ -834,27 +845,29 @@ For generality, |lscan| works on arbitrary monoids.
 For convenience, let's define some specializations.
 One way to do so is to provide functions that map between non-monoids and monoids.
 Start with a class similar to |Generic| for providing alternative representations:
+%format Old = "\Varid{O}"
 \begin{samepage}
 \begin{code}
 class Newtype n where
-  type O n :: *
-  pack    :: O n -> n
-  unpack  :: n -> O n
+  type Old n :: *
+  pack    :: Old n -> n
+  unpack  :: n -> Old n
 \end{code}
 \end{samepage}
 This class is from \cite{newtype-generics}, which also defines many instances for commonly used types.
 Given this vocabulary, we can scan structures over a non-monoid by packing values into a chosen monoid, scanning, and then unpacking:\footnote{The |(***)| operation applies two given functions to the respective components of a pair, and the ``|@@|'' notation is visible type application \cite{eisenberg2016visible}.}
 \begin{code}
-lscanNew  ::  forall n o f. (Newtype n, o ~ O n, LScan f, Monoid n) =>  f o -> f o :* o
+lscanNew  ::  forall n o f. (Newtype n, o ~ Old n, LScan f, Monoid n) =>  f o -> f o :* o
 lscanNew = (fmap unpack *** unpack) . lscan . fmap (pack @n)
 \end{code}
 
 \begin{code}
 lsums, lproducts :: (LScan f, Num a) => f a -> f a :* a
-lalls :: LScan f => f Bool -> f Bool :* Bool
+lalls, lanys :: LScan f => f Bool -> f Bool :* Bool
 lsums      = lscanNew @(Sum a)
 lproducts  = lscanNew @(Product a)
 lalls      = lscanNew @All
+lanys      = lscanNew @Any
 ...
 \end{code}
 
@@ -876,7 +889,6 @@ Fortunately, automatic common subexpression elimination (CSE) removes such redun
 
 Building on this example, let's define polynomial evaluation, mapping a structure of coefficients $a_0, \ldots, a_{n-1}$ and a parameter $x$ to $\sum_{0 \le i < n} a_i x^i$\out{$a_0 + a_1 x + \cdots + a_{n-1} x^{n-1}$}.
 A very simple formulation is to construct all of the powers of $x$ and then form a dot product with the coefficients:
-
 \begin{code}
 evalPoly  ::  (LScan f, Foldable f, Applicative f, Num a) =>  f a -> a -> a
 evalPoly coeffs x = coeffs <.> fst (powers x)
@@ -884,7 +896,7 @@ evalPoly coeffs x = coeffs <.> fst (powers x)
 (<.>) :: (Foldable f, Applicative f, Num a) => f a -> f a -> a
 u <.> v = sum (liftA2 (*) u v)
 \end{code}
-See \figreftwo{evalPoly-rb4}{evalPoly-lb4}.
+\figreftwo{evalPoly-rb4}{evalPoly-lb4} shows the results for top-down and bottom-up trees.
 \figp{
 \circdef{evalPoly-rb4}{|evalPoly @(RBin N4)|}{29+15}{9}}{
 \circdef{evalPoly-lb4}{|evalPoly @(LBin N4)|}{29+15}{11}}
@@ -916,8 +928,7 @@ $$ X_k =
         e^{-\frac{2\pi i}{N_1} n_1 k_1}
 $$
 In this form, we can see two smaller sets of DFTs: $N_1$ of size $N_2$ each, and $N_2$ of size $N_1$ each.
-If we use the same method for solving these $N_1 + N_2$ smaller DFTs, we get a recursive FFT algorithm.
-See \figrefdef{factored-dft}{Factored DFT \cite{JohnsonCooleyTukeyPic}}{\pic{cooley-tukey-general}}.
+If we use the same method for solving these $N_1 + N_2$ smaller DFTs, we get a recursive FFT algorithm, visually outlined in \figrefdef{factored-dft}{Factored DFT \cite{JohnsonCooleyTukeyPic}}{\pic{cooley-tukey-general}}.
 
 Rather than implementing FFT via sequences or arrays as usual, let's take a step back and consider a more structured approach.
 
@@ -950,7 +961,7 @@ The uniform pair case simplifies particularly nicely:
 >   fft (a :# b) = (a + b) :# (a - b)
 
 The final case is |g :.: f|, which is the heart of FFT.
-\figref{factored-dft} tells us almost all we need to know.
+\figref{factored-dft} tells us almost all we need to know, leading to the following definition:
 
 > instance NOP ... => FFT (g :.: f) where
 >   type FFO (g :.: f) = FFO f :.: FFO g
@@ -981,7 +992,7 @@ Unsurprisingly, the size of a composition is the product of the sizes.\notefoot{
 
 Complexity of |fft| depends on complexity of |twiddle| and |omegas|.
 Since |powers| (defined in \secref{Applications}) is a prefix scan, we can compute |omegas| efficiently in parallel, with one |powers| for |g| and then one more for each element of the resulting |g C|, the latter collection being constructed in parallel.
-Thanks to scanning on constant structures, |powers| requires only linear work even on top-down trees.
+Thanks to scanning on constant structures, |powers| requires only linear work even on top-down trees (normally $O (n \log n)$).
 Depth of |powers| is logarithmic.
 \begin{code}
 WO  (g (f C))  = O (ssize g + ssize g *. ssize f) = O (ssize (g :.: f))
@@ -989,7 +1000,7 @@ DO  (g (f C))  = log2 (ssize g) + log2 (ssize f)
                = log2 (ssize g *. ssize f)
                = log2 (ssize (g :.: f)
 \end{code}
-After constructing |omegas|, |twiddle| multiplies two |g :.: f| structures element-wise, with linear work and constant depth.\notefoot{Probably replace |WT (g (f C))| with |WT f g| and likewise for |DT|.}
+After constructing |omegas|, |twiddle| multiplies two |g (f C)| structures element-wise, with linear work and constant depth.\notefoot{Probably replace |WT (g (f C))| with |WT f g| and likewise for |DT|.}
 \begin{code}
 WT  (g (f C))  = WO (g (f C)) + O (ssize (g :.: f))
                = O (ssize (g :.: f)) + O (ssize (g :.: f))
@@ -997,8 +1008,8 @@ WT  (g (f C))  = WO (g (f C)) + O (ssize (g :.: f))
 DT  (g (f C))  = DO (g (f C)) + O (1)
                = log2 (ssize (g :.: f)) + O (1)
 \end{code}
-Returning to |fft @(g :.: f)|, the first |ffts'|, on |g :.: f|, does |ssize f| many |fft| on |g| (thanks to |transpose|), in parallel (via |fmap|).
-The second |ffts'|, on |f :.: g|, does |ssize g| many |fft| on |f|, also in parallel.
+Returning to |fft @(g :.: f)|, the first |ffts'| (on |g :.: f|) does |ssize f| many |fft| on |g| (thanks to |transpose|), in parallel (via |fmap|).
+The second |ffts'| (on |f :.: g|) does |ssize g| many |fft| on |f|, also in parallel.
 (Since |transpose| is optimized away entirely, it is assigned no cost.)
 Altogether,
 \begin{code}
@@ -1059,6 +1070,7 @@ W (Bush 0) = W Pair = 2
 W (Bush (S n))  = W (Bush n :.: Bush n)
                 = ssize (Bush n) *. W (Bush n) + O (ssize (Bush n :.: Bush n)) + ssize (Bush n) *. W (Bush n)
                 = 2 *. ssize (Bush n) *. W (Bush n) + O (ssize (Bush (S n)))
+                = 2 *. pow 2 (pow 2 n) *. W (Bush n) + O (pow 2 (pow 2 (n+1)))
 \end{code}
 A closed form solution is left for later work.
 
@@ -1100,7 +1112,7 @@ Each complex number appears as its real and imaginary components.
   \label{fig:fft-stats-256}
 \end{minipage}
 \end{figure}
-The total counts include literals, many of which are non-zero only due to numerical inexactness.
+The total counts include literals, many of which are non-zero only accidentally, due to numerical inexactness.
 Pleasantly, the |Bush| instance of generic FFT appears to improve over the classic DIT and DIF algorithms in both work and depth.
 
 %% \section{Related work}
@@ -1132,9 +1144,9 @@ Making these extra, hidden scans explicit reveals the close relationship between
 The applied optimization is merely removal of zero additions (more generally combinations with monoid identity) and is easily automated.
 The duality between the Sklansky's parallel scan and Ladner and Fischer's is exactly mirrored in the duality between two of the FFT algorithms, commonly known as ``decimation in time'' (right-associated functor composition) and ``decimation in frequency (left-associated functor composition).
 
-Not only do we see the elegant essence and common connections between known algorithms, satisfying enough in its own right, but this insight also points the way to many infinitely many variations of these algorithms by varying the functors being composed beyond uniform pairs \emph{and} varying the pattern of composition beyond \emph{uniform} right or left association.
+Not only do we see the elegant essence and common connections between known algorithms---satisfying enough in its own right---but this insight also points the way to many infinitely many variations of these algorithms by varying the functors being composed beyond uniform pairs \emph{and} varying the pattern of composition beyond \emph{uniform} right or left association.
 This paper merely scratches the surface of the possible additional variations in the form of fully balanced compositions of the pair functor, as a type of uniform ``bushes''.
-Even this simple and perhaps obvious idea appears to offer a useful alternative.
+Even this simple and perhaps obvious idea appears to provide a useful alternative.
 For scan, bushes offer a different compromise between top-down trees (best in work and worst in depth) vs bottom-up trees (best in depth and worst in work), coming in second place for both work and depth.
 With FFT, the complexity story seems to be uniformly positive, besting top-down and bottom-up in both work and depth, though at the cost of less flexibility in data set size, since bushes of have sizes of the form $2^{2^n}$, compared with $2^n$ for binary trees.
 
