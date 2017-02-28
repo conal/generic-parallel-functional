@@ -1,10 +1,50 @@
 % -*- latex -*-
 
+\newif\ifacm
 \newif\ifanon
 
-\anontrue
+%% \anontrue
+%% \acmtrue
+
+\ifacm
 
 \documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart} % ,draft
+\citestyle{acmauthoryear}
+\author{Conal Elliott}
+\email{conal@@conal.net}
+\affiliation{%
+  \institution{Target}
+}
+%% Temporary
+\setcopyright{rightsretained}
+\settopmatter{printacmref=false, printccs=true, printfolios=true}
+\acmYear{2017 (submitted)}
+\acmMonth{2}
+\acmDOI{}
+
+\else
+
+\documentclass{article}
+
+%% \usepackage[cm,myheadings]{fullpage}
+%% \markright{Generic functional parallel algorithms: Scan and FFT \hfill Conal Elliott \hspace{4ex}}
+\usepackage[cm]{fullpage}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\setlength{\headheight}{15.2pt}
+\fancyhead[l]{Generic functional parallel algorithms: Scan and FFT}
+\fancyhead[r]{Conal Elliott \hspace{4ex} \thepage}
+
+\usepackage[skip=4ex,font=small]{caption}
+% \authorinfo{Conal Elliott}{LambdaPix}{conal@@conal.net}
+\author{Conal Elliott}
+% (author date) form
+\usepackage[]{natbib}
+\bibpunct();A{},
+\let\cite=\citep
+% \ref{...} uses linkcolor
+\usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
+\fi
 
 %% \usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
 
@@ -18,30 +58,11 @@
 \nc\compilingToCats{\ifanon Anonymous\else Elliott\fi-2017-compiling-to-categories}
 
 \bibliographystyle{plainnat}
-%% % (author date) form
-%% \usepackage[]{natbib}
-%% \bibpunct();A{},
-%% \let\cite=\citep
-\citestyle{acmauthoryear}
 
 % \title{Two generic functional parallel algorithms}
 % \title{Generic functional parallel algorithms}
 % \subtitle{Scan and FFT}
 \title{Generic functional parallel algorithms: Scan and FFT}
-
-%% \authorinfo{Conal Elliott}{Target}{conal@@conal.net}
-\author{Conal Elliott}
-\email{conal@@conal.net}
-\affiliation{%
-  \institution{Target}
-}
-
-%% Temporary
-\setcopyright{rightsretained}
-\settopmatter{printacmref=false, printccs=true, printfolios=true}
-\acmYear{2017 (submitted)}
-\acmMonth{2}
-\acmDOI{}
 
 \begin{document}
 
@@ -928,7 +949,7 @@ $$ X_k =
         e^{-\frac{2\pi i}{N_1} n_1 k_1}
 $$
 In this form, we can see two smaller sets of DFTs: $N_1$ of size $N_2$ each, and $N_2$ of size $N_1$ each.
-If we use the same method for solving these $N_1 + N_2$ smaller DFTs, we get a recursive FFT algorithm, visually outlined in \figrefdef{factored-dft}{Factored DFT \cite{JohnsonCooleyTukeyPic}}{\pic{cooley-tukey-general}}.
+If we use the same method for solving these $N_1 + N_2$ smaller DFTs, we get a recursive FFT algorithm, visually outlined in \figrefdef{factored-dft}{Factored DFT \cite{JohnsonCooleyTukeyPic}}{\centering \pic{cooley-tukey-general}}.
 
 Rather than implementing FFT via sequences or arrays as usual, let's take a step back and consider a more structured approach.
 
