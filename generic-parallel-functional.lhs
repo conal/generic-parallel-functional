@@ -1,6 +1,10 @@
 % -*- latex -*-
 
-\documentclass[acmlarge,authorversion,anonymous]{acmart} % ,draft
+\newif\ifanon
+
+\anontrue
+
+\documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart} % ,draft
 
 %% \usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
 
@@ -10,6 +14,8 @@
 %include formatting.fmt
 
 \input{macros}
+
+\nc\compilingToCats{\ifanon Anonymous\else Elliott\fi-2017-compiling-to-categories}
 
 \bibliographystyle{plainnat}
 %% % (author date) form
@@ -139,7 +145,7 @@ Concretely, this paper makes the following contributions:
   Compositional complexity analysis (work and depth), also based on functor combinators.
 \end{itemize}
 
-The figures in this paper are generated automatically (including optimizations) from the given Haskell code using the compiler plugin described in \cite{Elliott-2017-compiling}, which also generates synthesizable descriptions in Verilog for parallel, hardware-based evaluation.
+The figures in this paper are generated automatically (including optimizations) from the given Haskell code using the compiler plugin described in \cite{\compilingToCats}, which also generates synthesizable descriptions in Verilog for parallel, hardware-based evaluation.
 
 
 \section{Some useful data types}
@@ -719,7 +725,7 @@ W  (g :.: f) = ssize g *. W f + W g + ssize g *. ssize f
 D  (g :.: f) = D f + D g
 \end{code}
 
-\subsection{More examples}
+\subsection{Other data types}
 
 We now know how to scan the full vocabulary of generic functor combinators, and we've seen the consequences for several data types.
 Let's now examine how well generic scan works for some other example structures.
