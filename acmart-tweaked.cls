@@ -1,5 +1,5 @@
 %%
-%% This is file `acmart.cls',
+%% This is file `acmart-tweaked.cls',
 %% generated with the docstrip utility.
 %%
 %% The original source files were:
@@ -11,7 +11,7 @@
 %% For the copyright see the source file.
 %% 
 %% Any modified versions of this file must be renamed
-%% with new filenames distinct from acmart.cls.
+%% with new filenames distinct from acmart-tweaked.cls.
 %% 
 %% For distribution of the original source see the terms
 %% for copying and modification in the file acmart.dtx.
@@ -37,18 +37,18 @@
 %%   Right brace   \}     Tilde         \~}
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{acmart}
+\ProvidesClass{acmart-tweaked}
 [2017/01/07 v1.28 Typesetting articles for Association of
 Computing Machinery]
-\def\@classname{acmart}
+\def\@classname{acmart-tweaked}
 \RequirePackage{xkeyval}
-\define@choicekey*+{acmart.cls}{format}[\ACM@format\ACM@format@nr]{%
+\define@choicekey*+{acmart-tweaked.cls}{format}[\ACM@format\ACM@format@nr]{%
   manuscript, acmsmall, acmlarge, acmtog, sigconf, siggraph,
   sigplan, sigchi, sigchi-a}[manuscript]{}{%
   \ClassError{\@classname}{The option format must be manuscript,
     acmsmall, acmlarge, acmtog, sigconf, siggraph,
     sigplan, sigchi or sigchi-a}}
-\def\@DeclareACMFormat#1{\DeclareOptionX{#1}{\setkeys{acmart.cls}{format=#1}}}
+\def\@DeclareACMFormat#1{\DeclareOptionX{#1}{\setkeys{acmart-tweaked.cls}{format=#1}}}
 \@DeclareACMFormat{manuscript}
 \@DeclareACMFormat{acmsmall}
 \@DeclareACMFormat{acmlarge}
@@ -59,7 +59,7 @@ Computing Machinery]
 \@DeclareACMFormat{sigchi}
 \@DeclareACMFormat{sigchi-a}
 \ExecuteOptionsX{format}
-\define@boolkey+{acmart.cls}[@ACM@]{screen}[true]{%
+\define@boolkey+{acmart-tweaked.cls}[@ACM@]{screen}[true]{%
   \if@ACM@screen
     \PackageInfo{\@classname}{Using screen mode}%
   \else
@@ -67,7 +67,7 @@ Computing Machinery]
   \fi}{\PackageError{\@classname}{Option screen can be either true or
     false}}
 \ExecuteOptionsX{screen=false}
-\define@boolkey+{acmart.cls}[@ACM@]{review}[true]{%
+\define@boolkey+{acmart-tweaked.cls}[@ACM@]{review}[true]{%
   \if@ACM@review
     \PackageInfo{\@classname}{Using review mode}%
   \else
@@ -75,7 +75,7 @@ Computing Machinery]
   \fi}{\PackageError{\@classname}{Option review can be either true or
     false}}
 \ExecuteOptionsX{review=false}
-\define@boolkey+{acmart.cls}[@ACM@]{authorversion}[true]{%
+\define@boolkey+{acmart-tweaked.cls}[@ACM@]{authorversion}[true]{%
   \if@ACM@authorversion
     \PackageInfo{\@classname}{Using authorversion mode}%
   \else
@@ -85,7 +85,7 @@ Computing Machinery]
 \ExecuteOptionsX{authorversion=false}
 \newif\if@ACM@natbib@override
 \@ACM@natbib@overridefalse
-\define@boolkey+{acmart.cls}[@ACM@]{natbib}[true]{%
+\define@boolkey+{acmart-tweaked.cls}[@ACM@]{natbib}[true]{%
   \@ACM@natbib@overridetrue
   \if@ACM@natbib
     \PackageInfo{\@classname}{Explicitly selecting natbib mode}%
@@ -93,7 +93,7 @@ Computing Machinery]
     \PackageInfo{\@classname}{Explicitly deselecting natbib mode}%
   \fi}{\PackageError{\@classname}{Option natbib can be either true or
     false}}
-\define@boolkey+{acmart.cls}[@ACM@]{anonymous}[true]{%
+\define@boolkey+{acmart-tweaked.cls}[@ACM@]{anonymous}[true]{%
   \if@ACM@anonymous
     \PackageInfo{\@classname}{Using anonymous mode}%
   \else
@@ -1142,7 +1142,7 @@ Computing Machinery]
   Copyright held by the owner/author(s). Publication rights licensed to
   ACM\@.
   \or % rightsretained
-  Copyright held by the owner/author(s).
+  Copyright held by the author. % owner/author(s).
   \or % usgov
   \or % usgovmixed
   ACM\@.
@@ -1325,19 +1325,20 @@ Computing Machinery]
     Manuscript submitted to ACM\\
   \else
     \if@ACM@authorversion
-        This is the author's version of the work. It is posted here for
-        your personal use. Not for redistribution. The definitive Version
-        of Record was published in
-        \if@ACM@journal
-          \emph{\@journalName}%
-        \else
-          \emph{Proceedings of \acmConference@name, \acmConference@date}%
-        \fi
-        \ifx\@acmDOI\@empty
-        .
-        \else
-          , \@formatdoi{\@acmDOI}.
-        \fi\\
+%%         This is the author's version of the work.
+%%         It is posted here for
+%%         your personal use. Not for redistribution. The definitive Version
+%%         of Record was published in
+%%         \if@ACM@journal
+%%           \emph{\@journalName}%
+%%         \else
+%%           \emph{Proceedings of \acmConference@name, \acmConference@date}%
+%%         \fi
+%%         \ifx\@acmDOI\@empty
+%%         .
+%%         \else
+%%           , \@formatdoi{\@acmDOI}.
+%%         \fi\\
       \else
         \if@ACM@journal
           \@permissionCodeOne/\@acmYear/\@acmMonth-ART\@acmArticle\
@@ -1893,8 +1894,9 @@ Computing Machinery]
     \fancyhead[LO]{\ACM@linecount}%
     \fancyhead[RO]{\@headfootfont
       \shorttitle\quad\textbullet\quad\@acmArticle\if@ACM@printfolios:\thepage\fi}%
-    \fancyfoot[RO,LE]{\footnotesize \@journalName, Vol. \@acmVolume, No.
-    \@acmNumber, Article \@acmArticle.  Publication date: \@acmPubDate.}%
+%%     \fancyfoot[RO,LE]{\footnotesize \@journalName, Vol. \@acmVolume, No.
+%%     \@acmNumber, Article \@acmArticle.  Publication date: \@acmPubDate.}%
+    \fancyfoot[RO,LE]{Draft of \@acmPubDate.}%
   \or % acmtog
     \fancyhead[LE]{\ACM@linecount\@headfootfont
       \@acmArticle:\if@ACM@printfolios\thepage\quad\textbullet\quad\fi\@shortauthors}%
@@ -1974,9 +1976,9 @@ Computing Machinery]
     \fancyhead[RO]{\@folioblob}%
     \fancyheadoffset[RO,LE]{0.6\@folio@wd}%
   \or % acmlarge
-    \fancyfoot[RO,LE]{\footnotesize \@journalName, Vol. \@acmVolume, No.
-    \@acmNumber, Article \@acmArticle.  Publication date:
-    \@acmPubDate.}%
+%%     \fancyfoot[RO,LE]{\footnotesize \@journalName, Vol. \@acmVolume, No.
+%%     \@acmNumber, Article \@acmArticle.  Publication date:
+%%     \@acmPubDate.}%
     \fancyhead[RO]{\@folioblob}%
     \fancyhead[LE]{\ACM@linecount\@folioblob}%
     \fancyhead[LO]{\ACM@linecount}%
@@ -2191,4 +2193,4 @@ Computing Machinery]
 \normalsize\normalfont
 \endinput
 %%
-%% End of file `acmart.cls'.
+%% End of file `acmart-tweaked.cls'.

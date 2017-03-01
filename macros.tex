@@ -255,3 +255,18 @@
 \nc\size[1]{\lvert #1 \rvert}
 
 \nc\onehalf{\tfrac 1 2}
+
+\usepackage{etoolbox}
+%% Here because the @ confuses lhs2tex
+\nc\blankCopyright{
+\makeatletter
+\patchcmd{\maketitle}{\@copyrightspace}{}{}{}
+\makeatother
+}
+
+%% \nc\blankCopyright{
+%% \makeatletter
+%% \def\runningfoot{\def\@runningfoot{}}
+%% \def\firstfoot{\def\@firstfoot{}}
+%% \makeatother
+%% }

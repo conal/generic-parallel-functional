@@ -7,8 +7,10 @@
 %% \acmtrue
 
 \ifacm
-
-\documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart} % ,draft
+\documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart}
+\else
+\documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart-tweaked}
+\fi
 \citestyle{acmauthoryear}
 \author{Conal Elliott}
 \email{conal@@conal.net}
@@ -18,35 +20,9 @@
 %% Temporary
 \setcopyright{rightsretained}
 \settopmatter{printacmref=false, printccs=true, printfolios=true}
-\acmYear{2017 (submitted)}
+\acmYear{2017}
 \acmMonth{2}
 \acmDOI{}
-
-\else
-
-\documentclass{article}
-
-%% \usepackage[cm,myheadings]{fullpage}
-%% \markright{Generic functional parallel algorithms: Scan and FFT \hfill Conal Elliott \hspace{4ex}}
-\usepackage[cm]{fullpage}
-\usepackage{fancyhdr}
-\pagestyle{fancy}
-\setlength{\headheight}{15.2pt}
-\fancyhead[l]{Generic functional parallel algorithms: Scan and FFT}
-\fancyhead[r]{Conal Elliott \hspace{4ex} \thepage}
-
-\usepackage[skip=4ex,font=small]{caption}
-% \authorinfo{Conal Elliott}{LambdaPix}{conal@@conal.net}
-\author{Conal Elliott}
-% (author date) form
-\usepackage[]{natbib}
-\bibpunct();A{},
-\let\cite=\citep
-% \ref{...} uses linkcolor
-\usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
-\fi
-
-%% \usepackage[colorlinks,urlcolor=black,citecolor=black,linkcolor=black]{hyperref} % ,draft=true
 
 %include polycode.fmt
 %include forall.fmt
@@ -64,11 +40,19 @@
 % \subtitle{Scan and FFT}
 \title{Generic functional parallel algorithms: Scan and FFT}
 
+\ifacm\else
+\fancyfoot[RO,LE]{Draft of February 27, 2017. Submitted to ICFP. Comments appreciated.}
+%% \addtolength{\topmargin}{0.25in}
+%% \addtolength{\headsep}{0.3in}
+\addtolength{\textheight}{0.5in}
+\addtolength{\footskip}{0.1in}
+\fi
+
 \begin{document}
 
-\maketitle
+%% \blankCopyright
 
-\section{Abstract}
+\begin{abstract}
 
 Parallel programming, whether imperative or functional, has long focused on arrays as the central data type.
 Meanwhile, typed functional programming has explored a variety of data types, including lists and various forms of trees.
@@ -79,6 +63,10 @@ Notably, arrays play no role in these formulations.
 Consequent benefits include a simpler and more compositional style, much use of common algebraic patterns---such as |Functor|, |Applicative|, |Foldable|, and |Traversable|\out{ \cite{McBride:2008}}---and freedom from possibility of run-time indexing errors.
 The functional generic style also clearly reveals deep commonality among what otherwise appears to be quite different algorithms.
 Instantiating the generic formulations to ``top-down'' and ``bottom-up'' trees as well as ``bushes'', two well-known algorithms for each of parallel scan and FFT naturally emerge, as well as two possibly new algorithms.
+
+\end{abstract}
+
+\maketitle
 
 \section{Introduction}
 
@@ -100,6 +88,24 @@ There are additional definitions that capture recursion and meta-data such as fi
 To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| language extension), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*| \cite{Magalhaes:2010}.
 For type constructors of kind |* -> *|, as in this paper, one derives |Generic1| instead.
 Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving a representation functor |Rep1 f| along with encoding and decoding operations |to1| and |from1|, as in \figref{Generic1}.
+To define a generic algorithm, one provides class instances for these primitives and writes a default definition for each method in terms of |from1| and |to1|.
+
+The effectiveness of generic programming relies on having at our disposal a variety of data types, each corresponding to a unique composition of the generic type building blocks.
+In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays.
+The various array algorithms involve idiosyncratic patterns of traversal and construction of this single data type.
+For instance, a parallel array reduction with an associative operator involves recursive or iterative generation of numeric indices for extracting elements, taking care that each element is visited exactly once and combined left-to-right.
+Frequently, an array is split, each half processed recursively and independently, and results combined later.
+Alternatively, adjacent element pairs are combined, resulting in an array of half size for further processing.
+(Often, such operations are performed in place, littering the original array with partial reduction results.)
+The essential idea of these two patterns is the natural fold for perfect, binary leaf trees of two different varieties, but this essence is obscured by implicit \emph{encodings} of trees as arrays.
+The correctness of the algorithm depends on careful translation of the natural tree algorithm.
+Mistakes typically hide in the tedious details of index arithmetic, which must be perfectly consistent with the particular encoding chosen.
+Those mistakes will not be caught by a type-checker (unless programmed with dependent types and full correctness proofs), instead manifesting at run-time in the form of incorrect results and/or index out-of-bound errors.
+Note also that this array reduction algorithm only works for arrays whose size is a power of two.
+This restriction is a dynamic condition rather than part of the type signature.
+If we use the essential data type (a perfect, binary leaf tree) directly rather than via an encoding, it is easy to capture this restriction in the type system and check it statically.
+The Haskell-based formulations below use GADTs (generalized algebraic data types) and type families.
+
 \figpairW{0.52}{0.40}{ghc-generics}{Functor building blocks}{
 \begin{code}
 data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  SPC  -- sum
@@ -121,23 +127,6 @@ class Generic1 f where
 \end{code}
 \vspace{1.9ex}
 }
-To define a generic algorithm, one provides class instances for these primitives and writes a default definition for each method in terms of |from1| and |to1|.
-
-The effectiveness of generic programming relies on having at our disposal a variety of data types, each corresponding to a unique composition of the generic type building blocks.
-In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays.
-The various array algorithms involve idiosyncratic patterns of traversal and construction of this single data type.
-For instance, a parallel array reduction with an associative operator involves recursive or iterative generation of numeric indices for extracting elements, taking care that each element is visited exactly once and combined left-to-right.
-Frequently, an array is split, each half processed recursively and independently, and results combined later.
-Alternatively, adjacent element pairs are combined, resulting in an array of half size for further processing.
-(Often, such operations are performed in place, littering the original array with partial reduction results.)
-The essential idea of these two patterns is the natural fold for perfect, binary leaf trees of two different varieties, but this essence is obscured by implicit \emph{encodings} of trees as arrays.
-The correctness of the algorithm depends on careful translation of the natural tree algorithm.
-Mistakes typically hide in the tedious details of index arithmetic, which must be perfectly consistent with the particular encoding chosen.
-Those mistakes will not be caught by a type-checker (unless programmed with dependent types and full correctness proofs), instead manifesting at run-time in the form of incorrect results and/or index out-of-bound errors.
-Note also that this array reduction algorithm only works for arrays whose size is a power of two.
-This restriction is a dynamic condition rather than part of the type signature.
-If we use the essential data type (a perfect, binary leaf tree) directly rather than via an encoding, it is easy to capture this restriction in the type system and check it statically.
-The Haskell-based formulations below use GADTs (generalized algebraic data types) and type families.
 
 When we use natural, recursively defined data types \emph{explicitly}, we can use standard programming patterns such as folds and traversals \out{\cite{McBride:2008}} directly.
 In a language like Haskell, those patterns follow known laws and are well supported by the programming ecosystem.
@@ -403,7 +392,9 @@ For reasons soon to be explained, also rename the types |TTree| and |BTree| to `
 data RPow :: (* -> *) -> Nat -> * -> * SPC where
   L :: a -> RPow f Z a
   B :: f (RPow f n a) -> RPow f (S n) a
-
+\end{code}
+\vspace{-4ex}
+\begin{code}
 data LPow :: (* -> *) -> Nat -> * -> * SPC where
   L :: a -> LPow f Z a
   B :: LPow f n (f a) -> LPow f (S n) a
@@ -460,7 +451,9 @@ Trees:
 type family RPow h n where
   RPow h Z      = Par1
   RPow h (S n)  = h :.: RPow h n
-
+\end{code}
+\vspace{-4ex}
+\begin{code}
 type family LPow h n where
   LPow h Z      = Par1
   LPow h (S n)  = LPow h n :.: h
@@ -639,6 +632,7 @@ All we need to do, therefore, is adjust each |g| result by the final |f| result,
 \vspace{1ex}
 }{lsums-lv5xlv11-highlight}{|lscan @(RVec N5 :*: RVec N11)| \stats{26}{11}}{\incpic{lsums-lv5xlv11-highlight}}
 The general product instance:
+\begin{samepage}
 \begin{code}
 instance (LScan f, LScan g) => LScan (f :*: g) where
   lscan (fa :*: ga) = (fa' :*: fmap (fx NOP <> ) ga', fx <> gx)
@@ -646,6 +640,7 @@ instance (LScan f, LScan g) => LScan (f :*: g) where
      (fa'  , fx)  = lscan fa
      (ga'  , gx)  = lscan ga
 \end{code}
+\end{samepage}
 The work for |f :*: g| is the combined work for each, plus the cost of adjusting the result for |g|.
 The depth is the maximum depth for |f| and |g|, plus one more step to adjust the final |g| result.
 \begin{code}
@@ -819,12 +814,14 @@ Hence
 D (Bush n) = pow 2 n = pow 2 (log2 (log2 (ssize (Bush n)))) = log2 (ssize (Bush n))
 \end{code}
 Work complexity is trickier:
+\begin{samepage}
 \begin{code}
 W (Bush 0) = W Pair = 1
 W (Bush (S n))  = W (Bush n :.: Bush n) = ssize (Bush n) *. W (Bush n) + W (Bush n) + ssize (Bush (S n))
                 = pow 2 (pow 2 n) *. W (Bush n) + W (Bush n) + pow 2 (pow 2 (n+1))
                 = (pow 2 (pow 2 n) + 1) *. W (Bush n) + pow 2 (pow 2 (n+1))
 \end{code}
+\end{samepage}
 A closed form solution is left for later work.
 \figp{
 \circdef{lsums-bush0}{|lscan @(Bush N0)|}{1}{1}}{

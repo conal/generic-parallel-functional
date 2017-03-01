@@ -7,7 +7,7 @@ default: $(targ).pdf
 #latex=pdflatex
 latex=latexmk -pdf
 
-%.pdf: %.tex bib.bib $(figures) Makefile
+%.pdf: %.tex bib.bib $(figures) Makefile acmart-tweaked.cls
 	$(latex) $*.tex
 
 %.tex: %.lhs macros.tex formatting.fmt $(pdfs) Makefile
@@ -31,8 +31,8 @@ SHELL = bash
 clean:
 	rm -f $(targ).{tex,dvi,pdf,aux,bbl,blg,out,log,ptb}
 
-web-paper: web-paper-token
+web: web-token
 
-web-paper-token: $(short).pdf $(long).pdf
-	scp $(targ).pdf conal@conal.net:/home/conal/domains/conal/htdocs/papers
-	touch web-paper-token
+web-token: $(targ).pdf
+	scp $(targ).pdf conal@conal.net:/home/conal/domains/conal/htdocs/papers/$(targ)/
+	touch web-token
