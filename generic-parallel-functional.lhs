@@ -50,8 +50,6 @@
 
 \begin{document}
 
-%% \blankCopyright
-
 \begin{abstract}
 
 Parallel programming, whether imperative or functional, has long focused on arrays as the central data type.
@@ -69,8 +67,6 @@ Instantiating the generic formulations to ``top-down'' and ``bottom-up'' trees a
 \maketitle
 
 \section{Introduction}
-
-%% \section{Datatype-generic programming in Haskell}
 
 There is a long, rich history of datatype-generic programming in Haskell.
 See, e.g., \cite{Gibbons06DatatypeGeneric,DatatypeGenericComparison2012}.
