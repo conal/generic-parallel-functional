@@ -29,6 +29,9 @@
 %format L1
 %format R1
 
+%% %format Comp1 = "\Varid{C}_1"
+%% %format unComp1 = "\Varid{unC}_1"
+
 %format liftA2
 %format liftA3
 

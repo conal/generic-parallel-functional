@@ -1,5 +1,9 @@
 # To do
 
+*   "There is a considerable body of previous work in the FP community on parallel scan and FFT, in both non-generic and generic contexts, and related work on functional hardware description languages. The final version the paper should cite and compare with appropriate related work in these domains."
+
+*   Comments in side-by-side code.
+
 *   How I might shorten the conference submission:
     *   Side-by-side code.
         Would save a lot of vertical space.

@@ -90,6 +90,7 @@ p1, The abstract is too long, and should be compressed.  Much of
 the initial text on generic programming can be removed.
 
 p1, "GHC.Generics" -> "the library GHC.Generics" (at first mention).
+[done]
 
 p1, Some additional remarks are required for the manner in which
 recursion is treated.  The statement that "There are additional
@@ -98,6 +99,7 @@ Figure 1 suffices for this paper" is not sufficient.
 
 p1, It would be better to refer to Figure 2 at the end of the
 previous sentence, when Generic_1 is first mentioned.
+[done]
 
 p2, The first paragraph on this page is too long, and should be
 compressed or split up.  There are many places in this paragraph
@@ -106,6 +108,7 @@ where it would be appropriate to add some references.
 p3, When RList and LList are first 'defined' informally using
 the isomorphism notation, the fact that this is not valid
 Haskell notation needs to be explicitly mentioned.
+[done]
 
 p3, It would be beneficial to present the instances of Generic_1
 for RList and LList side-by-side rather than above-and-below.
@@ -118,15 +121,19 @@ p4, Section 3.2 on top-down trees could be presented much more
 concisely, as this is standard generic progamming material.
 
 p4, "Start with" -> "Let us start with".
+[Done]
 
 p4, Why is considering branch-labelled trees relevant at this
 point, beyond the fact that they are another example of trees?
 If they are important for the subsequent development explain
 why, otherwise this example could be removed.
+[Removed.]
 
 p5, Similarly, why is considering bottom-up trees relevant?
+[Added "As we'll see below, they give rise to important versions of parallel scan and FFT."]
 
 p7, "also rename" -> "we also rename".
+["let's also rename ..."]
 
 p9, Six pages of preliminaries in section 3 is rather a lot
 before getting to the meat of the paper in section 4.  It would
@@ -142,16 +149,20 @@ from which it is then easy to define the general case.
 
 p9, Section 4 seems to assume that the reader already knowns
 what parallel scan is.  This needs to be explained here!
+[clarified.]
 
 p10, "a place to stash" -> "a natural place to store".
+[done]
 
 p10, "so, provide" -> "so, we provide".
+["To do so, we can simply provide ..."]
 
 p11, Can smaller examples be used in Figures 3 and 4 -- is using
 numbers are large as 11 and 5 really necessary here?  The same
 comment applies to many of the examples in the paper.
 
 p11, "consider two aspect" -> "we consider two aspects".
+["aspects"]
 
 p15, Is section 4.4 really necessary for the published version
 of the paper?  Sections 4.2 and 4.3 are already very technical,
@@ -159,19 +170,25 @@ so it would be good to omit 4.4 if it is not so important.
 
 p17, Figure 20 is incomprehensible in both the print and PDF
 versions of the paper.  Can a smaller example be used?
+[removed.]
 
 p18, Explain what 'powers' means with a simple example, e.g.
 for lists we have powers 2 = [2^0, 2^1, 2^2, 2^3, ...]
+[done]
 
 p18, Clarify where 'automatic CSE' performed - by GHC?
 
 p19, The idea of factoring types rather than numbers is very nice!
+[Thanks.]
 
 p20, "scan, define" -> "scan, we define".
+["scan, we can define"]
 
 p21, In the second para, "the" is missing in a number of places.
+[done]
 
 p23, Figure 31 is just a blur of black lines!
+[removed.]
 
 ===========================================================================
                            ICFP 2017 Review #48B

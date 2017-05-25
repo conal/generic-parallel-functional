@@ -1,6 +1,6 @@
 targ = generic-parallel-functional
 
-# .PRECIOUS: %.tex
+.PRECIOUS: %.tex
 
 default: $(targ).pdf
 

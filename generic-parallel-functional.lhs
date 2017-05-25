@@ -4,25 +4,30 @@
 \newif\ifanon
 
 %% \anontrue
-%% \acmtrue
+\acmtrue
 
-\ifacm
-\documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart}
-\else
-\documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart-tweaked}
-\fi
+\documentclass[acmsmall,draft]{acmart}
+\acmJournal{PACMPL}
+
+%% \ifacm
+%% \documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart}
+%% \else
+%% \documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart-tweaked}
+%% \fi
+
 \citestyle{acmauthoryear}
 \author{Conal Elliott}
 \email{conal@@conal.net}
 \affiliation{%
   \institution{Target}
 }
-%% Temporary
-\setcopyright{rightsretained}
-\settopmatter{printacmref=false, printccs=true, printfolios=true}
-\acmYear{2017}
-\acmMonth{2}
-\acmDOI{}
+
+%% %% Temporary
+%% \setcopyright{rightsretained}
+%% \settopmatter{printacmref=false, printccs=true, printfolios=true}
+%% \acmYear{2017}
+%% \acmMonth{2}
+%% \acmDOI{}
 
 %include polycode.fmt
 %include forall.fmt
@@ -78,12 +83,12 @@ These type primitives serve to connect algorithms with data types in the followi
 \end{itemize}
 In this way, algorithms and data types are defined independently and then automatically work together.
 
-One version of this general scheme is found in |GHC.Generics|, in which the type primitives are \emph{functor-level} building blocks \cite{HaskellWikiGhcGenerics}.
+One version of this general scheme is found in the library |GHC.Generics|, in which the type primitives are \emph{functor-level} building blocks \cite{HaskellWikiGhcGenerics}.
 For this paper, we'll use six: sum, product, composition, and their three corresponding identities, as in \figref{ghc-generics}.
 There are additional definitions that capture recursion and meta-data such as field names and operator fixity, but the collection in \figref{ghc-generics} suffices for this paper.
 To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| language extension), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*| \cite{Magalhaes:2010}.
-For type constructors of kind |* -> *|, as in this paper, one derives |Generic1| instead.
-Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving a representation functor |Rep1 f| along with encoding and decoding operations |to1| and |from1|, as in \figref{Generic1}.
+For type constructors of kind |* -> *|, as in this paper, one derives |Generic1| instead (defined in \figref{Generic1}).
+Instances for non-regular algebraic data types can be defined explicitly, which amounts to giving a representation functor |Rep1 f| along with encoding and decoding operations |to1| and |from1|.
 To define a generic algorithm, one provides class instances for these primitives and writes a default definition for each method in terms of |from1| and |to1|.
 
 The effectiveness of generic programming relies on having at our disposal a variety of data types, each corresponding to a unique composition of the generic type building blocks.
@@ -104,9 +109,9 @@ The Haskell-based formulations below use GADTs (generalized algebraic data types
 
 \figpairW{0.52}{0.40}{ghc-generics}{Functor building blocks}{
 \begin{code}
-data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  SPC  -- sum
+data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  NOP  -- sum
 data     (f  :*:  g)  a = f a :*: g a               -- product
-newtype  (g  :.:  f)  a = Comp1 (g (f a))           -- composition
+newtype  (g  :.:  f)  a = Comp1 (g (f a)) -- composition
 
 data     V1           a                             -- void
 newtype  U1           a = U1                        -- unit
@@ -124,7 +129,7 @@ class Generic1 f where
 \vspace{1.9ex}
 }
 
-When we use natural, recursively defined data types \emph{explicitly}, we can use standard programming patterns such as folds and traversals \out{\cite{McBride:2008}} directly.
+When we use natural, recursively defined data types \emph{explicitly}, we can use standard programming patterns such as folds and traversals \out{\cite{McBride:2008} }directly.
 In a language like Haskell, those patterns follow known laws and are well supported by the programming ecosystem.
 The use of array encodings makes those patterns \emph{implicit}, as a sort of informal guide only, distancing programs from the elegant and well-understood laws and abstractions that motivate those programs, justify their correctness, and point to algorithmic variations that solve related problems or make different implementation trade-offs.
 
@@ -174,7 +179,8 @@ Alternatively, there are ``snoc lists'' or ``left lists'', which grow leftward:
 \begin{code}
 data LList a = LNil | LList a >: a
 \end{code}
-In terms of our functor algebra, we are using sum, unit, identity, and product:
+% In terms of our functor algebra, we are using sum, unit, singleton, and product:
+These two types are isomorphic to types assembled from the functor building blocks of \figref{ghc-generics}:
 \begin{code}
 type RList =~ U1 :+: Par1 :*: RList
 type LList =~ U1 :+: RList :*: Par1
@@ -226,15 +232,11 @@ After lists, trees are perhaps the most commonly used data structure in function
 Moreover, in contrast with lists, the symmetry possible with trees naturally leads to parallel-friendly algorithms.
 Also unlike lists, there are quite a few varieties of trees.
 
-Start with a simple binary leaf tree, i.e., one in which data occurs only in leaves:
+Let's start with a simple binary leaf tree, i.e., one in which data occurs only in leaves:
 \begin{code}
 data Tree a = Leaf a | Branch (Tree a) (Tree a)
 \end{code}
-As one variation, we could instead place data in the branch nodes:
-\begin{code}
-data Tree a = Leaf | Branch (Tree a) a (Tree a)
-\end{code}
-Another variation is ternary rather than binary leaf trees:
+One variation is ternary rather than binary leaf trees:
 \begin{code}
 data Tree a = Leaf a | Branch (Tree a) (Tree a) (Tree a)
 \end{code}
@@ -322,6 +324,7 @@ data TTree f a = TLeaf a | TBranch (f (TTree a))
 data BTree f a = BLeaf a | BBranch (BTree (f a))
 \end{code}
 Bottom-up trees (|BTree|) are a canonical example of ``nested'' or ``non-regular'' data types, requiring polymorphic recursion \cite{Bird1998}.
+As we'll see below, they give rise to important versions of parallel scan and FFT.
 
 \subsection{Statically shaped variations}\seclabel{statically-shaped-types}
 
@@ -383,7 +386,7 @@ For leaf trees, we have a choice between imperfect and perfect trees.
 A ``perfect'' leaf tree is one in which all leaves are at the same depth.
 Both imperfect and perfect can be ``statically shaped'', but we'll use just perfect trees in this paper, for which we need only a single type-level number signifying the depth of all leaves.
 For succinctness, rename |Leaf| and |Branch| to ``|L|'' and ``|B|''.
-For reasons soon to be explained, also rename the types |TTree| and |BTree| to ``|RPow|'' and ``|LPow|'':
+For reasons soon to be explained, let's also rename the types |TTree| and |BTree| to ``|RPow|'' and ``|LPow|'':
 \begin{code}
 data RPow :: (* -> *) -> Nat -> * -> * SPC where
   L :: a -> RPow f Z a
@@ -519,7 +522,7 @@ Given a sequence $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ld
 More generally, for any associative operation $\oplus$, the ``prefix scan'' is defined by $b_k = \bigoplus_{0 \le i < k}{a_i}$, with $b_0$ being the identity for $\oplus$.
 (One can define a similar operation if we assume semigroup---lacking identity element---rather than monoid, but the development is more straightforward with identity.)
 
-Parallel scan has broad applications, including the following, taken from a longer list in \cite{BlellochTR90}:
+Scan has broad applications, including the following, taken from a longer list in \cite{BlellochTR90}:
 \begin{itemize}
 \item Adding multi-precision numbers
 \item Polynomial evaluation
@@ -530,6 +533,7 @@ Parallel scan has broad applications, including the following, taken from a long
 \item Regular expression search
 \item Labeling components in two dimensional images
 \end{itemize}
+An efficient, \emph{parallel} scan algorithm thus enables each of these applications to be performed in parallel.
 Scans may be ``prefix'' (from the left, as above) or or ``suffix'' (from the right).
 We will just develop prefix scan, but generic suffix scan works out in the same way.
 
@@ -539,7 +543,7 @@ Note also that there is one more output element than input, which is atypical in
 As we will see below, the unconventional choice of exclusive+total above makes for an elegant generic decomposition.
 
 The standard list prefix scans in Haskell, |scanl| and |scanr|, also yield one more output element than input, which is possible for lists.
-For other data types, such as trees and especially perfect ones, there may not be a place to stash the extra value.
+For other data types, such as trees and especially perfect ones, there may not be a natural place to store the extra value.
 For a generic scan applying to many different data types, we can simply form a product, so that scanning maps |f a| to |f a :* a|.
 The extra summary value is the fold over the whole input structure.
 We thus have the following class for left-scannable functors:
@@ -559,7 +563,7 @@ mapAccumL :: Traversable t => (b -> a -> b :* c) -> b -> t a -> b :* t c
 Although all of the example types in this paper are indeed in |Traversable|, using this |lscan| specification as an implementation would result in an entirely sequential implementation, since data dependencies are \emph{linearly} threaded through the whole computation.
 
 Rather than defining |LScan| instances for all of our data types, the idea of generic programming is to define instances only for the small set of fundamental functor combinators and then automatically compose instances for other types via the generic encodings (derived automatically when possible).
-To do so, provide a default signature and definition for functors with such encodings:
+To do so, we can simply provide a default signature and definition for functors with such encodings:
 \begin{code}
 class Functor f => LScan f where
   lscan :: Monoid a => f a -> f a :* a
@@ -595,7 +599,7 @@ Comments:
 \end{itemize}
 
 Just as the six functor combinators guide the composition of parallel algorithms, they also determine the performance characteristics of those parallel algorithms in a compositional manner.
-Following \cite{Blelloch96programmingparallel}, consider two aspect of performance:
+Following \cite{Blelloch96programmingparallel}, consider two aspects of performance:
 \begin{itemize}
 \item \emph{work}, the total number of primitive operations performed, and
 \item \emph{depth}, the longest dependency chain, and hence a measure of ideal parallel computation time.
@@ -661,7 +665,8 @@ Each single element (left) is used to adjust the entire suffix (right), requirin
 We can verify the complexity by using the definition of |RVec| and the complexities for the generic building blocks involved.
 \begin{code}
 W (RVec 0) = W U1 = 0
-W (RVec (S n)) = W (Par1 :*: RVec n) = W Par1 + W (RVec n) + ssize (RVec n) + 1 = W (RVec n) + O (n)
+W (RVec (S n))  = W (Par1 :*: RVec n) = W Par1 + W (RVec n) + ssize (RVec n) + 1
+                = W (RVec n) + O (n)
 
 D (RVec 0) = D U1 = 0
 D (RVec (S n)) = D (Par1 :*: RVec n) = (D Par1 `max` D (RVec n)) + 1 = D (RVec n) + O(1)
@@ -799,7 +804,7 @@ On the other hand, the depth for bottom-up trees is about twice the depth for to
 Specializing these |RPow h| and |LPow h| scan algorithms to |h = Pair| and then optimizing away zero-additions (as in \figreftwo{lsums-rb4}{lsums-lb4}) yields two well-known algorithms: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
 
 Finally, consider the |Bush| type from \secref{bushes}.
-Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush3} show |lscan| for bushes of depth zero through three.
+Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush2} show |lscan| for bushes of depth zero through two.
 Depth complexity:\out{\notefoot{I'm giving an exact analysis, not an asymptotic one. My conclusion doesn't match measurements for $n=2,3$. Find and fix my mistake.}}
 \begin{code}
 D (Bush 0) = D Pair = 1
@@ -823,13 +828,9 @@ A closed form solution is left for later work.
 \circdef{lsums-bush0}{|lscan @(Bush N0)|}{1}{1}}{
 \circdef{lsums-bush1}{|lscan @(Bush N1)|}{4}{2}}%
 \figp{
-\circdef{lsums-bush2}{|lscan @(Bush N2)|}{29}{5}}{
-\circdef{lsums-bush3}{|lscan @(Bush N3)|}{718}{10}}%
-\figreftwo{lscan-stats-16}{lscan-stats-256} offer an empirical comparison, including some optimizations not taken into account in the complexity analyses above.
-Note that top-down trees have the least depth, bottom-up trees have the least work, and bushes provide a compromise, with less work than top-down trees and less depth than bottom-up trees.
-
-\begin{figure}
-\begin{minipage}{0.43\linewidth}
+\circdefW{0.52}{lsums-bush2}{|lscan @(Bush N2)|}{29}{5}}{
+%\circdef{lsums-bush3}{|lscan @(Bush N3)|}{718}{10}}%
+\begin{minipage}{0.45\linewidth}
  \centering
   \lscanStats{
     \lscanStat{|RBin N4|}{32}{4}
@@ -839,9 +840,7 @@ Note that top-down trees have the least depth, bottom-up trees have the least wo
   \vspace*{-3ex}
   \captionof{figure}{|lscan| for 16 values}
   \label{fig:lscan-stats-16}
-\end{minipage}
-\begin{minipage}{0.49\linewidth}
- \centering
+  \vspace{5ex}
   \lscanStats{
     \lscanStat{|RBin N8|}{1024}{8}
     \lscanStat{|LBin N8|}{502}{14}
@@ -850,8 +849,10 @@ Note that top-down trees have the least depth, bottom-up trees have the least wo
   \vspace*{-3ex}
   \captionof{figure}{|lscan| for 256 values}
   \label{fig:lscan-stats-256}
-\end{minipage}
-\end{figure}
+\end{minipage}%
+}
+\figreftwo{lscan-stats-16}{lscan-stats-256} offer an empirical comparison, including some optimizations not taken into account in the complexity analyses above.
+Note that top-down trees have the least depth, bottom-up trees have the least work, and bushes provide a compromise, with less work than top-down trees and less depth than bottom-up trees.
 
 \subsection{Some convenient packaging}
 
@@ -887,7 +888,7 @@ lanys      = lscanNew @Any
 
 \subsectiondef{Applications}
 
-As a first simple example application of parallel scan, let's construct powers of a given number to fill a structure |f|.
+As a first simple example application of parallel scan, let's construct powers of a given number $x$ to fill a structure |f|, so that successive elements are $x^0, x^1, x^2$ etc.
 A simple implementation builds a structure with identical values using |pure| (from |Applicative|) and then calculates all prefix products:
 
 > powers :: (LScan f, Applicative f, Num a) => a -> f a :* a
@@ -896,7 +897,7 @@ A simple implementation builds a structure with identical values using |pure| (f
 \figref{powers-rb4-no-hash} shows one instance of |powers|.
 A quick examination shows that there is a lot of redundant computation due to the special context of scanning over identical values.
 For instance, for an input $x$, we compute $x^2$ eight times and $x^4$ four times.
-Fortunately, automatic common subexpression elimination (CSE) removes such redundancies easily, resulting in \figref{powers-rb4}.
+Fortunately, automatic common subexpression elimination (CSE) can remove such redundancies easily, resulting in \figref{powers-rb4}.
 \figp{
 \circdef{powers-rb4-no-hash}{|powers @(RBin N4)| --- without CSE}{32}{4}}{
 \circdef{powers-rb4}{|powers @(RBin N4)| --- with CSE}{15}{4}}
@@ -954,14 +955,15 @@ In a higher-level formulation, we might replace arrays and index arithmetic by a
 We have already seen the fundamental building block of structure nesting, namely functor composition.
 Instead of factoring numbers that represent type sizes, factor the types themselves.
 
-As with scan, define a class of FFT-able structures and a generic default.
+As with scan, we can define a class of FFT-able structures and a generic default.
 One new wrinkle is that the result shape differs from the original shape, so we'll use an associated functor ``|FFO|'':
 
 \begin{code}
 class FFT f where
   type FFO f :: * -> *
   fft :: f C -> FFO f C
-  default fft  ::  ( Generic1 f, Generic1 (FFO f), FFT (Rep1 f) , FFO (Rep1 f) ~ Rep1 (FFO f) ) =>  f C -> FFO f C
+  default fft  ::  ( Generic1 f, Generic1 (FFO f), FFT (Rep1 f) , FFO (Rep1 f) ~ Rep1 (FFO f) )
+               =>  f C -> FFO f C
   fft xs = to1 . fft xs . from1
 \end{code}
 
@@ -1004,7 +1006,7 @@ Unsurprisingly, the size of a composition is the product of the sizes.\notefoot{
 %format WFs = W"_"ffts'
 %format DFs = D"_"ffts'
 
-Complexity of |fft| depends on complexity of |twiddle| and |omegas|.
+The complexity of |fft| depends on the complexities of |twiddle| and |omegas|.
 Since |powers| (defined in \secref{Applications}) is a prefix scan, we can compute |omegas| efficiently in parallel, with one |powers| for |g| and then one more for each element of the resulting |g C|, the latter collection being constructed in parallel.
 Thanks to scanning on constant structures, |powers| requires only linear work even on top-down trees (normally $O (n \log n)$).
 Depth of |powers| is logarithmic.
@@ -1040,7 +1042,8 @@ The definition of |fft| for |g :.: f| can be simplified (without changing comple
 \begin{code}
     Comp1 . ffts' . transpose . twiddle . ffts' . unComp1
 ==  {- definition of |ffts'| (and associativity of |(.)|) -}
-    Comp1 . transpose . fmap fft . transpose .  transpose .  twiddle .  transpose . fmap fft . transpose . unComp1
+    Comp1  . transpose . fmap fft . transpose .  transpose .  twiddle .  transpose . fmap fft
+           . transpose . unComp1
 ==  {- |transpose . transpose == id| -}
     Comp1 . transpose . fmap fft . twiddle . transpose . fmap fft . transpose . unComp1
 ==  {- |transpose . fmap h == traverse h| -}
@@ -1090,20 +1093,15 @@ A closed form solution is left for later work.
 
 \todo{Consistent structure for these proofs throughout the paper.}
 
-\figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figreftwo{fft-bush2}{fft-bush3} for bushes of depth two and three.
-\notefoot{Probably drop |Bush N3|.}
+\figreftwo{fft-rb4}{fft-lb4} show |fft| for top-down and bottom-up binary trees of depth four, and \figref{fft-bush2} for bushes of depth two and three, all three of which types contain 16 elements.
 Each complex number appears as its real and imaginary components.
 \figp{
 \circdef{fft-rb4}{|fft @(RBin N4)|}{197}{8}}{
 \circdef{fft-lb4}{|fft @(LBin N4)|}{197}{8}}
-% \figo{\circdef{fft-bush2}{|fft @(Bush N2)|}{186}{6}}
 \figp{
-\circdef{fft-bush2}{|fft @(Bush N2)|}{186}{6}}{
-\circdef{fft-bush3}{|fft @(Bush N3)|}{7310}{14}}
-
-\figreftwo{fft-stats-16}{fft-stats-256} gives an empirical comparison.
-\begin{figure}
-\begin{minipage}{0.43\linewidth}
+\circdefW{0.48}{fft-bush2}{|fft @(Bush N2)|}{186}{6}}{
+\hspace{0.5ex}
+\begin{minipage}{0.47\linewidth}
  \centering
   \fftStats{
     \fftStat{|RBin N4|}{74}{40}{74}{197}{8}
@@ -1113,9 +1111,8 @@ Each complex number appears as its real and imaginary components.
   \vspace*{-3ex}
   \captionof{figure}{FFT for 16 complex values}
   \label{fig:fft-stats-16}
-\end{minipage}
-\begin{minipage}{0.49\linewidth}
- \centering
+
+  \vspace{5ex}
   \fftStats{
     \fftStat{|RBin N8|}{2690}{2582}{2690}{8241}{20}
     \fftStat{|LBin N8|}{2690}{2582}{2690}{8241}{20}
@@ -1125,11 +1122,23 @@ Each complex number appears as its real and imaginary components.
   \captionof{figure}{FFT for 256 complex values}
   \label{fig:fft-stats-256}
 \end{minipage}
-\end{figure}
+}
+\figreftwo{fft-stats-16}{fft-stats-256} gives an empirical comparison.
 The total counts include literals, many of which are non-zero only accidentally, due to numerical inexactness.
 Pleasantly, the |Bush| instance of generic FFT appears to improve over the classic DIT and DIF algorithms in both work and depth.
 
-%% \section{Related work}
+\section{Related work}
+
+Much has been written about parallel scan from a functional perspective.
+\citet[Figure 11]{Blelloch96programmingparallel} gave a functional implementation of work-efficient of the algorithm of \citet{LadnerFischer1980} in the functional parallel language NESL.
+\citet{ODonnell:1994:correctess} presented an implementation in Haskell of what appears to the algorithm of \citet{Sklansky1960}, along with an equational correctness proof.
+\citet{Sheeran:2011:FDP,Sheeran:2007:PPNG} reconstructed the algorithms of Sklansky, Ladner and Fischer, and \citet{BrentKung:1982}, generalized the latter two algorithms, and then searched the space defined by the generalized Ladner-Fischer, leading to a marked improvement.
+It is not clear how to set up a search problem in the context of the generic, type-directed scan formulation given above.
+Perhaps one could search among functors isomorphic to a given one, perhaps starting with an array of statically known size.
+\citet{Hinze04Scan} developed an elegant algebra out of which to compose a variety of scan algorithms, noting that ``using only two basic building blocks and four combinators all standard designs can be described succinctly and rigorously.''
+Moreover, the algebra is shown to be amenable to proving and deriving circuit designs.
+All of the work mentioned in this paragraph so far formulate scan exclusively in terms of lists, unlike the generic approach explored in the present paper.
+In contrast, \citet{Gibbons:1992:UDA,Gibbons:2000:GDA} generalized to other data types, including trees, and reconstructed scan as a combination of the two more general operations of upward and downward accumulations.
 
 \section{Reflections}
 
