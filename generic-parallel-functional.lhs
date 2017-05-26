@@ -6,7 +6,7 @@
 %% \anontrue
 \acmtrue
 
-\documentclass[acmsmall,draft]{acmart}
+\documentclass[acmsmall]{acmart}
 \acmJournal{PACMPL}
 
 %% \ifacm
