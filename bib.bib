@@ -1,4 +1,4 @@
-@incollection{Bird1998
+@inproceedings{Bird1998
  , author="Richard Bird and Lambert Meertens"
  , editor="Jeuring, Johan"
  , title="\href{http://www.cs.ox.ac.uk/richard.bird/online/BirdMeertens98Nested.pdf}{Nested Datatypes}"
@@ -113,7 +113,7 @@
  }
 
 @misc{JohnsonCooleyTukeyPic
- , title={Diagram to illustrate the general {Cooley–Tukey FFT} algorithm}
+ , title={{Diagram to illustrate the general Cooley-Tukey FFT algorithm}}
  , author={Steven G. Johnson}
  , year = 2010
  , url={https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm#General_factorizations}
@@ -129,7 +129,7 @@
 }
 
 @Misc{newtype-generics,
-  author =    {Darius Jahandarie and Conor McBride and João Cristóvão},
+  author =    {Darius Jahandarie and Conor McBride and Crist\'{o}v\~{a}o, Jo\~{a}o},
   title =     {\href{https://hackage.haskell.org/package/newtype-generics}{newtype-generics}},
   note =      {{Haskell} library},
   year =      {2014}
@@ -155,7 +155,7 @@
 @inproceedings{Gibbons06DatatypeGeneric,
   author    = {Jeremy Gibbons},
   title     = {Datatype-Generic Programming},
-  booktitle = {Datatype-Generic Programming - International Spring School, {SSDGP}
+  booktitle = {Datatype-Generic Programming --- International Spring School, {SSDGP}
                \out{2006, Nottingham, UK, April 24-27, 2006,} Revised Lectures},
   month = apr,
   year      = {2006},
@@ -170,7 +170,7 @@
 
 @MISC{McBride01derivative,
     author = {Conor McBride},
-    title = {\href{http://www.strictlypositive.org/diff.pdf}{The Derivative of a Regular Type is its Type of One-Hole Contexts (Extended Abstract)}},
+    title = {\href{http://www.strictlypositive.org/diff.pdf}{The derivative of a regular type is its type of one-hole contexts (extended abstract)}},
     year = {2001}
 }
 
@@ -241,15 +241,16 @@
 }
 
 @inproceedings{SharpCripps:1993:fft, 
-author={David Sharp and Martin Cripps},
-booktitle={1993 Euromicro Workshop on Parallel and Distributed Processing}, 
-title={Synthesis of the fast Fourier transform algorithm by functional language program transformation}, 
-year={1993}, 
-pages={136-143}, 
-abstract={Presents a technique for systematically synthesizing parallel algorithms starting from a high-level specification of the problem to be solved and a functional abstraction of the target architecture. We show how functional language program transformation can be used to generate various algorithms that match the characteristics of the target architecture and demonstrate the technique by synthesizing various fast Fourier transforms for various parallel architectures from a specification of the discrete Fourier transform}, 
-keywords={fast Fourier transforms;formal specification;functional programming;parallel algorithms;parallel architectures;parallel languages;program processors;discrete Fourier transform;fast Fourier transform algorithm synthesis;functional abstraction;functional language program transformation;high-level problem specification;parallel algorithm synthesis;parallel architectures;target architecture;Biomedical imaging;Computer architecture;Concurrent computing;Discrete Fourier transforms;Educational institutions;Fast Fourier transforms;Parallel algorithms;Parallel architectures;Parallel machines;Signal processing algorithms}, 
-doi={10.1109/EMPDP.1993.336410}, 
-month={Jan},}
+  author={David Sharp and Martin Cripps},
+  booktitle={Euromicro Workshop on Parallel and Distributed Processing}, 
+  title={{Synthesis of the fast Fourier transform algorithm by functional language program transformation}}, 
+  year={1993}, 
+  pages={136-143}, 
+  abstract={Presents a technique for systematically synthesizing parallel algorithms starting from a high-level specification of the problem to be solved and a functional abstraction of the target architecture. We show how functional language program transformation can be used to generate various algorithms that match the characteristics of the target architecture and demonstrate the technique by synthesizing various fast Fourier transforms for various parallel architectures from a specification of the discrete Fourier transform}, 
+  keywords={fast Fourier transforms;formal specification;functional programming;parallel algorithms;parallel architectures;parallel languages;program processors;discrete Fourier transform;fast Fourier transform algorithm synthesis;functional abstraction;functional language program transformation;high-level problem specification;parallel algorithm synthesis;parallel architectures;target architecture;Biomedical imaging;Computer architecture;Concurrent computing;Discrete Fourier transforms;Educational institutions;Fast Fourier transforms;Parallel algorithms;Parallel architectures;Parallel machines;Signal processing algorithms}, 
+  Qdoi={10.1109/EMPDP.1993.336410}, 
+  month=jan
+}
 
 
 % This paper describes the codelet generator introduced in FFTW 2
@@ -260,7 +261,7 @@ month={Jan},}
   pages =	 {169--180},
   year =	 1999,
   volume =	 34,
-  number =	 5,
+  Qnumber =	 5,
   month =	 {May},
   publisher =	 {ACM}
 }
@@ -318,19 +319,19 @@ month={June}}
 @unpublished{Anonymous-2017-compiling-to-categories,
   author = {Anonymous},
   title = {Compiling to categories},
-  note = {Submitted for publication to ICFP 2017},
+  note = {Submitted to ICFP 2017},
   month = feb,
   year = 2017
 }
 
-@unpublished{Elliott-2017-compiling-to-categories,
+@inproceedings{Elliott-2017-compiling-to-categories,
   author = {Conal Elliott},
   title = {\href{http://conal.net/papers/compiling-to-categories}{Compiling to categories}},
-  note = {Submitted for publication to ICFP 2017},
-  month = feb,
+booktitle = {International Conference on Functional Programming},
+  Qnote = {Submitted for publication to ICFP 2017},
   year = 2017
 }
-                  
+
 @inproceedings{Voi08b,
   author  = {Janis Voigtl\"ander},
   title   = {\href{http://www.janis-voigtlaender.eu/Voi08b.html}{Much ado about two: A pearl on parallel prefix computation}},
@@ -460,10 +461,9 @@ month={June}}
 
 @inproceedings{Hartel92arraysin,
     author = {Pieter H. Hartel and Willem G. Vree},
-    title = {\href{http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.486.8999}{Arrays in a lazy functional language -- a case study: the Fast Fourier Transform}},
-    booktitle = {2nd Arrays, functional languages, and parallel systems (ATABLE},
+    title = {\href{http://doc.utwente.nl/55744/}{Arrays in a lazy functional language -- a case study: the fast Fourier transform}},
+    booktitle = {2nd Arrays, functional languages, and parallel systems (ATABLE)},
     year = {1992},
-    pages = {pages},
     abstract = {The array plays a prominent role in imperative programming languages because the data structure bears a close resemblance to the mathematical notion of a vector and because array operations can be implemented efficiently. Not all lazy functional languages offer arrays as a primitive data structure because laziness makes it difficult to implement arrays efficiently. We study 8 different versions of the Fast Fourier Transform, with and without arrays, to assess the importance of arrays in a lazy functional language. An efficient implementation of arrays contributes significantly to the performance of functional languages in certain areas. However, a clear distinction should bemade between array construction and array subscription. In the FFT example we could not gain efficiency by using array construction, other than for storing precomputed data like the input. Using array subscription improves performance.}
 }
 
@@ -471,7 +471,7 @@ month={June}}
     author = {Gabriele Keller and Manuel M. T. Chakravarty and Roman Leshchinskiy and Simon Peyton},
     title = {\href{http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.205.9426}{Regular, shape-polymorphic, parallel arrays in Haskell}},
     Qbooktitle = {In Proceedings of the ACM SIGPLAN International Conference on Functional Programming, ICFP 2010},
-    booktitle = {SIGPLAN International Conference on Functional Programming},
+    booktitle = {International Conference on Functional Programming},
     year = {2010}
 }
 
@@ -480,14 +480,14 @@ month={June}}
     title = {\href{http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.45.9999}{Deriving the fast Fourier algorithm by calculation}},
     booktitle = {Glasgow Workshop on Functional Programming},
     year = {1989},
-    pages = {21--23},
+    Qpages = {21--23},
     Qpublisher = {Springer-Verlag}
 }
 
-@inbook{Jones1991Flutter,
+@inproceedings{Jones1991Flutter,
   author="Jones, Geraint",
-  editor="Birtwistle, Graham",
-  title="A fast flutter by the Fourier transform",
+  Qeditor="Birtwistle, Graham",
+  title={{A fast flutter by the Fourier transform}},
   QbookTitle="IV Higher Order Workshop, Banff 1990: Proceedings of the IV Higher Order Workshop, Banff, Alberta, Canada 10--14 September 1990",
 bookTitle="IV Higher Order Workshop, Banff 1990",
   year="1991",
@@ -508,16 +508,15 @@ bookTitle="IV Higher Order Workshop, Banff 1990",
     year = {1991}
 }
 
-@INPROCEEDINGS{Jay93matrices,
+@unpublished{Jay93matrices,
     author = {C. Barry Jay},
-    title = {Matrices, Monads and the Fast Fourier Transform},
-    booktitle = {Proceedings of the},
+    title = {\href{http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.54.4548}{Matrices, Monads and the Fast Fourier Transform}},
     year = {1993},
-    pages = {71--80}
+    Qpages = {71--80}
 }
 
 @article{Gorlatch1998ProgrammingWD,
-  title={Programming with Divide-and-Conquer Skeletons: A Case Study of FFT},
+  title={{Programming with divide-and-conquer skeletons: A case study of FFT}},
   author={Sergei Gorlatch},
   journal={The Journal of Supercomputing},
   year={1998},
@@ -528,7 +527,7 @@ bookTitle="IV Higher Order Workshop, Banff 1990",
 
 @inproceedings{Berthold:2009:PFE,
  author = {Berthold, Jost and Dieterle, Mischa and Lobachev, Oleg and Loogen, Rita},
- title = {Parallel FFT with Eden Skeletons},
+ title = {\href{http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.301.2633}{Parallel FFT with Eden skeletons}},
  Qbooktitle = {Proceedings of the 10th International Conference on Parallel Computing Technologies},
  booktitle = {International Conference on Parallel Computing Technologies},
  series = {PaCT '09},
