@@ -1,6 +1,10 @@
 # To do
 
-*   "There is a considerable body of previous work in the FP community on parallel scan and FFT, in both non-generic and generic contexts, and related work on functional hardware description languages. The final version the paper should cite and compare with appropriate related work in these domains."
+*   Related work
+    *   "There is a considerable body of previous work in the FP community on parallel scan and FFT, in both non-generic and generic contexts, and related work on functional hardware description languages. The final version the paper should cite and compare with appropriate related work in these domains."
+    *   Parallel scan: waiting to hear back from Gabi Keller.
+    *   FFT: good, I think. Maybe:
+        *   [*Matrix algebra and applicative programming*](https://www.cs.indiana.edu/cgi-bin/techreports/TRNNN.cgi?trnum=TR222)
 
 *   Comments in side-by-side code.
 

@@ -1139,19 +1139,22 @@ Moreover, the algebra is shown to be amenable to proving and deriving circuit de
 All of the work mentioned in this paragraph so far formulate scan exclusively in terms of lists, unlike the generic approach explored in the present paper.
 In contrast, \citet{Gibbons:1992:UDA,Gibbons:2000:GDA} generalized to other data types, including trees, and reconstructed scan as a combination of the two more general operations of upward and downward accumulations.
 
-FFT has also been studied through a functional lens, using lists or arrays.
+FFT has also been studied through a functional lens, using lists or arrays..
 \citet{deVries:1988:FFT} developed an implementation of fast polynomial multiplication based on binary FFT.
 \citet{Hartel92arraysin} assessed the convenience and efficiency of lazy functional array programming.
 \citet{Keller10regular} gave a binary FFT implementation in terms of shape-polymorphic, parallel arrays, using index manipulations.
 \citet{Jones:1989:DerivingFFT,Jones1991Flutter} derived the Cooley/Tukey FFT algorithm from the DFT (discrete Fourier transform) definition, using lists of lists, which were assumed rectangular.
 (Perhaps such a derivation could be simplified by using type structure in place of lists and arithmetic.)
 \citet{Jay93matrices} explored a categorical basis for tracking the static sizes of lists (and hence list-of-lists rectangularity) involved in computations like FFT.
-\citet{Berthold:2009:PFE} investigated use of skeletons for parallel, distributed memory implementation of    list-based FFT, mainly binary versions, though also mentioning other uniform and mixed radices.
+\citet{Berthold:2009:PFE} investigated use of skeletons for parallel, distributed memory implementation of list-based FFT, mainly binary versions, though also mentioning other uniform and mixed radices.
 Various skeletons defined strategies for distributing work.
 \citet{Gorlatch1998ProgrammingWD} applied his notion of ``distributable homomorphisms'' specialized to the FFT problem, reproducing common FFT algorithms.
 \citet{SharpCripps:1993:fft} transformed a DFT implementation to efficient an FFT in the functional language Hope$^{+}$.
 One transformation path led to a general functional execution platform, while other paths partially evaluated with respect to the problem size and generated feed-forward static process networks for execution on various static architectures.
+\citet{Bjesse:1998:Lava} formulated the decimation-in-time and decimation-in-frequency FFT algorithms in the Haskell-embedded hardware description language Lava, producing circuits, executions, and correctness proofs.
 \citet{FFTWgen99} developed a code generator in OCAML for highly efficient FFT implementations for any size (not just powers of two or even composite).
+Similarly, \citet{Kiselyov2004AMF} developed an FFT algorithm in MetaOCAML for static input sizes, using explicit staging and sharing.
+% There does not appear to be any previous work on generic FFT or for types other than lists or arrays.
 
 \section{Reflections}
 
