@@ -1132,13 +1132,26 @@ Pleasantly, the |Bush| instance of generic FFT appears to improve over the class
 Much has been written about parallel scan from a functional perspective.
 \citet[Figure 11]{Blelloch96programmingparallel} gave a functional implementation of work-efficient of the algorithm of \citet{LadnerFischer1980} in the functional parallel language NESL.
 \citet{ODonnell:1994:correctess} presented an implementation in Haskell of what appears to the algorithm of \citet{Sklansky1960}, along with an equational correctness proof.
-\citet{Sheeran:2011:FDP,Sheeran:2007:PPNG} reconstructed the algorithms of Sklansky, Ladner and Fischer, and \citet{BrentKung:1982}, generalized the latter two algorithms, and then searched the space defined by the generalized Ladner-Fischer, leading to a marked improvement.
-It is not clear how to set up a search problem in the context of the generic, type-directed scan formulation given above.
-Perhaps one could search among functors isomorphic to a given one, perhaps starting with an array of statically known size.
-\citet{Hinze04Scan} developed an elegant algebra out of which to compose a variety of scan algorithms, noting that ``using only two basic building blocks and four combinators all standard designs can be described succinctly and rigorously.''
+\citet{Sheeran:2011:FDP,Sheeran:2007:PPNG} reconstructed the algorithms of \citet{Sklansky1960}, \citet{LadnerFischer1980}, and \citet{BrentKung:1982}, generalized the latter two algorithms, and used dynamic programming to search the space defined by the generalized Ladner-Fischer algorithm, leading to a marked improvement in efficiency.
+(One can speculate on how to set up a search problem in the context of the generic, type-directed scan formulation given in the present paper, perhaps searching among functors isomorphic to arrays of statically known size.)
+\citet{Hinze04Scan} developed an elegant algebra of scans, noting that ``using only two basic building blocks and four combinators all standard designs can be described succinctly and rigorously.''
 Moreover, the algebra is shown to be amenable to proving and deriving circuit designs.
 All of the work mentioned in this paragraph so far formulate scan exclusively in terms of lists, unlike the generic approach explored in the present paper.
 In contrast, \citet{Gibbons:1992:UDA,Gibbons:2000:GDA} generalized to other data types, including trees, and reconstructed scan as a combination of the two more general operations of upward and downward accumulations.
+
+FFT has also been studied through a functional lens, using lists or arrays.
+\citet{deVries:1988:FFT} developed an implementation of fast polynomial multiplication based on binary FFT.
+\citet{Hartel92arraysin} assessed the convenience and efficiency of lazy functional array programming.
+\citet{Keller10regular} gave a binary FFT implementation in terms of shape-polymorphic, parallel arrays, using index manipulations.
+\citet{Jones:1989:DerivingFFT,Jones1991Flutter} derived the Cooley/Tukey FFT algorithm from the DFT (discrete Fourier transform) definition, using lists of lists, which were assumed rectangular.
+(Perhaps such a derivation could be simplified by using type structure in place of lists and arithmetic.)
+\citet{Jay93matrices} explored a categorical basis for tracking the static sizes of lists (and hence list-of-lists rectangularity) involved in computations like FFT.
+\citet{Berthold:2009:PFE} investigated use of skeletons for parallel, distributed memory implementation of    list-based FFT, mainly binary versions, though also mentioning other uniform and mixed radices.
+Various skeletons defined strategies for distributing work.
+\citet{Gorlatch1998ProgrammingWD} applied his notion of ``distributable homomorphisms'' specialized to the FFT problem, reproducing common FFT algorithms.
+\citet{SharpCripps:1993:fft} transformed a DFT implementation to efficient an FFT in the functional language Hope$^{+}$.
+One transformation path led to a general functional execution platform, while other paths partially evaluated with respect to the problem size and generated feed-forward static process networks for execution on various static architectures.
+\citet{FFTWgen99} developed a code generator in OCAML for highly efficient FFT implementations for any size (not just powers of two or even composite).
 
 \section{Reflections}
 
