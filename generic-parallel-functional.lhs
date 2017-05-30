@@ -6,7 +6,7 @@
 %% \anontrue
 \acmtrue
 
-\documentclass[acmsmall]{acmart}
+\documentclass[acmsmall]{acmart} % ,draft
 \acmJournal{PACMPL}
 
 %% \ifacm
@@ -73,8 +73,7 @@ Instantiating the generic formulations to ``top-down'' and ``bottom-up'' trees a
 
 \section{Introduction}
 
-There is a long, rich history of datatype-generic programming in Haskell.
-See, e.g., \cite{Gibbons06DatatypeGeneric,DatatypeGenericComparison2012}.
+There is a long, rich history of datatype-generic programming in functional languages \cite{backhouse2007datatype,DatatypeGenericComparison2012}.
 The basic idea of most such designs is to relate a broad range of types to a small set of basic ones via isomorphism (or more accurately, embedding-projection pairs), particularly binary sums and products and their corresponding identities (``void'' and ``unit'').
 These type primitives serve to connect algorithms with data types in the following sense:
 \begin{itemize}
@@ -83,7 +82,7 @@ These type primitives serve to connect algorithms with data types in the followi
 \end{itemize}
 In this way, algorithms and data types are defined independently and then automatically work together.
 
-One version of this general scheme is found in the library |GHC.Generics|, in which the type primitives are \emph{functor-level} building blocks \cite{HaskellWikiGhcGenerics}.
+One version of this general scheme is found in the Haskell library |GHC.Generics|, in which the type primitives are \emph{functor-level} building blocks \cite{HaskellWikiGhcGenerics}.
 For this paper, we'll use six: sum, product, composition, and their three corresponding identities, as in \figref{ghc-generics}.
 There are additional definitions that capture recursion and meta-data such as field names and operator fixity, but the collection in \figref{ghc-generics} suffices for this paper.
 To make the encoding of data types easy, |GHC.Generics| comes with a generic deriving mechanism (enabled by the |DeriveGeneric| language extension), so that for regular (not generalized) algebraic data types, one can simply write ``|data ... deriving Generic|'' for types of kind |*| \cite{Magalhaes:2010}.
@@ -92,7 +91,7 @@ Instances for non-regular algebraic data types can be defined explicitly, which 
 To define a generic algorithm, one provides class instances for these primitives and writes a default definition for each method in terms of |from1| and |to1|.
 
 The effectiveness of generic programming relies on having at our disposal a variety of data types, each corresponding to a unique composition of the generic type building blocks.
-In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays.
+In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays (or lists in functional formulations; see \secref{Related work}).
 The various array algorithms involve idiosyncratic patterns of traversal and construction of this single data type.
 For instance, a parallel array reduction with an associative operator involves recursive or iterative generation of numeric indices for extracting elements, taking care that each element is visited exactly once and combined left-to-right.
 Frequently, an array is split, each half processed recursively and independently, and results combined later.
@@ -133,7 +132,7 @@ When we use natural, recursively defined data types \emph{explicitly}, we can us
 In a language like Haskell, those patterns follow known laws and are well supported by the programming ecosystem.
 The use of array encodings makes those patterns \emph{implicit}, as a sort of informal guide only, distancing programs from the elegant and well-understood laws and abstractions that motivate those programs, justify their correctness, and point to algorithmic variations that solve related problems or make different implementation trade-offs.
 
-Even the \emph{determinacy} of an array-based parallel algorithm can be difficult to ensure or verify.
+Even the \emph{determinacy} of an imperative, array-based parallel algorithm can be difficult to ensure or verify.
 When the result is an array rather than a single value, as in scans and FFTs, values are written to indexed locations.
 In the presence of parallelism, determinacy depends on those write indices being distinct, which again is a subtle, encoding-specific property, unlikely to be verified automatically.
 
@@ -159,7 +158,7 @@ Concretely, this paper makes the following contributions:
   Compositional complexity analysis (work and depth), also based on functor combinators.
 \end{itemize}
 
-The figures in this paper are generated automatically (including optimizations) from the given Haskell code, using a compiler plugin described in \cite{\compilingToCats}, which also generates synthesizable descriptions in Verilog for massively parallel, hardware-based evaluation.
+The figures in this paper are generated automatically (including optimizations) from the given Haskell code, using a compiler plugin that which also generates synthesizable descriptions in Verilog for massively parallel, hardware-based evaluation \cite{\compilingToCats}.
 
 
 \section{Some useful data types}
@@ -276,11 +275,11 @@ Define a single type of $n$-ary leaf trees, polymorphic over $n$:
 \begin{code}
 data Tree n a = Leaf a | Branch (Vec n (Tree a))
 \end{code}
-The more general vector-based instance definitions are simpler than even the binary-only versions given above:
+The more general vector-based instance definitions are simpler than even for the binary-only version |Tree| type given above:
 \begin{code}
 instance Functor (Tree n) where
   fmap h (Leaf a)     = Leaf (h a)
-  fmap h (Branch ts)  = Branch ((fmap.fmap) f ts)
+  fmap h (Branch ts)  = Branch ((fmap.fmap) h ts)
 
 instance Foldable (Tree n) where
   foldMap h (Leaf a)     = h a
@@ -288,7 +287,7 @@ instance Foldable (Tree n) where
 
 instance Traversable (Tree n) where
   traverse h (Leaf a)     = fmap Leaf (h a)
-  traverse f (Branch ts)  = fmap Branch ((traverse.traverse) f ts)
+  traverse h (Branch ts)  = fmap Branch ((traverse.traverse) h ts)
 \end{code}
 
 Notice that these instance definitions rely on very little about the |Vec n| functor.
@@ -297,7 +296,7 @@ For this reason, we can easily generalize from |Vec n| as follows:
 \begin{code}
 data Tree f a = Leaf a | Branch (f (Tree a))
 \end{code}
-The instance definitions for ``|f|-ary'' trees are exactly as with $n$-ary, except for making the requirements on |f| explicit:
+The instance definitions for ``|f|-ary'' trees (also known as the ``free monad'' for the functor |f|) are exactly as with $n$-ary, except for making the requirements on |f| explicit:
 \begin{code}
 instance Functor      f => Functor      (Tree f) where ...
 instance Foldable     f => Foldable     (Tree f) where ...
@@ -345,7 +344,7 @@ For this paper, assume that |Nat| is a kind-promoted version of the following da
 \begin{code}
 data Nat = Z | S Nat
 \end{code}
-Thanks to promotion, |Nat| is not only a new data type with value-level constructors |Z| and |S|, but also a new \emph{kind} with \emph{type-level} constructors |Z| and |S| \cite{yorgey2012giving}.
+Thanks to promotion (via the |DataKinds| language extension), |Nat| is not only a new data type with value-level constructors |Z| and |S|, but also a new \emph{kind} with \emph{type-level} constructors |Z| and |S| \cite{yorgey2012giving}.
 
 \subsubsection{GADT formulation}
 
@@ -361,7 +360,7 @@ data LVec :: Nat -> * -> * NOP where
   (>:)  :: LVec n a -> a -> LVec (S n) a
 \end{code}
 Recall that the generic representations of |RList| and |LList| were built out of sum, unit, identity, and product.
-With static shaping, the sum disappears from the representation, moving from dynamic to static choice:
+With static shaping, the sum disappears from the representation, moving from dynamic to static choice, and each |Generic1| instance split into two:
 \begin{code}
 instance Generic1 (RVec Z) where
   type Rep1 (RVec Z) = U1
@@ -430,9 +429,9 @@ Since all of these types are memo tries \cite{Hinze00memofunctions}, their class
 
 Note that |RVec n| and |LVec n| are essentially $n$-ary functor \emph{products} of |Par1|.
 Similarly, |RPow f n| and |LPow f n| are $n$-ary functor \emph{compositions} of |f|.
-Functor product and functor composition are both associative but only up to isomorphism.
-This limit to associativity is exactly why both exist and are useful.
+Functor product and functor composition are both associative only up to isomorphism.
 While |RVec| and |RPow| are right associations, |LVec| and |LPow| are left associations.
+As we will see below, different associations, though isomorphic, lead to different algorithms.
 
 Instead of the GADT-based definitions given above for |RVec|, |LVec|, |RPow|, and |LPow|, we can make the repeated product and repeated composition more apparent by using closed type families \cite{ClosedTypeFamilies:2014}, with instances defined inductively over type-level natural numbers.
 Vectors:
@@ -469,14 +468,14 @@ h ^ (1+n)  = h * (h ^ n)
 Likewise, the type family instances for |LVec| and |LPow| are analogous to the following equivalent definitions of Peano multiplication and exponentiation:
 \begin{code}
 0      * a = 0
-(n+1)  * a = (n * a) + n
+(n+1)  * a = (n * a) + a
 
 h ^ 0      = 1
 h ^ (n+1)  = (h ^ n) * h
 \end{code}
 
 Because these type-family-based definitions are expressed in terms of existing generic building blocks, we directly inherit many existing class instances rather than having to define them.
-A downside is that we \emph{cannot} provide them, which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
+For the same reason, we \emph{cannot} provide them (since instances already exist), which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
 
 Although |RPow| and |LPow| work with any functor argument, we will use uniform pairs in the examples below.
 The uniform |Pair| functor can be defined in a variety of ways, including |Par1 :*: Par1|, |RVec N2|, |LVec N2|, or its own algebraic data type:
@@ -503,16 +502,16 @@ While each |RBin n| and |LBin n| holds $2^n$ elements, each statically shaped |B
 Moreover, there's nothing special about |Pair| or \emph{binary} composition here.
 Either could be replaced or generalized.
 
-Our ``bush'' type is adapted from an example of nested data types that has a less regular shape \cite{Bird1998}:
+Our ``bush'' type is inspired by an example of nested data types that has a less regular shape \cite{Bird1998}:
 \begin{code}
 data Bush a = NilB | ConsB a (Bush (Bush a))
 \end{code}
 
 Bushes are to trees as trees are to vectors, in the following sense.
 Functor product is associative up to isomorphism.
-Where |RVec| and |LVec| choose fully right- or left-associated products, |RPow f| and |LPow f| form perfectly and recursively balanced products.
+Where |RVec| and |LVec| choose fully right- or left-associated products, |RBin| and |LBin| form perfectly and recursively balanced products (being repeated compositions of |Pair|).
 Likewise, functor composition is associative up to isomorphism.
-Where |RPow f| and |LPow f| are fully right- and left-associated compositions, |Bush f| forms balanced compositions.
+Where |RBin| and |LBin| are fully right- and left-associated compositions, |Bush n| forms balanced compositions.
 Many other variations are possible, but the |Bush| definition above will suffice for this paper.
 
 
@@ -522,7 +521,7 @@ Given a sequence $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ld
 More generally, for any associative operation $\oplus$, the ``prefix scan'' is defined by $b_k = \bigoplus_{0 \le i < k}{a_i}$, with $b_0$ being the identity for $\oplus$.
 (One can define a similar operation if we assume semigroup---lacking identity element---rather than monoid, but the development is more straightforward with identity.)
 
-Scan has broad applications, including the following, taken from a longer list in \cite{BlellochTR90}:
+Scan has broad applications, including the following, taken from a longer list \cite{BlellochTR90}:
 \begin{itemize}
 \item Adding multi-precision numbers
 \item Polynomial evaluation
@@ -540,7 +539,7 @@ We will just develop prefix scan, but generic suffix scan works out in the same 
 Note that $a_k$ does \emph{not} influence $b_k$.
 Often scans are classified as ``exclusive'', as above, or ``inclusive'', where $a_k$ does contribute to $b_k$.
 Note also that there is one more output element than input, which is atypical in the literature on parallel prefix algorithms, perhaps because scans are often performed in place.
-As we will see below, the unconventional choice of exclusive+total above makes for an elegant generic decomposition.
+As we will see below, the additional output makes for an elegant generic decomposition.
 
 The standard list prefix scans in Haskell, |scanl| and |scanr|, also yield one more output element than input, which is possible for lists.
 For other data types, such as trees and especially perfect ones, there may not be a natural place to store the extra value.
@@ -552,7 +551,7 @@ class Functor f => LScan f where lscan :: Monoid a => f a -> f a :* a
 \end{code}
 The |Functor| superclass is just for convenience and can be dropped in favor of more verbose signatures elsewhere.
 
-When |f| is in |Traversable|, there is simple and general specification using operations from the standard Haskell libraries:
+When |f| is in |Traversable|, there is a simple and general specification using operations from the standard Haskell libraries:
 \begin{code}
 lscan == swap . mapAccumL (\ acc a -> (acc <> a,acc)) mempty
 \end{code}
@@ -595,11 +594,11 @@ Comments:
 \item An empty structure can only generate another empty structure with a summary value of |mempty|.
 \item For a singleton value |Par1 a|, the combination of values before the first and only one is |mempty|, and the summary is the value |a|.
 \item For a sum, scan whichever structure is present, and re-tag.
-(The higher-order function |first| applies a function to the first element of a pair, carrying the second element along unchanged.)
+(The higher-order function |first| applies a function to the first element of a pair, carrying the second element along unchanged \cite{Hughes98generalisingmonads}.)
 \end{itemize}
 
 Just as the six functor combinators guide the composition of parallel algorithms, they also determine the performance characteristics of those parallel algorithms in a compositional manner.
-Following \cite{Blelloch96programmingparallel}, consider two aspects of performance:
+Following \citet{Blelloch96programmingparallel}, consider two aspects of performance:
 \begin{itemize}
 \item \emph{work}, the total number of primitive operations performed, and
 \item \emph{depth}, the longest dependency chain, and hence a measure of ideal parallel computation time.
@@ -698,7 +697,7 @@ Performing a suffix/right scan on a left vector also leads to quadratic work, re
 Although work is greatly reduced (from quadratic to linear), depth remains at linear, because unbalanced data types lead to unbalanced parallelism.
 Both |RVec| and |LVec| are ``parallel'' in a sense, but we only get to perform small computations in parallel with large one (especially apparent in the unoptimized \figreftwo{lsums-rv8-no-hash-no-opt}{lsums-lv8-no-hash-no-opt}), so that the result is essentially sequential.
 
-To get a more parallelism, we could replace a type like |LVec N16| with a isomorphic product such as |LVec N5 :*: LVec N11|, resulting in \figref{lsums-lv5xlv11-highlight}, reducing depth from 15 to 11.
+To get more parallelism, we could replace a type like |LVec N16| with a isomorphic product such as |LVec N5 :*: LVec N11|, resulting in \figref{lsums-lv5xlv11-highlight}, reducing depth from 15 to 11.
 More generally, scan on |LVec m :*: LVec n| has depth |((m-1) `max` (n-1)) + 1 = max m n|.
 For an ideal partition adding up to |p|, we'll want |m = n = p/2|.
 For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \figref{lsums-lv8xlv8} with depth eight.
@@ -731,7 +730,7 @@ For every following quadruple, the prefix sums are lacking the sum of all elemen
 
 \emph{Now we get to the surprising heart of generic parallel scan}.
 Observe that the sums of elements from all earlier quadruples are computed entirely from the final summary results from each quadruple.
-We end up needing the sum of every \emph{prefix} of the triple of summaries, and so we are computing not just three prefix scans over |LVec N4| but also \emph{one additional scan} over |LVec N3|.
+We end up needing the sum of every \emph{prefix} of the triple of summaries, and so we are computing not just three prefix scans over |LVec N4| but also \emph{one additional scan} over |LVec N3| (highlighted in \figref{lsums-lv3olv4-highlight}).
 Moreover, the apparent inconsistency of adjusting all quadruples \emph{except} for the first one is an illusion brought on by premature optimization.
 We can instead adjust \emph{every} quadruple by the corresponding result of this final scan of summaries, the first summary being zero.
 These zero-additions can be optimized away later.
@@ -861,15 +860,13 @@ For convenience, let's define some specializations.
 One way to do so is to provide functions that map between non-monoids and monoids.
 Start with a class similar to |Generic| for providing alternative representations:
 %format Old = "\Varid{O}"
-\begin{samepage}
 \begin{code}
 class Newtype n where
   type Old n :: *
   pack    :: Old n -> n
   unpack  :: n -> Old n
 \end{code}
-\end{samepage}
-This class is from \cite{newtype-generics}, which also defines many instances for commonly used types.
+This class also defines many instances for commonly used types \cite{newtype-generics}.
 Given this vocabulary, we can scan structures over a non-monoid by packing values into a chosen monoid, scanning, and then unpacking:\footnote{The |(***)| operation applies two given functions to the respective components of a pair, and the ``|@@|'' notation is visible type application \cite{eisenberg2016visible}.}
 \begin{code}
 lscanNew  ::  forall n o f. (Newtype n, o ~ Old n, LScan f, Monoid n) =>  f o -> f o :* o
@@ -911,7 +908,7 @@ evalPoly coeffs x = coeffs <.> fst (powers x)
 (<.>) :: (Foldable f, Applicative f, Num a) => f a -> f a -> a
 u <.> v = sum (liftA2 (*) u v)
 \end{code}
-\figreftwo{evalPoly-rb4}{evalPoly-lb4} shows the results for top-down and bottom-up trees.
+\figreftwo{evalPoly-rb4}{evalPoly-lb4} show the results for top-down and bottom-up trees.
 \figp{
 \circdef{evalPoly-rb4}{|evalPoly @(RBin N4)|}{29+15}{9}}{
 \circdef{evalPoly-lb4}{|evalPoly @(LBin N4)|}{29+15}{11}}
@@ -950,7 +947,7 @@ Rather than implementing FFT via sequences or arrays as usual, let's take a step
 \subsection{Factor types, not numbers!}
 
 The summation formula above exhibits a trait typical of array-based algorithms, namely index arithmetic, which is tedious to write and to read.
-This arithmetic has a purpose, however, which is interpret an array as an array of arrays.
+This arithmetic has a purpose, however, which is to interpret an array as an array of arrays.
 In a higher-level formulation, we might replace arrays and index arithmetic by an \emph{explicit} nesting of structures.
 We have already seen the fundamental building block of structure nesting, namely functor composition.
 Instead of factoring numbers that represent type sizes, factor the types themselves.
@@ -1123,11 +1120,11 @@ Each complex number appears as its real and imaginary components.
   \label{fig:fft-stats-256}
 \end{minipage}
 }
-\figreftwo{fft-stats-16}{fft-stats-256} gives an empirical comparison.
+\figreftwo{fft-stats-16}{fft-stats-256} give an empirical comparison.
 The total counts include literals, many of which are non-zero only accidentally, due to numerical inexactness.
 Pleasantly, the |Bush| instance of generic FFT appears to improve over the classic DIT and DIF algorithms in both work and depth.
 
-\section{Related work}
+\sectionl{Related work}
 
 Much has been written about parallel scan from a functional perspective.
 \citet[Figure 11]{Blelloch96programmingparallel} gave a functional implementation of work-efficient of the algorithm of \citet{LadnerFischer1980} in the functional parallel language NESL.
@@ -1181,7 +1178,7 @@ Ladner and Fischer's scan algorithm sums adjacent pairs, performs \emph{one} rec
 In both cases, the post-recursion adjustment step turns out to be optimized versions of additional recursive scans, followed by the same kind of simple, uniform adjustment.
 Making these extra, hidden scans explicit reveals the close relationship between these two algorithms.
 The applied optimization is merely removal of zero additions (more generally combinations with monoid identity) and is easily automated.
-The duality between the Sklansky's parallel scan and Ladner and Fischer's is exactly mirrored in the duality between two of the FFT algorithms, commonly known as ``decimation in time'' (right-associated functor composition) and ``decimation in frequency (left-associated functor composition).
+The duality between Sklansky's parallel scan and Ladner and Fischer's is exactly mirrored in the duality between two of the FFT algorithms, commonly known as ``decimation in time'' (right-associated functor composition) and ``decimation in frequency'' (left-associated functor composition).
 
 Not only do we see the elegant essence and common connections between known algorithms---satisfying enough in its own right---but this insight also points the way to many infinitely many variations of these algorithms by varying the functors being composed beyond uniform pairs \emph{and} varying the pattern of composition beyond \emph{uniform} right or left association.
 This paper merely scratches the surface of the possible additional variations in the form of fully balanced compositions of the pair functor, as a type of uniform ``bushes''.
@@ -1190,9 +1187,9 @@ For scan, bushes offer a different compromise between top-down trees (best in wo
 With FFT, the complexity story seems to be uniformly positive, besting top-down and bottom-up in both work and depth, though at the cost of less flexibility in data set size, since bushes of have sizes of the form $2^{2^n}$, compared with $2^n$ for binary trees.
 
 There are many more interesting questions to explore.
-Which other known scan and FFT algorithms emerge from the generic versions defined in this paper, specialized to other data types.
+Which other known scan and FFT algorithms emerge from the generic versions defined in this paper, specialized to other data types?
 Are there different instances for the \emph{generic} functor combinators that lead to different algorithms for the data types used above?
-How does generic scan relate to the scan algebra in \cite{Hinze04Scan}, which is another systematic way to generate scan algorithms?
+How does generic scan relate to the scan algebra of \citet{Hinze04Scan}, which is another systematic way to generate scan algorithms?
 What other problems are amenable to the sort of generic formulation in this paper?
 What other data types (functor assembly patterns) explain known algorithms and point to new ones?
 
