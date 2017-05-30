@@ -1,21 +1,20 @@
 targ = generic-parallel-functional
 
-.PRECIOUS: %.tex
+.PRECIOUS: %.tex %.pdf
 
 default: $(targ).pdf
 
 #latex=pdflatex
 latex=latexmk -pdf
 
+dots = $(wildcard figures/*.dot)
+figures = $(addsuffix .pdf, $(basename $(dots)))
+
 %.pdf: %.tex bib.bib $(figures) Makefile acmart-tweaked.cls
 	$(latex) $*.tex
 
 %.tex: %.lhs macros.tex formatting.fmt $(pdfs) Makefile
 	lhs2TeX -o $*.tex $*.lhs
-
-dots = $(wildcard figures/*.dot)
-
-figures = $(addsuffix .pdf, $(basename $(dots)))
 
 # Cap the size so that LaTeX doesn't choke.
 %.pdf: %.dot # Makefile
