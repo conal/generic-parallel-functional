@@ -214,38 +214,69 @@ In principle, the approach in this paper makes it easier to explore the space of
 I support acceptance of the paper, but have a number of presentational suggestions that the authors may wish to take into account for a revision:
 
   - p. 1: From the first sentence, this paper commits to being about Haskell.  So, it would probably be helpful to mention Haskell in the abstract, if not the title.  (Otherwise, non-Haskeller readers will be lured in by the title and abstract and then left in the cold when they start to read the paper.)
+[Broadened to functional languages.]
   - p. 2: "Even the determinacy of an array-based parallel algorithm can be difficult to ensure or verify."  The paper should explain in what way the generic encoding makes it any easier to ensure or verify determinacy.
+[Added "imperative" before "array-based".]
   - p. 5: "The more general vector-based instance definitions are simpler than even the binary-only versions given above" -- the instance definitions above are ternary-only.
+["than even for the binary-only version |Tree| type given above"]
   - p. 5: A picture might help to visualize bottom-up trees as opposed to top-down ones.
   - p. 6: "Thanks to promotion..." -- assuming you enable the `DataKinds` GHC extension, right?
+[clarified]
   - p. 7: "the sum disappears from the representation" -- but clarify that this is at the expense of having to define separate instances for `(RVec Z)` and `(RVec (S n))`.
+[added ", and each |Generic1| instance split into two"]
   - p. 7: "A 'perfect' leaf tree is..." -- maybe this definition should go at the first point where the paper uses the term.
   - p. 8: "This limit to associativity is exactly why both exist and are useful." -- I didn't understand this; please clarify.
+["Functor product and functor composition are both associative only up to isomorphism.
+While |RVec| and |RPow| are right associations, |LVec| and |LPow| are left associations.
+As we will see below, different associations, though isomorphic, lead to different algorithms."]
   - p. 8: "A downside is that we *cannot* provide them..." -- explain why.
+["we *cannot* provide them (since instances already exist)"]
   - p. 9: "Our 'bush' type is adapted from..." -- I didn't understand how this paper's bush type is "adapted" from the Bird and Meertens version; it looks like something entirely different.
+[Changed to "is inspired by". My Bush type is a depth-indexed version of the result of moving the values from nodes to leaves in the Bird and Meertens version. I guess it could be called a "perfect leaf bush".]
   - p. 9: "`RPow f` and `LPow f` form perfectly and recursively balanced products" -- I didn't understand this; product isn't used in the definitions of `RPow` and `LPow`.
+["Where |RVec| and |LVec| choose fully right- or left-associated products, |RBin| and |LBin| form perfectly and recursively balanced products (being repeated compositions of |Pair|).
+Likewise, functor composition is associative up to isomorphism.
+Where |RBin| and |LBin| are fully right- and left-associated compositions, |Bush n| forms balanced compositions."]
   - p. 9: "our choice of exclusive+total" -- what does "total" mean here?
+["the unconventional choice of exclusive+total above" --> "the additional output"]
   - p. 11: "The higher-order function `first` applies a function to the first element of a pair, carrying the second element along unchanged" -- I read `first` as "extract first element" (the more typical usage) and was briefly confused.  Is there a better name you can use?
+[It's a standard operation from the `Arrow` class. I added reference to the paper "Generalising monads to arrows".]
   - p. 14: "not just three prefix scans over `LVec 4` but also *one additional scan* over `LVec 3`" -- in figure 12, could you somehow highlight the operations that are part of this one additional scan so that they are obvious?  (I think I can see which ones they are, but I'm not completely certain.)  Yes, the figures are automatically generated, but it's worth doing this step of manual post-processing on one figure if it makes the point more clear.
+[I added "(highlighted in Figure 12)", though I take it from your comment that the highlighting didn't make the point.]
   - p. 22: Why don't you show the depth complexity for bushes?
+*[I guess I forgot to.]*
 
 Typos/grammar/formatting:
 
   - The paper should use the proper formatting for an abstract, instead of having the abstract be the first section of the paper body.
+[Fixed.]
   - Throughout the paper, avoid using citations as nouns.
+[Fixed.]
   - It's pretty much impossible to read the tiny "In" and "Out" labels in figures 3-16.
   - p. 5: It looks like there are a few occurrences of `f` in the instance definitions for `(Tree n)` that are supposed to be `h`.
+[Fixed.]
   - p. 8: In the code here (and elsewhere in the paper too), `family` ought to appear in bold since it's a keyword.
+[Fixed.]
   - p. 8: In the second definition of Peano multiplication (corresponding to `LVec`), it looks like there's a typo: it should be `(n + 1) * a = (n * a) + a`, not `(n + 1) * a = (n * a) + n`, right?  (Also, is there any reason that the second definitions of Peano multiplication and exponentiation need to use `n + 1` instead of `1 + n` as the ones above do?)
+[Fixed. (Yes; I meant the `n+1` vs `1+n` to suggest `LVec` vs `RVec`.)]
   - p. 10: "there is simple and general specification" -> "there is a..."
+[Fixed.]
   - p. 11: "two aspect of performance"
+[Fixed.]
   - p. 13: "to get a more parallelism"
+[Fixed.]
   - p. 19: "Figures 25 and 26 shows"
+[Fixed.]
   - p. 19: "which is interpret"
+[Fixed.]
   - p. 22: "Figures 32 and 33 gives"
+[Fixed.]
   - p. 24: "the Sklansky's parallel scan" -> "Sklansky's parallel scan"
+[Fixed.]
   - p. 24: "decimation in frequency" -- missing a closing quote.
+[Fixed.]
   - p. 24: "Which other known scan and FFT algorithms..." -- This sentence should end in a question mark.
+[Fixed.]
 
 ===========================================================================
                            ICFP 2017 Review #48C
@@ -280,11 +311,13 @@ Minor comments
 
 * p1, Abstract: the abstract should be in a \begin{abstract}, rather
   than as the first section.
+[Fixed.]
 
 * p2, Fig 1: calling Singleton `Par` is a bit mysterious at first.
 
 * p5, "f-ary" trees: you ought to mention that this is the free monad
   for the functor `f`.
+[Added "(also known as the ``free monad'' for the functor |f|)".]
 
 ===========================================================================
                            ICFP 2017 Review #48D
@@ -352,5 +385,6 @@ process.
 * Please ensure that you are using the correct document style, including
   author-year citations with correct usage as described in the call for
   papers.  These requirements are necessary for inclusion in PACM PL.
+[Done.]
 
 * There is a considerable body of previous work in the FP community on parallel scan and FFT, in both non-generic and generic contexts, and related work on functional hardware description languages. The final version the paper should cite and compare with appropriate related work in these domains.
