@@ -587,8 +587,7 @@ Functor product and functor composition are both associative only up to isomorph
 While |RVec| and |RPow| are right associations, |LVec| and |LPow| are left associations.
 As we will see below, different associations, though isomorphic, lead to different algorithms.
 
-Instead of the GADT-based definitions given above for |RVec|, |LVec|, |RPow|, and |LPow|, we can make the repeated product and repeated composition more apparent by using closed type families \cite{ClosedTypeFamilies:2014}, with instances defined inductively over type-level natural numbers.
-Vectors:
+Instead of the GADT-based definitions given above for |RVec|, |LVec|, |RPow|, and |LPow|, we can make the repeated product and repeated composition more apparent by using closed type families \cite{ClosedTypeFamilies:2014}, with instances defined inductively over type-level natural numbers:
 %if True
 \\
 \begin{minipage}[b]{0.4\textwidth}
@@ -596,18 +595,25 @@ Vectors:
 type family RVec n where
   RVec Z      = U1
   RVec (S n)  = Par1 :*: RVec n
+
+type family RPow h n where
+  RPow h Z      = Par1
+  RPow h (S n)  = h :.: RPow h n
 \end{code}
 \end{minipage}
-\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.5in}}\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{1.07in}}\end{minipage}
 %\hspace{-2.5ex}
 \begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
 \begin{code}
 type family LVec n where
   LVec Z      = U1
   LVec (S n)  = LVec n :*: Par1
+
+type family LPow h n where
+  LPow h Z      = Par1
+  LPow h (S n)  = LPow h n :.: h
 \end{code}
 \end{minipage}
-\\
 %else
 \begin{code}
 type family RVec n where
@@ -617,29 +623,7 @@ type family RVec n where
 type family LVec n where
   LVec Z      = U1
   LVec (S n)  = LVec n :*: Par1
-\end{code}
-%endif
-Trees:
-%if True
-\\
-\begin{minipage}[b]{0.4\textwidth}
-\begin{code}
-type family RPow h n where
-  RPow h Z      = Par1
-  RPow h (S n)  = h :.: RPow h n
-\end{code}
-\end{minipage}
-\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.5in}}\end{minipage}
-%\hspace{-2.5ex}
-\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
-\begin{code}
-type family LPow h n where
-  LPow h Z      = Par1
-  LPow h (S n)  = LPow h n :.: h
-\end{code}
-\end{minipage}
-%else
-\begin{code}
+
 type family RPow h n where
   RPow h Z      = Par1
   RPow h (S n)  = h :.: RPow h n
@@ -652,8 +636,7 @@ type family LPow h n where
 \end{code}
 %endif
 
-Note the similarity between the |RVec| and |RPow| type family instances and the following definitions of multiplication and exponentiation on Peano numbers (with RHS parentheses for emphasis).
-Likewise, the type family instances for |LVec| and |LPow| are analogous to the following equivalent definitions of Peano multiplication and exponentiation:
+Note the similarity between the |RVec| and |RPow| type family instances and the following definitions of multiplication and exponentiation on Peano numbers (with RHS parentheses for emphasis):
 %if True
 \\
 \begin{minipage}[b]{0.4\textwidth}
