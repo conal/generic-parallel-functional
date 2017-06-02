@@ -106,11 +106,11 @@ This restriction is a dynamic condition rather than part of the type signature.
 If we use the essential data type (a perfect, binary leaf tree) directly rather than via an encoding, it is easy to capture this restriction in the type system and check it statically.
 The Haskell-based formulations below use GADTs (generalized algebraic data types) and type families.
 
-\figpairW{0.52}{0.40}{ghc-generics}{Functor building blocks}{
+\figpairW{0.54}{0.38}{ghc-generics}{Functor building blocks}{
 \begin{code}
 data     (f  :+:  g)  a = L1 (f a) | R1 (g a)  NOP  -- sum
 data     (f  :*:  g)  a = f a :*: g a               -- product
-newtype  (g  :.:  f)  a = Comp1 (g (f a)) -- composition
+newtype  (g  :.:  f)  a = Comp1 (g (f a)) NOP -- composition
 
 data     V1           a                             -- void
 newtype  U1           a = U1                        -- unit
@@ -185,6 +185,31 @@ type RList =~ U1 :+: Par1 :*: RList
 type LList =~ U1 :+: RList :*: Par1
 \end{code}
 Spelling out the isomorphisms explicitly,
+%if True
+\\
+\begin{minipage}[b]{0.48\textwidth}
+\begin{code}
+instance Generic1 RList where
+  type Rep1 RList = U1 :+: Par1 :*: RList
+  from RNil       = L1 U1
+  from (a :< as)  = R1 (Par1 a :*: as)
+  to (L1 U1)               = RNil
+  to (R1 (Par1 a :*: as))  = a :< as
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{1.05in}}\end{minipage}
+\hspace{1ex}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
+instance Generic1 LList where
+  type Rep1 LList = U1 :+: LList :*: Par1
+  from LNil       = L1 U1
+  from (a :< as)  = R1 (as :*: Par1 a)
+  to (L1 U1)               = LNil
+  to (R1 (as :*: Par1 a))  = as >: a
+\end{code}
+\end{minipage}
+%else
 \begin{code}
 instance Generic1 RList where
   type Rep1 RList = U1 :+: Par1 :*: RList
@@ -200,8 +225,29 @@ instance Generic1 LList where
   to (L1 U1)               = LNil
   to (R1 (as :*: Par1 a))  = as >: a
 \end{code}
+%endif
 
 |RList| and |LList| are isomorphic not only to their underlying representation functors, but also to each other, as follows:\notefoot{Probably drop these definitions.}
+%if True
+\\
+\begin{minipage}[b]{0.48\textwidth}
+\begin{code}
+rToL :: RList a -> LList a
+rToL RNil       = LNil
+rToL (a :< as)  = rToL as >: a
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.5in}}\end{minipage}
+\hspace{1ex}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
+lToR :: LList a -> RList a
+lToR LNil       = RNil
+lToR (as >: a)  = a :< lToR as
+\end{code}
+\end{minipage}
+\\
+%else
 \begin{code}
 rToL :: RList a -> LList a
 rToL RNil       = LNil
@@ -211,6 +257,7 @@ lToR :: LList a -> RList a
 lToR LNil       = RNil
 lToR (as >: a)  = a :< lToR as
 \end{code}
+%endif
 Since these list types are easily isomorphic, why would we want to distinguish between them?
 One reason is that they may capture different intentions.
 For instance, a zipper for right lists comprises a left-list for the (reversed) elements leading up to a position and a right-list for the not-yet-visited elements \cite{HuetZipper1997,McBride01derivative}:
@@ -249,12 +296,12 @@ The repetition present in the data type definition will be mirrored in instance 
 For instance, for ternary leaf trees,
 \begin{code}
 instance Functor Tree where
-  fmap h (Leaf a)           = Leaf (h a)
-  fmap h (Branch t1 t2 t3)  = Branch (fmap h t1) (fmap h t2) (fmap h t3)
+  fmap h (Leaf a)               = Leaf (h a)
+  fmap h (Branch t1 t2 t3)      = Branch (fmap h t1) (fmap h t2) (fmap h t3)
 
 instance Foldable Tree where
-  foldMap h (Leaf a)           = h a
-  foldMap h (Branch t1 t2 t3)  = foldMap h t1 <> foldMap h t2 <> foldMap h t3
+  foldMap h (Leaf a)            = h a
+  foldMap h (Branch t1 t2 t3)   = foldMap h t1 <> foldMap h t2 <> foldMap h t3
 
 instance Traversable Tree where
   traverse h (Leaf a)           = fmap Leaf (h a)
@@ -350,6 +397,25 @@ Thanks to promotion (via the |DataKinds| language extension), |Nat| is not only 
 
 Now we can define the length-indexed |Vec| type mentioned above, which is the canonical example of dependent types in either full dependently typed languages or as simulated with generalized algebraic data types (GADTs).
 As with lists, there are right- and left-growing versions:
+%if True
+\\
+\begin{minipage}[b]{0.5\textwidth}
+\begin{code}
+data RVec :: Nat -> * -> * NOP where
+  RNil  :: RVec Z a 
+  (:<)  :: a -> RVec n a -> RVec (S n) a
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.5in}}\end{minipage}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
+data LVec :: Nat -> * -> * NOP where
+  LNil  :: LVec Z a 
+  (>:)  :: LVec n a -> a -> LVec (S n) a
+\end{code}
+\end{minipage}
+\\
+%else
 \begin{code}
 data RVec :: Nat -> * -> * NOP where
   RNil  :: RVec Z a 
@@ -359,8 +425,41 @@ data LVec :: Nat -> * -> * NOP where
   LNil  :: LVec Z a 
   (>:)  :: LVec n a -> a -> LVec (S n) a
 \end{code}
+%endif
 Recall that the generic representations of |RList| and |LList| were built out of sum, unit, identity, and product.
 With static shaping, the sum disappears from the representation, moving from dynamic to static choice, and each |Generic1| instance split into two:
+%if True
+\\
+\begin{minipage}[b]{0.5\textwidth}
+\begin{code}
+instance Generic1 (RVec Z) where
+  type Rep1 (RVec Z) = U1
+  from RNil = U1
+  to U1 = RNil
+instance  Generic1 (RVec n) =>
+          Generic1 (RVec (S n)) where
+  type Rep1 (RVec (S n)) = Par1 :*: RVec n
+  from (a :< as) = Par1 a :*: as
+  to (Par1 a :*: as) = a :< as
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{1.58in}}\end{minipage}
+\hspace{1ex}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
+instance Generic1 (LVec Z) where
+  type Rep1 (LVec Z) = U1
+  from RNil = U1
+  to U1 = RNil
+instance  Generic1 (LVec n) =>
+          Generic1 (LVec (S n)) where
+  type Rep1 (LVec (S n)) = LVec n :*: Par1
+  from (a :< as) = Par1 a :*: as
+  to (Par1 a :*: as) = a :< as
+\end{code}
+\end{minipage}
+\\
+%else
 \begin{code}
 instance Generic1 (RVec Z) where
   type Rep1 (RVec Z) = U1
@@ -380,12 +479,32 @@ instance Generic1 (LVec n) => Generic1 (LVec (S n)) where
   from (a :< as) = Par1 a :*: as
   to (Par1 a :*: as) = a :< as
 \end{code}
+%endif
 
 For leaf trees, we have a choice between imperfect and perfect trees.
 A ``perfect'' leaf tree is one in which all leaves are at the same depth.
 Both imperfect and perfect can be ``statically shaped'', but we'll use just perfect trees in this paper, for which we need only a single type-level number signifying the depth of all leaves.
 For succinctness, rename |Leaf| and |Branch| to ``|L|'' and ``|B|''.
 For reasons soon to be explained, let's also rename the types |TTree| and |BTree| to ``|RPow|'' and ``|LPow|'':
+%if True
+\\
+\begin{minipage}[b]{0.515\textwidth}
+\begin{code}
+data RPow :: (* -> *) -> Nat -> * -> * SPC where
+  L :: a -> RPow f Z a
+  B :: f (RPow f n a) -> RPow f (S n) a
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.58in}}\end{minipage}
+\hspace{-2.5ex}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
+data LPow :: (* -> *) -> Nat -> * -> * SPC where
+  L :: a -> LPow f Z a
+  B :: LPow f n (f a) -> LPow f (S n) a
+\end{code}
+\end{minipage}
+%else
 \begin{code}
 data RPow :: (* -> *) -> Nat -> * -> * SPC where
   L :: a -> RPow f Z a
@@ -397,8 +516,42 @@ data LPow :: (* -> *) -> Nat -> * -> * SPC where
   L :: a -> LPow f Z a
   B :: LPow f n (f a) -> LPow f (S n) a
 \end{code}
+%endif
 
 As with vectors, statically shaped |f|-ary trees are generically represented like their dynamically shaped counterparts but with dynamic choice (sum) replaced by static choice:
+%if True
+\\
+\begin{minipage}[b]{0.51\textwidth}
+\begin{code}
+instance Generic1 (RPow f Z) where
+  type Rep1 (RPow f Z) = Par1
+  from1 (L a) = Par1 a
+  to1 (Par1 a) = L a
+
+instance  Generic1 (RPow f n) =>
+          Generic1 (RPow f (S n)) where
+  type Rep1 (RPow f (S n)) = f :.: RPow f n
+  from1 (B ts) = Comp1 ts
+  to1 (Comp1 ts)  = B ts
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{1.6in}}\end{minipage}
+%\hspace{-2.5ex}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
+instance Generic1 (LPow f Z) where
+  type Rep1 (LPow f Z) = Par1
+  from1 (L a) = Par1 a
+  to1 (Par1 a) = L a
+
+instance  Generic1 (LPow f n) =>
+          Generic1 (LPow f (S n)) where
+  type Rep1 (LPow f (S n)) = LPow f n :.: f
+  from1 (B ts) = Comp1 ts
+  to1 (Comp1 ts) = B ts
+\end{code}
+\end{minipage}
+%else
 \begin{code}
 instance Generic1 (RPow f Z) where
   type Rep1 (RPow f Z) = Par1
@@ -420,6 +573,7 @@ instance  Generic1 (LPow f n) => Generic1 (LPow f (S n)) where
   from1 (B ts) = Comp1 ts
   to1 (Comp1 ts) = B ts
 \end{code}
+%endif
 
 We can then give these statically shaped data types |Functor|, |Foldable|, and |Traversable| instances matching the dynamically shaped versions given above.
 In addition, they have |Applicative| and |Monad| instances, left as an exercise for the reader.
@@ -435,6 +589,26 @@ As we will see below, different associations, though isomorphic, lead to differe
 
 Instead of the GADT-based definitions given above for |RVec|, |LVec|, |RPow|, and |LPow|, we can make the repeated product and repeated composition more apparent by using closed type families \cite{ClosedTypeFamilies:2014}, with instances defined inductively over type-level natural numbers.
 Vectors:
+%if True
+\\
+\begin{minipage}[b]{0.4\textwidth}
+\begin{code}
+type family RVec n where
+  RVec Z      = U1
+  RVec (S n)  = Par1 :*: RVec n
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.5in}}\end{minipage}
+%\hspace{-2.5ex}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
+type family LVec n where
+  LVec Z      = U1
+  LVec (S n)  = LVec n :*: Par1
+\end{code}
+\end{minipage}
+\\
+%else
 \begin{code}
 type family RVec n where
   RVec Z      = U1
@@ -444,7 +618,27 @@ type family LVec n where
   LVec Z      = U1
   LVec (S n)  = LVec n :*: Par1
 \end{code}
+%endif
 Trees:
+%if True
+\\
+\begin{minipage}[b]{0.4\textwidth}
+\begin{code}
+type family RPow h n where
+  RPow h Z      = Par1
+  RPow h (S n)  = h :.: RPow h n
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.5in}}\end{minipage}
+%\hspace{-2.5ex}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
+type family LPow h n where
+  LPow h Z      = Par1
+  LPow h (S n)  = LPow h n :.: h
+\end{code}
+\end{minipage}
+%else
 \begin{code}
 type family RPow h n where
   RPow h Z      = Par1
@@ -456,8 +650,13 @@ type family LPow h n where
   LPow h Z      = Par1
   LPow h (S n)  = LPow h n :.: h
 \end{code}
+%endif
 
-Note the similarity between the |RVec| and |RPow| type family instances and the following definitions of multiplication and exponentiation on Peano numbers (with RHS parentheses for emphasis):
+Note the similarity between the |RVec| and |RPow| type family instances and the following definitions of multiplication and exponentiation on Peano numbers (with RHS parentheses for emphasis).
+Likewise, the type family instances for |LVec| and |LPow| are analogous to the following equivalent definitions of Peano multiplication and exponentiation:
+%if True
+\\
+\begin{minipage}[b]{0.4\textwidth}
 \begin{code}
 0      * a = 0
 (1+n)  * a = a + (n * a)
@@ -465,7 +664,9 @@ Note the similarity between the |RVec| and |RPow| type family instances and the 
 h ^ 0      = 1
 h ^ (1+n)  = h * (h ^ n)
 \end{code}
-Likewise, the type family instances for |LVec| and |LPow| are analogous to the following equivalent definitions of Peano multiplication and exponentiation:
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.7in}}\end{minipage}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
 \begin{code}
 0      * a = 0
 (n+1)  * a = (n * a) + a
@@ -473,6 +674,24 @@ Likewise, the type family instances for |LVec| and |LPow| are analogous to the f
 h ^ 0      = 1
 h ^ (n+1)  = (h ^ n) * h
 \end{code}
+\end{minipage}
+%else
+\begin{code}
+0      * a = 0
+(1+n)  * a = a + (n * a)
+
+h ^ 0      = 1
+h ^ (1+n)  = h * (h ^ n)
+\end{code}
+
+\begin{code}
+0      * a = 0
+(n+1)  * a = (n * a) + a
+
+h ^ 0      = 1
+h ^ (n+1)  = (h ^ n) * h
+\end{code}
+%endif
 
 Because these type-family-based definitions are expressed in terms of existing generic building blocks, we directly inherit many existing class instances rather than having to define them.
 For the same reason, we \emph{cannot} provide them (since instances already exist), which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
@@ -483,9 +702,25 @@ The uniform |Pair| functor can be defined in a variety of ways, including |Par1 
 data Pair a = a :# a deriving (Functor,Foldable,Traversable)
 \end{code}
 For convenience, define top-down and bottom-up \emph{binary} trees:
-
-> type RBin = RPow Pair
-> type LBin = LPow Pair
+%if False
+\\
+\begin{minipage}[b]{0.4\textwidth}
+\begin{code}
+type RBin = RPow Pair
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.1in}}\end{minipage}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
+type LBin = LPow Pair
+\end{code}
+\end{minipage}
+%else
+\begin{code}
+type RBin = RPow Pair
+type LBin = LPow Pair
+\end{code}
+%endif
 
 \subsection{Bushes}\seclabel{bushes}
 
