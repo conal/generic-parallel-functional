@@ -130,7 +130,7 @@ class Generic1 f where
 
 When we use natural, recursively defined data types \emph{explicitly}, we can use standard programming patterns such as folds and traversals \out{\cite{McBride:2008} }directly.
 In a language like Haskell, those patterns follow known laws and are well supported by the programming ecosystem.
-The use of array encodings makes those patterns \emph{implicit}, as a sort of informal guide only, distancing programs from the elegant and well-understood laws and abstractions that motivate those programs, justify their correctness, and point to algorithmic variations that solve related problems or make different implementation trade-offs.
+Array encodings make those patterns \emph{implicit}, as a sort of informal guide only, distancing programs from the elegant and well-understood laws and abstractions that motivate those programs, justify their correctness, and point to algorithmic variations that solve related problems or make different implementation trade-offs.
 
 Even the \emph{determinacy} of an imperative, array-based parallel algorithm can be difficult to ensure or verify.
 When the result is an array rather than a single value, as in scans and FFTs, values are written to indexed locations.
@@ -260,7 +260,7 @@ lToR (as >: a)  = a :< lToR as
 %endif
 Since these list types are easily isomorphic, why would we want to distinguish between them?
 One reason is that they may capture different intentions.
-For instance, a zipper for right lists comprises a left-list for the (reversed) elements leading up to a position and a right-list for the not-yet-visited elements \cite{HuetZipper1997,McBride01derivative}:
+For instance, a zipper for right lists comprises a left-list for the (reversed) elements leading up to a position and a right-list for the not-yet-visited elements \cite{HuetZipper1997,McBride01derivative}\out{:
 \begin{code}
 data ListZipper a = ListZipper (LList a) (RList a)
 \end{code}
@@ -268,8 +268,7 @@ or
 \begin{code}
 type ListZipper = LList :*: RList
 \end{code}
-This same type serves as a zipper for left-lists as well.
-
+This same type serves as a zipper for left-lists as well}.
 Another reason for distinguishing left- from right-lists is that they have usefully different instances for standard type classes, leading---as we will see---to different operational characteristics, especially with regard to parallelism.
 
 \subsection{Top-down trees}
@@ -381,7 +380,7 @@ In array-based algorithms, these restrictions can be realized in one of two ways
 \item
   check array sizes dynamically, incurring a performance penalty; or
 \item
-  document the restriction, assume the best, and blame the library user when the assumption is violated.
+  document the restriction, assume the best, and blame the library user for errors.
 \end{itemize}
 A third option---much less commonly used---is to statically verify the size restriction at the call site, perhaps by using a dependently typed language and providing proofs as part of the call.
 
@@ -391,7 +390,7 @@ For this paper, assume that |Nat| is a kind-promoted version of the following da
 \begin{code}
 data Nat = Z | S Nat
 \end{code}
-Thanks to promotion (via the |DataKinds| language extension), |Nat| is not only a new data type with value-level constructors |Z| and |S|, but also a new \emph{kind} with \emph{type-level} constructors |Z| and |S| \cite{yorgey2012giving}.
+Thanks to promotion (via the |DataKinds| language extension), |Nat| is\out{ not only a new data type with value-level constructors |Z| and |S|, but} also a new \emph{kind} with \emph{type-level} constructors |Z| and |S| \cite{yorgey2012giving}.
 
 \subsubsection{GADT formulation}
 
@@ -576,7 +575,7 @@ instance  Generic1 (LPow f n) => Generic1 (LPow f (S n)) where
 %endif
 
 We can then give these statically shaped data types |Functor|, |Foldable|, and |Traversable| instances matching the dynamically shaped versions given above.
-In addition, they have |Applicative| and |Monad| instances, left as an exercise for the reader.
+In addition, they have |Applicative| and |Monad| instances\out{, left as an exercise for the reader}.
 Since all of these types are memo tries \cite{Hinze00memofunctions}, their class instances instance follow homomorphically from the corresponding instances for functions \cite{long-type-class-morphisms}.
 
 \subsubsection{Type family formulation}
@@ -638,7 +637,7 @@ type family LPow h n where
 
 Note the similarity between the |RVec| and |RPow| type family instances and the following definitions of multiplication and exponentiation on Peano numbers (with RHS parentheses for emphasis):
 %if True
-\\
+
 \begin{minipage}[b]{0.4\textwidth}
 \begin{code}
 0      * a = 0
@@ -834,7 +833,7 @@ With the four easy instances out of the way, we have only two left to define: pr
 \subsection{Product}
 
 Suppose we have linear scans, as in \figref{two-scans}.
-We will see later how these individual scans arise from particular functors |f| and |g| (of sizes five and eleven respectively), but for now take them as given.
+We will see later how these individual scans arise from particular functors |f| and |g| (of sizes five and eleven), but for now take them as given.
 To understand |lscan| on functor products, consider how to combine the scans of |f| and |g| into scan for |f :*: g|.
 
 Because we are left-scanning, every prefix of |f| is also a prefix of |f :*: g|, so the |lscan| results for |f| are also correct results for |f :*: g|.
@@ -865,10 +864,10 @@ W  (f :*: g) = W f + W g + ssize g + 1
 D  (f :*: g) = (D f `max` D g) + 1
 \end{code}
 
-We now have enough functionality for scanning vectors using either the GADT or type family definitions from \secref{statically-shaped-types}.
+We now have enough functionality for scanning vectors using the GADT or type family definitions from \secref{statically-shaped-types}.
 \figref{lsums-rv8-no-hash-no-opt} shows |lscan| for |RVec N8| (\emph{right} vector of length 8).
-The zero-additions can be easily optimized away, resulting in \figref{lsums-rv8}.
-In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|), and the work and depth are shown in the caption (as \emph{W} and \emph{D}).
+The zero-additions are easily optimized away, resulting in \figref{lsums-rv8}.
+In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|), and work and depth are shown in the caption (as \emph{W} and \emph{D}).
 As promised, there is always one more output than input, and the last output is the fold that summarizes the entire structure being scanned.
 
 \figp{
@@ -878,7 +877,7 @@ As promised, there is always one more output than input, and the last output is 
 
 The combination of left scan and right vector is particularly unfortunate, as it involves quadratic work and linear depth.
 The source of quadratic work is the product instance's \emph{right} adjustment combined with the right-associated shape of |RVec|.
-Each single element (left) is used to adjust the entire suffix (right), requiring linear work at each step, summing to quadratic.
+Each single element is used to adjust the entire suffix, requiring linear work at each step, summing to quadratic.
 We can verify the complexity by using the definition of |RVec| and the complexities for the generic building blocks involved.
 \begin{code}
 W (RVec 0) = W U1 = 0
@@ -910,7 +909,7 @@ Thus
 W  (LVec n) = O (n)
 D  (LVec n) = O (n)
 \end{code}
-Performing a suffix/right scan on a left vector also leads to quadratic work, reduced to linear by switching to right vectors.
+Performing a suffix/right scan on a left vector also leads to quadratic work\out{, reduced to linear by switching to right vectors}.
 
 Although work is greatly reduced (from quadratic to linear), depth remains at linear, because unbalanced data types lead to unbalanced parallelism.
 Both |RVec| and |LVec| are ``parallel'' in a sense, but we only get to perform small computations in parallel with large one (especially apparent in the unoptimized \figreftwo{lsums-rv8-no-hash-no-opt}{lsums-lv8-no-hash-no-opt}), so that the result is essentially sequential.
@@ -923,8 +922,8 @@ Can we decrease the depth any further?
 Not as a single product, but we can as more than one product, as shown in \figref{lsums-lv5-5-6-l} with depth six.
 Again, the more balance, the better.
 \figp{
-\circdef{lsums-lv8xlv8}{|lscan @(LVec N8 :*: LVec N8)|}{22}{8}}{
-\circdef{lsums-lv5-5-6-l}{|lscan @((LVec N5 :*: LVec N5) :*: LVec N6)|}{24}{6}}
+\circdefWsmall{\stdWidth}{lsums-lv8xlv8}{|lscan @(LVec N8 :*: LVec N8)|}{22}{8}}{
+\circdefWsmall{\stdWidth}{lsums-lv5-5-6-l}{|lscan @((LVec N5 :*: LVec N5) :*: LVec N6)|}{24}{6}}
 
 \subsection{Composition}
 
@@ -943,7 +942,7 @@ We already know the answer, since this composite type is essentially |(LVec N4 :
 }{lsums-lv3olv4-highlight}{|lscan @(LVec N3 :.: LVec N4)| \stats{18}{5}}{\incpic{lsums-lv3olv4-highlight}}
 
 Let's reflect on this example as we did with binary products above.
-The prefixes of the first quadruple are all prefixes of the composite structure, so their prefix sums are prefix sums of the composite and so are used as they are.
+Since the prefixes of the first quadruple are all prefixes of the composite structure, their prefix sums are prefix sums of the composite and so are used as they are.
 For every following quadruple, the prefix sums are lacking the sum of all elements from the earlier quadruples and so must be adjusted accordingly, as emphasized in \figref{lsums-lv3olv4-highlight}.
 
 \emph{Now we get to the surprising heart of generic parallel scan}.
@@ -1114,8 +1113,8 @@ A quick examination shows that there is a lot of redundant computation due to th
 For instance, for an input $x$, we compute $x^2$ eight times and $x^4$ four times.
 Fortunately, automatic common subexpression elimination (CSE) can remove such redundancies easily, resulting in \figref{powers-rb4}.
 \figp{
-\circdef{powers-rb4-no-hash}{|powers @(RBin N4)| --- without CSE}{32}{4}}{
-\circdef{powers-rb4}{|powers @(RBin N4)| --- with CSE}{15}{4}}
+\circdef{powers-rb4-no-hash}{|powers @(RBin N4)|, no CSE}{32}{4}}{
+\circdef{powers-rb4}{|powers @(RBin N4)|, CSE}{15}{4}}
 
 Building on this example, let's define polynomial evaluation, mapping a structure of coefficients $a_0, \ldots, a_{n-1}$ and a parameter $x$ to $\sum_{0 \le i < n} a_i x^i$\out{$a_0 + a_1 x + \cdots + a_{n-1} x^{n-1}$}.
 A very simple formulation is to construct all of the powers of $x$ and then form a dot product with the coefficients:
@@ -1296,15 +1295,19 @@ D (RPow h n) = O (pow n 2) = O (logSq (ssize (RPow h n)))
 As mentioned above, |W (g :.: f) = W (f :.: g)| and |D (g :.: f) = D (f :.: g)|, so top-down and bottom-up trees have the same work and depth complexities.
 
 Next, consider bushes.
-Work:
 \begin{code}
 W (Bush 0) = W Pair = 2
 W (Bush (S n))  = W (Bush n :.: Bush n)
                 = ssize (Bush n) *. W (Bush n) + O (ssize (Bush n :.: Bush n)) + ssize (Bush n) *. W (Bush n)
                 = 2 *. ssize (Bush n) *. W (Bush n) + O (ssize (Bush (S n)))
                 = 2 *. pow 2 (pow 2 n) *. W (Bush n) + O (pow 2 (pow 2 (n+1)))
+
+D (Bush 0) = D Pair = 1
+D (Bush (S n))  = D (Bush n :.: Bush n)
+                = D (Bush n) + log2 (ssize (Bush n :.: Bush n)) + O(1) + D (Bush n)
+                = 2 D (Bush n) + pow 2 (n+1) + O(1)
 \end{code}
-A closed form solution is left for later work.
+Closed form solutions are left for later work.
 
 \todo{Consistent structure for these proofs throughout the paper.}
 
