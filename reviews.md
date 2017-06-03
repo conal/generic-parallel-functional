@@ -108,7 +108,7 @@ where it would be appropriate to add some references.
 p3, When RList and LList are first 'defined' informally using
 the isomorphism notation, the fact that this is not valid
 Haskell notation needs to be explicitly mentioned.
-[done]
+["These two types are isomorphic to types assembled from the functor building blocks of Figure 1"]
 
 p3, It would be beneficial to present the instances of Generic_1
 for RList and LList side-by-side rather than above-and-below.
@@ -116,6 +116,7 @@ This makes it easier to compare them, and also saves space.  The
 same comment applies a number of other places in the paper too,
 and the author should carefully review all the definitions and
 see which could naturally be placed side-by-side.
+[Done in several places.]
 
 p4, Section 3.2 on top-down trees could be presented much more
 concisely, as this is standard generic progamming material.
@@ -226,9 +227,7 @@ I support acceptance of the paper, but have a number of presentational suggestio
 [added ", and each |Generic1| instance split into two"]
   - p. 7: "A 'perfect' leaf tree is..." -- maybe this definition should go at the first point where the paper uses the term.
   - p. 8: "This limit to associativity is exactly why both exist and are useful." -- I didn't understand this; please clarify.
-["Functor product and functor composition are both associative only up to isomorphism.
-While |RVec| and |RPow| are right associations, |LVec| and |LPow| are left associations.
-As we will see below, different associations, though isomorphic, lead to different algorithms."]
+["Functor product and functor composition are both associative only up to isomorphism. While |RVec| and |RPow| are right associations, |LVec| and |LPow| are left associations. As we will see below, different associations, though isomorphic, lead to different algorithms."]
   - p. 8: "A downside is that we *cannot* provide them..." -- explain why.
 ["we *cannot* provide them (since instances already exist)"]
   - p. 9: "Our 'bush' type is adapted from..." -- I didn't understand how this paper's bush type is "adapted" from the Bird and Meertens version; it looks like something entirely different.
@@ -244,7 +243,7 @@ Where |RBin| and |LBin| are fully right- and left-associated compositions, |Bush
   - p. 14: "not just three prefix scans over `LVec 4` but also *one additional scan* over `LVec 3`" -- in figure 12, could you somehow highlight the operations that are part of this one additional scan so that they are obvious?  (I think I can see which ones they are, but I'm not completely certain.)  Yes, the figures are automatically generated, but it's worth doing this step of manual post-processing on one figure if it makes the point more clear.
 [I added "(highlighted in Figure 12)", though I take it from your comment that the highlighting didn't make the point.]
   - p. 22: Why don't you show the depth complexity for bushes?
-*[I guess I forgot to.]*
+*[Oops! Added, though without closed form solution.]*
 
 Typos/grammar/formatting:
 
@@ -314,6 +313,7 @@ Minor comments
 [Fixed.]
 
 * p2, Fig 1: calling Singleton `Par` is a bit mysterious at first.
+[I agree. I chose to keep the names from `GHC.Generics`.]
 
 * p5, "f-ary" trees: you ought to mention that this is the free monad
   for the functor `f`.
