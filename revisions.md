@@ -1,6 +1,6 @@
 # Revisions
 
-I've addressed suggestions as follows, with the change description described in square brackets.
+I've addressed suggestions as described below, with the change description described in square brackets.
 
 ## Mandatory
 
