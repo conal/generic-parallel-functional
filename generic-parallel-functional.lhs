@@ -732,7 +732,7 @@ Where |RBin| and |LBin| are fully right- and left-associated compositions, |Bush
 Many other variations are possible, but the |Bush| definition above will suffice for this paper.
 
 
-\section{Parallel scan}
+\sectionl{Parallel scan}
 
 Given a sequence $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ldots,b_n$ such that $b_k = \sum_{0 \le i < k}{a_i}$.
 More generally, for any associative operation $\oplus$, the ``prefix scan'' is defined by $b_k = \bigoplus_{0 \le i < k}{a_i}$, with $b_0$ being the identity for $\oplus$.
@@ -1356,6 +1356,7 @@ Much has been written about parallel scan from a functional perspective.
 Moreover, the algebra is shown to be amenable to proving and deriving circuit designs.
 All of the work mentioned in this paragraph so far formulate scan exclusively in terms of lists, unlike the generic approach explored in the present paper.
 In contrast, \citet{Gibbons:1992:UDA,Gibbons:2000:GDA} generalized to other data types, including trees, and reconstructed scan as a combination of the two more general operations of upward and downward accumulations.
+\citet{Keller1999} described a distributed scan algorithm similar to some of those emerging from the generic algorithm of \secref{Parallel scan} above, pointing out the additional scan and adjustment required to combine results of scanned segments.
 
 FFT has also been studied through a functional lens, using lists or arrays..
 \citet{deVries:1988:FFT} developed an implementation of fast polynomial multiplication based on binary FFT.
