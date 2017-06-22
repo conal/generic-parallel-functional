@@ -5,12 +5,30 @@
 
 %% \anontrue
 
-%% \acmtrue
+\acmtrue
 
 \documentclass[acmsmall]{acmart} % ,authorversion=true
 
 \ifacm
+
+%%% The following is specific to ICFP'17 and the paper
+%%% 'Generic Functional Parallel Algorithms: Scan and FFT'
+%%% by Conal Elliott.
+%%%
+%%% If you see 'none' in the 'setcopyright' statement below,
+%%% please first submit your publishing-rights agreement with ACM (follow link on submission page),
+%%% and then visit the instructions received from ACM (in the publishing-rights agreement)
+%%% in order to copy the correct 'setcopyright' statement.  Please contact us in case of questions.
+%%%
+\setcopyright{none}
 \acmJournal{PACMPL}
+\acmYear{2017}
+\acmVolume{1}
+\acmNumber{1}
+\acmArticle{7}
+\acmMonth{9}
+\acmDOI{10.1145/3110251}
+
 \else
 \acmPrice{}
 \setcopyright{none}
@@ -27,7 +45,7 @@
 \author{Conal Elliott}
 \email{conal@@conal.net}
 \affiliation{%
-  \institution{Target}
+  \institution{Target, USA}
 }
 
 %include polycode.fmt
@@ -81,7 +99,7 @@ Instances for non-regular algebraic data types can be defined explicitly, which 
 To define a generic algorithm, one provides class instances for these primitives and writes a default definition for each method in terms of |from1| and |to1|.
 
 The effectiveness of generic programming relies on having at our disposal a variety of data types, each corresponding to a unique composition of the generic type building blocks.
-In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays (or lists in functional formulations; see \secref{Related work}).
+In contrast, parallel algorithms are usually designed and implemented in terms of the \emph{single} data type of arrays (or lists in functional formulations; see \secref{Related Work}).
 The various array algorithms involve idiosyncratic patterns of traversal and construction of this single data type.
 For instance, a parallel array reduction with an associative operator involves recursive or iterative generation of numeric indices for extracting elements, taking care that each element is visited exactly once and combined left-to-right.
 Frequently, an array is split, each half processed recursively and independently, and results combined later.
@@ -361,7 +379,7 @@ data BTree f a = BLeaf a | BBranch (BTree (f a))
 Bottom-up trees (|BTree|) are a canonical example of ``nested'' or ``non-regular'' data types, requiring polymorphic recursion \cite{Bird1998}.
 As we'll see below, they give rise to important versions of parallel scan and FFT.
 
-\subsection{Statically Shaped Variations}\seclabel{statically-shaped-types}
+\subsectionl{Statically Shaped Variations}
 
 Some algorithms work only on collections of restricted size.
 For instance, the most common parallel scan and FFT algorithms are limited to arrays of size $2^n$, while the more general (not just binary) Cooley-Tukey FFT algorithms require composite size, i.e., $m \cdot n$ for integers $m, n \ge 2$.
@@ -694,7 +712,7 @@ type LBin = LPow Pair
 \end{code}
 %endif
 
-\subsection{Bushes}\seclabel{bushes}
+\subsectionl{Bushes}
 
 In contrast to vectors, the tree types above are perfectly balanced, as is helpful in obtaining naturally parallel algorithms.
 From another perspective, however, they are quite unbalanced.
@@ -854,7 +872,7 @@ W  (f :*: g) = W f + W g + ssize g + 1
 D  (f :*: g) = (D f `max` D g) + 1
 \end{code}
 
-We now have enough functionality for scanning vectors using the GADT or type family definitions from \secref{statically-shaped-types}.
+We now have enough functionality for scanning vectors using the GADT or type family definitions from \secref{Statically Shaped Variations}.
 \figref{lsums-rv8-no-hash-no-opt} shows |lscan| for |RVec N8| (\emph{right} vector of length 8).
 The zero-additions are easily optimized away, resulting in \figref{lsums-rv8}.
 In this picture (and many more like it below), the data types are shown in flattened form in the input and output (labeled |In| and |Out|), and work and depth are shown in the caption (as \emph{W} and \emph{D}).
@@ -1009,7 +1027,7 @@ On the other hand, the depth for bottom-up trees is about twice the depth for to
 
 Specializing these |RPow h| and |LPow h| scan algorithms to |h = Pair| and then optimizing away zero-additions (as in \figreftwo{lsums-rb4}{lsums-lb4}) yields two well-known algorithms: |lscan| on |RBin n| is from \citep{Sklansky1960}, while |lscan| on |LBin n| is from \citep{LadnerFischer1980}.
 
-Finally, consider the |Bush| type from \secref{bushes}.
+Finally, consider the |Bush| type from \secref{Bushes}.
 Figures~\ref{fig:lsums-bush0} through~\ref{fig:lsums-bush2} show |lscan| for bushes of depth zero through two.
 Depth complexity:\out{\notefoot{I'm giving an exact analysis, not an asymptotic one. My conclusion doesn't match measurements for $n=2,3$. Find and fix my mistake.}}
 \begin{code}
@@ -1346,7 +1364,7 @@ Much has been written about parallel scan from a functional perspective.
 Moreover, the algebra is shown to be amenable to proving and deriving circuit designs.
 All of the work mentioned in this paragraph so far formulate scan exclusively in terms of lists, unlike the generic approach explored in the present paper.
 In contrast, \citet{Gibbons:1992:UDA,Gibbons:2000:GDA} generalized to other data types, including trees, and reconstructed scan as a combination of the two more general operations of upward and downward accumulations.
-\citet{Keller1999} described a distributed scan algorithm similar to some of those emerging from the generic algorithm of \secref{Parallel scan} above, pointing out the additional scan and adjustment required to combine results of scanned segments.
+\citet{Keller1999} described a distributed scan algorithm similar to some of those emerging from the generic algorithm of \secref{Parallel Scan} above, pointing out the additional scan and adjustment required to combine results of scanned segments.
 
 FFT has also been studied through a functional lens, using lists or arrays..
 \citet{deVries:1988:FFT} developed an implementation of fast polynomial multiplication based on binary FFT.
