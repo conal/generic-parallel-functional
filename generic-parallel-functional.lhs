@@ -4,16 +4,24 @@
 \newif\ifanon
 
 %% \anontrue
-\acmtrue
 
-\documentclass[acmsmall]{acmart} % ,draft
+%% \acmtrue
+
+\documentclass[acmsmall]{acmart} % ,authorversion=true
+
+\ifacm
 \acmJournal{PACMPL}
+\else
+\acmPrice{}
+\setcopyright{none}
+%% \acmJournal{PACMPL}
+%% % Doesn't work:
+%% \acmConference[ICFP]{International Conference on Functional Programming}{September, 2017}{Oxford}
 
-%% \ifacm
-%% \documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart}
-%% \else
-%% \documentclass[acmlarge,authorversion \ifanon ,anonymous \else \fi]{acmart-tweaked}
-%% \fi
+\fancyfoot[RO,LE]{February 2017. (Revised \today.) To appear at ICFP 2017.}
+\fancyfoot[RO]{February 2017. Revised \today.}
+
+\fi
 
 \citestyle{acmauthoryear}
 \author{Conal Elliott}
@@ -21,13 +29,6 @@
 \affiliation{%
   \institution{Target}
 }
-
-%% %% Temporary
-%% \setcopyright{rightsretained}
-%% \settopmatter{printacmref=false, printccs=true, printfolios=true}
-%% \acmYear{2017}
-%% \acmMonth{2}
-%% \acmDOI{}
 
 %include polycode.fmt
 %include forall.fmt
@@ -40,18 +41,7 @@
 
 \bibliographystyle{plainnat}
 
-% \title{Two generic functional parallel algorithms}
-% \title{Generic functional parallel algorithms}
-% \subtitle{Scan and FFT}
-\title{Generic functional parallel algorithms: Scan and FFT}
-
-\ifacm\else
-\fancyfoot[RO,LE]{Draft of February 27, 2017. Submitted to ICFP. Comments appreciated.}
-%% \addtolength{\topmargin}{0.25in}
-%% \addtolength{\headsep}{0.3in}
-\addtolength{\textheight}{0.5in}
-\addtolength{\footskip}{0.1in}
-\fi
+\title{Generic Functional Parallel Algorithms: Scan and FFT}
 
 \begin{document}
 
@@ -161,9 +151,9 @@ Concretely, this paper makes the following contributions:
 The figures in this paper are generated automatically (including optimizations) from the given Haskell code, using a compiler plugin that which also generates synthesizable descriptions in Verilog for massively parallel, hardware-based evaluation \cite{\compilingToCats}.
 
 
-\section{Some useful data types}
+\section{Some Useful Data Types}
 
-\subsection{Right-lists and left-lists}
+\subsection{Right-Lists and Left-Lists}
 
 Let's start with a very familiar data type of lists:
 \begin{code}
@@ -271,7 +261,7 @@ type ListZipper = LList :*: RList
 This same type serves as a zipper for left-lists as well}.
 Another reason for distinguishing left- from right-lists is that they have usefully different instances for standard type classes, leading---as we will see---to different operational characteristics, especially with regard to parallelism.
 
-\subsection{Top-down trees}
+\subsection{Top-down Trees}
 
 After lists, trees are perhaps the most commonly used data structure in functional programming.
 Moreover, in contrast with lists, the symmetry possible with trees naturally leads to parallel-friendly algorithms.
@@ -371,7 +361,7 @@ data BTree f a = BLeaf a | BBranch (BTree (f a))
 Bottom-up trees (|BTree|) are a canonical example of ``nested'' or ``non-regular'' data types, requiring polymorphic recursion \cite{Bird1998}.
 As we'll see below, they give rise to important versions of parallel scan and FFT.
 
-\subsection{Statically shaped variations}\seclabel{statically-shaped-types}
+\subsection{Statically Shaped Variations}\seclabel{statically-shaped-types}
 
 Some algorithms work only on collections of restricted size.
 For instance, the most common parallel scan and FFT algorithms are limited to arrays of size $2^n$, while the more general (not just binary) Cooley-Tukey FFT algorithms require composite size, i.e., $m \cdot n$ for integers $m, n \ge 2$.
@@ -392,7 +382,7 @@ data Nat = Z | S Nat
 \end{code}
 Thanks to promotion (via the |DataKinds| language extension), |Nat| is\out{ not only a new data type with value-level constructors |Z| and |S|, but} also a new \emph{kind} with \emph{type-level} constructors |Z| and |S| \cite{yorgey2012giving}.
 
-\subsubsection{GADT formulation}
+\subsubsection{GADT Formulation}
 
 Now we can define the length-indexed |Vec| type mentioned above, which is the canonical example of dependent types in either full dependently typed languages or as simulated with generalized algebraic data types (GADTs).
 As with lists, there are right- and left-growing versions:
@@ -578,7 +568,7 @@ We can then give these statically shaped data types |Functor|, |Foldable|, and |
 In addition, they have |Applicative| and |Monad| instances\out{, left as an exercise for the reader}.
 Since all of these types are memo tries \cite{Hinze00memofunctions}, their class instances instance follow homomorphically from the corresponding instances for functions \cite{long-type-class-morphisms}.
 
-\subsubsection{Type family formulation}
+\subsubsection{Type Family Formulation}
 
 Note that |RVec n| and |LVec n| are essentially $n$-ary functor \emph{products} of |Par1|.
 Similarly, |RPow f n| and |LPow f n| are $n$-ary functor \emph{compositions} of |f|.
@@ -732,7 +722,7 @@ Where |RBin| and |LBin| are fully right- and left-associated compositions, |Bush
 Many other variations are possible, but the |Bush| definition above will suffice for this paper.
 
 
-\sectionl{Parallel scan}
+\sectionl{Parallel Scan}
 
 Given a sequence $a_0,\ldots,a_{n-1}$, the ``prefix sum'' is a sequence $b_0,\ldots,b_n$ such that $b_k = \sum_{0 \le i < k}{a_i}$.
 More generally, for any associative operation $\oplus$, the ``prefix scan'' is defined by $b_k = \bigoplus_{0 \le i < k}{a_i}$, with $b_0$ being the identity for $\oplus$.
@@ -790,7 +780,7 @@ class Functor f => LScan f where
 Once we define |LScan| instances for our six fundamental combinators, one can simply write ``|instance LScan F|'' for any functor |F| having a |Generic1| instance (derived automatically or defined manually).
 For our statically shaped vector, tree, and bush functors, we have a choice: use the GADT definitions with their manually defined |Generic1| instances (exploiting the |lscan| default), or use the type family versions without the need for the encoding (|from1|) and decoding (|to1|) steps.
 
-\subsection{Easy instances}
+\subsection{Easy Instances}
 
 Four of the six needed generic |LScan| instances are easily handled:
 \begin{code}
@@ -969,7 +959,7 @@ W  (g :.: f) = ssize g *. W f + W g + ssize g *. ssize f
 D  (g :.: f) = D f + D g
 \end{code}
 
-\subsection{Other data types}
+\subsection{Other Data Types}
 
 We now know how to scan the full vocabulary of generic functor combinators, and we've seen the consequences for several data types.
 Let's now examine how well generic scan works for some other example structures.
@@ -1070,7 +1060,7 @@ A closed form solution is left for later work.
 \figreftwo{lscan-stats-16}{lscan-stats-256} offer an empirical comparison, including some optimizations not taken into account in the complexity analyses above.
 Note that top-down trees have the least depth, bottom-up trees have the least work, and bushes provide a compromise, with less work than top-down trees and less depth than bottom-up trees.
 
-\subsection{Some convenient packaging}
+\subsection{Some Convenient Packaging}
 
 For generality, |lscan| works on arbitrary monoids.
 For convenience, let's define some specializations.
@@ -1132,7 +1122,7 @@ u <.> v = sum (liftA2 (*) u v)
 
 \note{Scan-based addition.}
 
-%% \subsection{Relation to known parallel scan algorithms}
+%% \subsection{Relation to Known Parallel Scan Algorithms}
 
 
 \section{FFT}
@@ -1161,7 +1151,7 @@ If we use the same method for solving these $N_1 + N_2$ smaller DFTs, we get a r
 
 Rather than implementing FFT via sequences or arrays as usual, let's take a step back and consider a more structured approach.
 
-\subsection{Factor types, not numbers!}
+\subsection{Factor Types, not Numbers!}
 
 The summation formula above exhibits a trait typical of array-based algorithms, namely index arithmetic, which is tedious to write and to read.
 This arithmetic has a purpose, however, which is to interpret an array as an array of arrays.
@@ -1264,7 +1254,7 @@ The definition of |fft| for |g :.: f| can be simplified (without changing comple
     Comp1 . traverse fft . twiddle . traverse fft . transpose . unComp1
 \end{code}
 
-\subsection{Comparing data types}
+\subsection{Comparing Data Types}
 
 The top-down and bottom-up tree algorithms correspond to two popular binary FFT variations known as ``decimation in time'' and ``decimation in frequency'' (``DIT'' and ``DIF''), respectively.
 In the array formulation, these variations arise from choosing $N_1$ small or $N_2$ small, respectively (most commonly 2 or 4).
@@ -1322,9 +1312,9 @@ Each complex number appears as its real and imaginary components.
 \begin{minipage}{0.47\linewidth}
  \centering
   \fftStats{
-    \fftStat{|RBin N4|}{74}{40}{74}{197}{8}
-    \fftStat{|LBin N4|}{74}{40}{74}{197}{8}
-    \fftStat{|Bush N2|}{72}{32}{72}{186}{6}
+    \fftStat{|RBin N4|}{74}{74}{40}{197}{8}
+    \fftStat{|LBin N4|}{74}{74}{40}{197}{8}
+    \fftStat{|Bush N2|}{72}{72}{32}{186}{6}
   }
   \vspace*{-3ex}
   \captionof{figure}{FFT for 16 complex values}
@@ -1332,9 +1322,9 @@ Each complex number appears as its real and imaginary components.
 
   \vspace{5ex}
   \fftStats{
-    \fftStat{|RBin N8|}{2690}{2582}{2690}{8241}{20}
-    \fftStat{|LBin N8|}{2690}{2582}{2690}{8241}{20}
-    \fftStat{|Bush N3|}{2528}{1922}{2528}{7310}{14}
+    \fftStat{|RBin N8|}{2690}{2690}{2582}{8241}{20}
+    \fftStat{|LBin N8|}{2690}{2690}{2582}{8241}{20}
+    \fftStat{|Bush N3|}{2528}{2528}{1922}{7310}{14}
   }
   \vspace*{-3ex}
   \captionof{figure}{FFT for 256 complex values}
@@ -1345,7 +1335,7 @@ Each complex number appears as its real and imaginary components.
 The total counts include literals, many of which are non-zero only accidentally, due to numerical inexactness.
 Pleasantly, the |Bush| instance of generic FFT appears to improve over the classic DIT and DIF algorithms in both work and depth.
 
-\sectionl{Related work}
+\sectionl{Related Work}
 
 Much has been written about parallel scan from a functional perspective.
 \citet[Figure 11]{Blelloch96programmingparallel} gave a functional implementation of work-efficient of the algorithm of \citet{LadnerFischer1980} in the functional parallel language NESL.
