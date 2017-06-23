@@ -85,7 +85,8 @@
 
 %format :# = "\mathbin{:\!\!\#}"
 
-%format *** = "\symThree{*}"
+%% %format *** = "\symThree{*}"
+%format *** = "\times"
 
 %format <.> = "\cdot"
 
@@ -108,3 +109,5 @@
 %% %format ~ = "\mathbin{\sim}"
 
 %format logSq = log"^2"
+
+%format ## = "\mid"
