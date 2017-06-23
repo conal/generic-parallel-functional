@@ -54,7 +54,7 @@
 
 %% \figone{fraction}{label}{caption}{content}
 \nc\figoneW[4]{
-\fbox{%
+{% \fbox
 \begin{minipage}{#1\linewidth}
   \centering
   \setlength\mathindent{0ex}
@@ -101,7 +101,7 @@
 \nc\circdefWsmall[5]{\figoneW{#1}{#2}{\scriptsize #3 \stats{#4}{#5}}{\incpic{#2}}}
 \nc\circdef{\circdefW{\stdWidth}}
 
-\nc\stdWidth{0.46}
+\nc\stdWidth{0.47}
 
 %% \figpair{frac1}{frac2}{label1}{caption1}{content1}{label2}{caption2}{content2}
 \nc\figpairW[8]{
