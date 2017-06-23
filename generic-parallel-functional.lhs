@@ -71,12 +71,26 @@ Meanwhile, typed functional programming has explored a variety of data types, in
 Definitions over these few fundamental type constructions then automatically assemble into algorithms for an infinite variety of data types---some familiar and some new.
 This paper presents generic functional formulations for two important and well-known classes of parallel algorithms: parallel scan (generalized prefix sum) and Fast Fourier Transform (FFT).
 Notably, arrays play no role in these formulations.
-Consequent benefits include a simpler and more compositional style, much use of common algebraic patterns---such as |Functor|, |Applicative|, |Foldable|, and |Traversable|\out{ \cite{McBride:2008}}---and freedom from possibility of run-time indexing errors.
+Consequent benefits include a simpler and more compositional style, much use of common algebraic patterns\out{---such as |Functor|, |Applicative|, |Foldable|, and |Traversable|\out{ \cite{McBride:2008}}---} and freedom from possibility of run-time indexing errors.
 The functional generic style also clearly reveals deep commonality among what otherwise appears to be quite different algorithms.
-Instantiating the generic formulations to ``top-down'' and ``bottom-up'' trees as well as ``bushes'', two well-known algorithms for each of parallel scan and FFT naturally emerge, as well as two possibly new algorithms.
+Instantiating the generic formulations\out{ to ``top-down'' and ``bottom-up'' trees as well as ``bushes''}, two well-known algorithms for each of parallel scan and FFT naturally emerge, as well as two possibly new algorithms.
 
 \end{abstract}
 
+%if True
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10003752.10003809.10010170</concept_id>
+<concept_desc>Theory of computation~Parallel algorithms</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+\keywords{generic programming, parallel prefix, fast Fourier transform}
+%endif
+
+\ccsdesc[500]{Theory of computation~Parallel algorithms}
 \maketitle
 
 \section{Introduction}
@@ -88,7 +102,7 @@ These type primitives serve to connect algorithms with data types in the followi
 \item Each data type of interest is encoded into and decoded from these type primitives.
 \item Each (generic) algorithm is defined over these same primitives.
 \end{itemize}
-In this way, algorithms and data types are defined independently and then automatically work together.
+In this way, algorithms and data types are defined independently and automatically work together.
 
 One version of this general scheme is found in the Haskell library |GHC.Generics|, in which the type primitives are \emph{functor-level} building blocks \cite{HaskellWikiGhcGenerics}.
 For this paper, we'll use six: sum, product, composition, and their three corresponding identities, as in \figref{ghc-generics}.
@@ -141,7 +155,7 @@ In a language like Haskell, those patterns follow known laws and are well suppor
 Array encodings make those patterns \emph{implicit}, as a sort of informal guide only, distancing programs from the elegant and well-understood laws and abstractions that motivate those programs, justify their correctness, and point to algorithmic variations that solve related problems or make different implementation trade-offs.
 
 Even the \emph{determinacy} of an imperative, array-based parallel algorithm can be difficult to ensure or verify.
-When the result is an array rather than a single value, as in scans and FFTs, values are written to indexed locations.
+When the result is an array\out{ rather than a single value}, as in scans and FFTs, values are written to indexed locations.
 In the presence of parallelism, determinacy depends on those write indices being distinct, which again is a subtle, encoding-specific property, unlikely to be verified automatically.
 
 Given these severe drawbacks, why are arrays so widely used in designing, implementing, and explaining parallel algorithms?
@@ -235,8 +249,11 @@ instance Generic1 LList where
 \end{code}
 %endif
 
-|RList| and |LList| are isomorphic not only to their underlying representation functors, but also to each other, as follows:\notefoot{Probably drop these definitions.}
+|RList| and |LList| are isomorphic not only to their underlying representation functors, but also to each other%
 %if True
+. Why would we want to distinguish between them?
+%else
+, as follows:\notefoot{Probably drop these definitions.}
 \\
 \begin{minipage}[b]{0.48\textwidth}
 \begin{code}
@@ -255,18 +272,8 @@ lToR (as >: a)  = a :< lToR as
 \end{code}
 \end{minipage}
 \\
-%else
-\begin{code}
-rToL :: RList a -> LList a
-rToL RNil       = LNil
-rToL (a :< as)  = rToL as >: a
-
-lToR :: LList a -> RList a
-lToR LNil       = RNil
-lToR (as >: a)  = a :< lToR as
-\end{code}
-%endif
 Since these list types are easily isomorphic, why would we want to distinguish between them?
+%endif
 One reason is that they may capture different intentions.
 For instance, a zipper for right lists comprises a left-list for the (reversed) elements leading up to a position and a right-list for the not-yet-visited elements \cite{HuetZipper1997,McBride01derivative}\out{:
 \begin{code}
@@ -398,13 +405,14 @@ For this paper, assume that |Nat| is a kind-promoted version of the following da
 \begin{code}
 data Nat = Z | S Nat
 \end{code}
-Thanks to promotion (via the |DataKinds| language extension), |Nat| is\out{ not only a new data type with value-level constructors |Z| and |S|, but} also a new \emph{kind} with \emph{type-level} constructors |Z| and |S| \cite{yorgey2012giving}.
+Thanks to promotion (via the |DataKinds| language extension), |Nat| is not only a new data type with value-level constructors |Z| and |S|, but also a new \emph{kind} with \emph{type-level} constructors |Z| and |S| \cite{yorgey2012giving}.
+
+%% \vspace{2ex}
 
 \subsubsection{GADT Formulation}
 
-Now we can define the length-indexed |Vec| type mentioned above, which is the canonical example of dependent types in either full dependently typed languages or as simulated with generalized algebraic data types (GADTs).
+Now we can define the length-indexed |Vec| type mentioned above\out{, which is the canonical example of dependent types in either full dependently typed languages or as simulated with generalized algebraic data types (GADTs)}.
 As with lists, there are right- and left-growing versions:
-%if True
 \\
 \begin{minipage}[b]{0.5\textwidth}
 \begin{code}
@@ -422,20 +430,8 @@ data LVec :: Nat -> * -> * NOP where
 \end{code}
 \end{minipage}
 \\
-%else
-\begin{code}
-data RVec :: Nat -> * -> * NOP where
-  RNil  :: RVec Z a 
-  (:<)  :: a -> RVec n a -> RVec (S n) a
-
-data LVec :: Nat -> * -> * NOP where
-  LNil  :: LVec Z a 
-  (>:)  :: LVec n a -> a -> LVec (S n) a
-\end{code}
-%endif
 Recall that the generic representations of |RList| and |LList| were built out of sum, unit, identity, and product.
 With static shaping, the sum disappears from the representation, moving from dynamic to static choice, and each |Generic1| instance split into two:
-%if True
 \\
 \begin{minipage}[b]{0.5\textwidth}
 \begin{code}
@@ -443,14 +439,9 @@ instance Generic1 (RVec Z) where
   type Rep1 (RVec Z) = U1
   from RNil = U1
   to U1 = RNil
-instance  Generic1 (RVec n) =>
-          Generic1 (RVec (S n)) where
-  type Rep1 (RVec (S n)) = Par1 :*: RVec n
-  from (a :< as) = Par1 a :*: as
-  to (Par1 a :*: as) = a :< as
 \end{code}
 \end{minipage}
-\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{1.58in}}\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.69in}}\end{minipage}
 \hspace{1ex}
 \begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
 \begin{code}
@@ -458,6 +449,22 @@ instance Generic1 (LVec Z) where
   type Rep1 (LVec Z) = U1
   from RNil = U1
   to U1 = RNil
+\end{code}
+\end{minipage}
+\\[-1.1ex]
+\begin{minipage}[b]{0.5\textwidth}
+\begin{code}
+instance  Generic1 (RVec n) =>
+          Generic1 (RVec (S n)) where
+  type Rep1 (RVec (S n)) = Par1 :*: RVec n
+  from (a :< as) = Par1 a :*: as
+  to (Par1 a :*: as) = a :< as
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.9in}}\end{minipage}
+\hspace{1ex}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
 instance  Generic1 (LVec n) =>
           Generic1 (LVec (S n)) where
   type Rep1 (LVec (S n)) = LVec n :*: Par1
@@ -465,36 +472,13 @@ instance  Generic1 (LVec n) =>
   to (Par1 a :*: as) = a :< as
 \end{code}
 \end{minipage}
-\\
-%else
-\begin{code}
-instance Generic1 (RVec Z) where
-  type Rep1 (RVec Z) = U1
-  from RNil = U1
-  to U1 = RNil
-instance Generic1 (RVec n) => Generic1 (RVec (S n)) where
-  type Rep1 (RVec (S n)) = Par1 :*: RVec n
-  from (a :< as) = Par1 a :*: as
-  to (Par1 a :*: as) = a :< as
-
-instance Generic1 (LVec Z) where
-  type Rep1 (LVec Z) = U1
-  from RNil = U1
-  to U1 = RNil
-instance Generic1 (LVec n) => Generic1 (LVec (S n)) where
-  type Rep1 (LVec (S n)) = LVec n :*: Par1
-  from (a :< as) = Par1 a :*: as
-  to (Par1 a :*: as) = a :< as
-\end{code}
-%endif
 
 For leaf trees, we have a choice between imperfect and perfect trees.
 A ``perfect'' leaf tree is one in which all leaves are at the same depth.
 Both imperfect and perfect can be ``statically shaped'', but we'll use just perfect trees in this paper, for which we need only a single type-level number signifying the depth of all leaves.
 For succinctness, rename |Leaf| and |Branch| to ``|L|'' and ``|B|''.
 For reasons soon to be explained, let's also rename the types |TTree| and |BTree| to ``|RPow|'' and ``|LPow|'':
-%if True
-\\
+\\[1ex]
 \begin{minipage}[b]{0.515\textwidth}
 \begin{code}
 data RPow :: (* -> *) -> Nat -> * -> * SPC where
@@ -502,7 +486,7 @@ data RPow :: (* -> *) -> Nat -> * -> * SPC where
   B :: f (RPow f n a) -> RPow f (S n) a
 \end{code}
 \end{minipage}
-\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.58in}}\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.53in}}\end{minipage}
 \hspace{-2.5ex}
 \begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
 \begin{code}
@@ -511,38 +495,18 @@ data LPow :: (* -> *) -> Nat -> * -> * SPC where
   B :: LPow f n (f a) -> LPow f (S n) a
 \end{code}
 \end{minipage}
-%else
-\begin{code}
-data RPow :: (* -> *) -> Nat -> * -> * SPC where
-  L :: a -> RPow f Z a
-  B :: f (RPow f n a) -> RPow f (S n) a
-\end{code}
-\vspace{-4ex}
-\begin{code}
-data LPow :: (* -> *) -> Nat -> * -> * SPC where
-  L :: a -> LPow f Z a
-  B :: LPow f n (f a) -> LPow f (S n) a
-\end{code}
-%endif
 
 As with vectors, statically shaped |f|-ary trees are generically represented like their dynamically shaped counterparts but with dynamic choice (sum) replaced by static choice:
-%if True
-\\
-\begin{minipage}[b]{0.51\textwidth}
+
+\begin{minipage}[b]{0.49\textwidth}
 \begin{code}
 instance Generic1 (RPow f Z) where
   type Rep1 (RPow f Z) = Par1
   from1 (L a) = Par1 a
   to1 (Par1 a) = L a
-
-instance  Generic1 (RPow f n) =>
-          Generic1 (RPow f (S n)) where
-  type Rep1 (RPow f (S n)) = f :.: RPow f n
-  from1 (B ts) = Comp1 ts
-  to1 (Comp1 ts)  = B ts
 \end{code}
 \end{minipage}
-\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{1.6in}}\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.685in}}\end{minipage}
 %\hspace{-2.5ex}
 \begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
 \begin{code}
@@ -550,7 +514,22 @@ instance Generic1 (LPow f Z) where
   type Rep1 (LPow f Z) = Par1
   from1 (L a) = Par1 a
   to1 (Par1 a) = L a
+\end{code}
+\end{minipage}
 
+\begin{minipage}[b]{0.51\textwidth}
+\begin{code}
+instance  Generic1 (RPow f n) =>
+          Generic1 (RPow f (S n)) where
+  type Rep1 (RPow f (S n)) = f :.: RPow f n
+  from1 (B ts) = Comp1 ts
+  to1 (Comp1 ts)  = B ts
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.87in}}\end{minipage}
+%\hspace{-2.5ex}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
 instance  Generic1 (LPow f n) =>
           Generic1 (LPow f (S n)) where
   type Rep1 (LPow f (S n)) = LPow f n :.: f
@@ -558,29 +537,6 @@ instance  Generic1 (LPow f n) =>
   to1 (Comp1 ts) = B ts
 \end{code}
 \end{minipage}
-%else
-\begin{code}
-instance Generic1 (RPow f Z) where
-  type Rep1 (RPow f Z) = Par1
-  from1 (L a) = Par1 a
-  to1 (Par1 a) = L a
-
-instance  Generic1 (RPow f n) => Generic1 (RPow f (S n)) where
-  type Rep1 (RPow f (S n)) = f :.: RPow f n
-  from1 (B ts) = Comp1 ts
-  to1 (Comp1 ts)  = B ts
-
-instance Generic1 (LPow f Z) where
-  type Rep1 (LPow f Z) = Par1
-  from1 (L a) = Par1 a
-  to1 (Par1 a) = L a
-
-instance  Generic1 (LPow f n) => Generic1 (LPow f (S n)) where
-  type Rep1 (LPow f (S n)) = LPow f n :.: f
-  from1 (B ts) = Comp1 ts
-  to1 (Comp1 ts) = B ts
-\end{code}
-%endif
 
 We can then give these statically shaped data types |Functor|, |Foldable|, and |Traversable| instances matching the dynamically shaped versions given above.
 In addition, they have |Applicative| and |Monad| instances\out{, left as an exercise for the reader}.
@@ -595,96 +551,73 @@ While |RVec| and |RPow| are right associations, |LVec| and |LPow| are left assoc
 As we will see below, different associations, though isomorphic, lead to different algorithms.
 
 Instead of the GADT-based definitions given above for |RVec|, |LVec|, |RPow|, and |LPow|, we can make the repeated product and repeated composition more apparent by using closed type families \cite{ClosedTypeFamilies:2014}, with instances defined inductively over type-level natural numbers:
-%if True
 \\
-\begin{minipage}[b]{0.4\textwidth}
+\begin{minipage}[b]{0.425\textwidth}
 \begin{code}
 type family RVec n where
   RVec Z      = U1
   RVec (S n)  = Par1 :*: RVec n
-
-type family RPow h n where
-  RPow h Z      = Par1
-  RPow h (S n)  = h :.: RPow h n
 \end{code}
 \end{minipage}
-\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{1.07in}}\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.5in}}\end{minipage}
 %\hspace{-2.5ex}
 \begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
 \begin{code}
 type family LVec n where
   LVec Z      = U1
   LVec (S n)  = LVec n :*: Par1
-
-type family LPow h n where
-  LPow h Z      = Par1
-  LPow h (S n)  = LPow h n :.: h
 \end{code}
 \end{minipage}
-%else
+\\[-1.1ex]
+\begin{minipage}[b]{0.425\textwidth}
 \begin{code}
-type family RVec n where
-  RVec Z      = U1
-  RVec (S n)  = Par1 :*: RVec n
-
-type family LVec n where
-  LVec Z      = U1
-  LVec (S n)  = LVec n :*: Par1
-
 type family RPow h n where
   RPow h Z      = Par1
   RPow h (S n)  = h :.: RPow h n
 \end{code}
-\vspace{-4ex}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.55in}}\end{minipage}
+%\hspace{-2.5ex}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
 \begin{code}
 type family LPow h n where
   LPow h Z      = Par1
   LPow h (S n)  = LPow h n :.: h
 \end{code}
-%endif
-
+\end{minipage}
+\\
 Note the similarity between the |RVec| and |RPow| type family instances and the following definitions of multiplication and exponentiation on Peano numbers (with RHS parentheses for emphasis):
-%if True
-
-\begin{minipage}[b]{0.4\textwidth}
+\\
+\begin{minipage}[b]{0.425\textwidth}
 \begin{code}
 0      * a = 0
 (1+n)  * a = a + (n * a)
-
-h ^ 0      = 1
-h ^ (1+n)  = h * (h ^ n)
 \end{code}
 \end{minipage}
-\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.7in}}\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.35in}}\end{minipage}
 \begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
 \begin{code}
 0      * a = 0
 (n+1)  * a = (n * a) + a
-
+\end{code}
+\end{minipage}
+\\[-1.1ex]
+\begin{minipage}[b]{0.425\textwidth}
+\begin{code}
+h ^ 0      = 1
+h ^ (1+n)  = h * (h ^ n)
+\end{code}
+\end{minipage}
+\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.38in}}\end{minipage}
+\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
+\begin{code}
 h ^ 0      = 1
 h ^ (n+1)  = (h ^ n) * h
 \end{code}
 \end{minipage}
-%else
-\begin{code}
-0      * a = 0
-(1+n)  * a = a + (n * a)
 
-h ^ 0      = 1
-h ^ (1+n)  = h * (h ^ n)
-\end{code}
-
-\begin{code}
-0      * a = 0
-(n+1)  * a = (n * a) + a
-
-h ^ 0      = 1
-h ^ (n+1)  = (h ^ n) * h
-\end{code}
-%endif
-
-Because these type-family-based definitions are expressed in terms of existing generic building blocks, we directly inherit many existing class instances rather than having to define them.
-For the same reason, we \emph{cannot} provide them (since instances already exist), which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom instances for displaying structures.
+Because the type-family-based definitions are expressed in terms of existing generic building blocks, we inherit many existing class instances rather than having to define them.
+For the same reason, we \emph{cannot} provide them (since instances already exist), which will pose a challenge (though easily surmounted) with FFT on vectors, as well as custom |Show| instances for displaying structures.
 
 Although |RPow| and |LPow| work with any functor argument, we will use uniform pairs in the examples below.
 The uniform |Pair| functor can be defined in a variety of ways, including |Par1 :*: Par1|, |RVec N2|, |LVec N2|, or its own algebraic data type:
@@ -692,25 +625,10 @@ The uniform |Pair| functor can be defined in a variety of ways, including |Par1 
 data Pair a = a :# a deriving (Functor,Foldable,Traversable)
 \end{code}
 For convenience, define top-down and bottom-up \emph{binary} trees:
-%if False
-\\
-\begin{minipage}[b]{0.4\textwidth}
-\begin{code}
-type RBin = RPow Pair
-\end{code}
-\end{minipage}
-\begin{minipage}[b]{0ex}{\rule[1ex]{0.5pt}{0.1in}}\end{minipage}
-\begin{minipage}[b]{0.3\textwidth}\setlength\mathindent{2ex}
-\begin{code}
-type LBin = LPow Pair
-\end{code}
-\end{minipage}
-%else
 \begin{code}
 type RBin = RPow Pair
 type LBin = LPow Pair
 \end{code}
-%endif
 
 \subsectionl{Bushes}
 
@@ -818,7 +736,7 @@ Comments:
 (The definition relies on the |LambdaCase| and |EmptyCase| language extensions.)
 \item An empty structure can only generate another empty structure with a summary value of |mempty|.
 \item For a singleton value |Par1 a|, the combination of values before the first and only one is |mempty|, and the summary is the value |a|.
-\item For a sum, scan whichever structure is present, and re-tag.
+\item For a sum, scan\out{ whichever structure is present,} and re-tag.
 (The higher-order function |first| applies a function to the first element of a pair, carrying the second element along unchanged \cite{Hughes98generalisingmonads}.)
 \end{itemize}
 
@@ -835,8 +753,8 @@ W  (f :+: g)  = W  f `max` W  g
 D  (f :+: g)  = D  f `max` D  g
 \end{code}
 
-\noindent
-With the four easy instances out of the way, we have only two left to define: product and composition.
+%% \noindent
+%% With the four easy instances out of the way, we have only two left to define: product and composition.
 
 \subsection{Product}
 
@@ -917,18 +835,18 @@ Thus
 W  (LVec n) = O (n)
 D  (LVec n) = O (n)
 \end{code}
-Performing a suffix/right scan on a left vector also leads to quadratic work\out{, reduced to linear by switching to right vectors}.
+% Performing a suffix/right scan on a left vector also leads to quadratic work\out{, reduced to linear by switching to right vectors}.
 
 Although work is greatly reduced (from quadratic to linear), depth remains at linear, because unbalanced data types lead to unbalanced parallelism.
 Both |RVec| and |LVec| are ``parallel'' in a sense, but we only get to perform small computations in parallel with large one (especially apparent in the unoptimized \figreftwo{lsums-rv8-no-hash-no-opt}{lsums-lv8-no-hash-no-opt}), so that the result is essentially sequential.
 
 To get more parallelism, we could replace a type like |LVec N16| with a isomorphic product such as |LVec N5 :*: LVec N11|, resulting in \figref{lsums-lv5xlv11-highlight}, reducing depth from 15 to 11.
-More generally, scan on |LVec m :*: LVec n| has depth |((m-1) `max` (n-1)) + 1 = max m n|.
+More generally, scan on |LVec m :*: LVec n| has depth |((m-1) `max` (n-1)) + 1 = m `max` n|.
 For an ideal partition adding up to |p|, we'll want |m = n = p/2|.
 For instance, replace |LVec N16| with the isomorphic product |LVec N8 :*: LVec N8|, resulting in \figref{lsums-lv8xlv8} with depth eight.
 Can we decrease the depth any further?
 Not as a single product, but we can as more than one product, as shown in \figref{lsums-lv5-5-6-l} with depth six.
-Again, the more balance, the better.
+\out{Again, the more balance, the better.}
 \figp{
 \circdefWsmall{\stdWidth}{lsums-lv8xlv8}{|lscan @(LVec N8 :*: LVec N8)|}{22}{8}}{
 \circdefWsmall{\stdWidth}{lsums-lv5-5-6-l}{|lscan @((LVec N5 :*: LVec N5) :*: LVec N6)|}{24}{6}}
