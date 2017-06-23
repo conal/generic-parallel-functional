@@ -207,7 +207,6 @@ type RList =~ U1 :+: Par1 :*: RList
 type LList =~ U1 :+: RList :*: Par1
 \end{code}
 Spelling out the isomorphisms explicitly,
-%if True
 \\
 \begin{minipage}[b]{0.48\textwidth}
 \begin{code}
@@ -231,23 +230,6 @@ instance Generic1 LList where
   to (R1 (as :*: Par1 a))  = as >: a
 \end{code}
 \end{minipage}
-%else
-\begin{code}
-instance Generic1 RList where
-  type Rep1 RList = U1 :+: Par1 :*: RList
-  from RNil       = L1 U1
-  from (a :< as)  = R1 (Par1 a :*: as)
-  to (L1 U1)               = RNil
-  to (R1 (Par1 a :*: as))  = a :< as
-
-instance Generic1 LList where
-  type Rep1 LList = U1 :+: LList :*: Par1
-  from LNil       = L1 U1
-  from (a :< as)  = R1 (as :*: Par1 a)
-  to (L1 U1)               = LNil
-  to (R1 (as :*: Par1 a))  = as >: a
-\end{code}
-%endif
 
 |RList| and |LList| are isomorphic not only to their underlying representation functors, but also to each other%
 %if True
