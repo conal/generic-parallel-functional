@@ -28,10 +28,11 @@
 \acmArticle{7}
 \acmMonth{9}
 \acmDOI{10.1145/3110251}
+\acmPrice{}
 
 \else
-\acmPrice{}
 \setcopyright{none}
+\acmPrice{}
 %% \acmJournal{PACMPL}
 %% % Doesn't work:
 %% \acmConference[ICFP]{International Conference on Functional Programming}{September, 2017}{Oxford}
@@ -87,7 +88,7 @@ Instantiating the generic formulations\out{ to ``top-down'' and ``bottom-up'' tr
 </concept>
 </ccs2012>
 \end{CCSXML}
-\keywords{generic programming, parallel prefix, fast Fourier transform}
+\keywords{generic programming, parallel prefix computation, fast Fourier transform}
 %endif
 
 \ccsdesc[500]{Theory of computation~Parallel algorithms}

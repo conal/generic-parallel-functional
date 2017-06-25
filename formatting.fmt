@@ -85,8 +85,8 @@
 
 %format :# = "\mathbin{:\!\!\#}"
 
-%% %format *** = "\symThree{*}"
-%format *** = "\times"
+%format *** = "\symThree{*}"
+%% %format *** = "\times"
 
 %format <.> = "\cdot"
 
