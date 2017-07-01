@@ -1,26 +1,12 @@
 % -*- latex -*-
 
 \newif\ifacm
-\newif\ifanon
-
-%% \anontrue
 
 \acmtrue
 
-\documentclass[acmsmall]{acmart} % ,authorversion=true
+\documentclass[acmsmall,screen]{acmart} % ,authorversion=true
 
-\ifacm
-
-%%% The following is specific to ICFP'17 and the paper
-%%% 'Generic Functional Parallel Algorithms: Scan and FFT'
-%%% by Conal Elliott.
-%%%
-%%% If you see 'none' in the 'setcopyright' statement below,
-%%% please first submit your publishing-rights agreement with ACM (follow link on submission page),
-%%% and then visit the instructions received from ACM (in the publishing-rights agreement)
-%%% in order to copy the correct 'setcopyright' statement.  Please contact us in case of questions.
-%%%
-\setcopyright{none}
+\setcopyright{rightsretained}
 \acmJournal{PACMPL}
 \acmYear{2017}
 \acmVolume{1}
@@ -30,17 +16,17 @@
 \acmDOI{10.1145/3110251}
 \acmPrice{}
 
-\else
-\setcopyright{none}
-\acmPrice{}
-%% \acmJournal{PACMPL}
-%% % Doesn't work:
-%% \acmConference[ICFP]{International Conference on Functional Programming}{September, 2017}{Oxford}
+%% \else
+%% \setcopyright{none}
+%% \acmPrice{}
+%% %% \acmJournal{PACMPL}
+%% %% % Doesn't work:
+%% %% \acmConference[ICFP]{International Conference on Functional Programming}{September, 2017}{Oxford}
 
-\fancyfoot[RO,LE]{February 2017. (Revised \today.) To appear at ICFP 2017.}
-\fancyfoot[RO]{February 2017. Revised \today.}
+%% \fancyfoot[RO,LE]{February 2017. (Revised \today.) To appear at ICFP 2017.}
+%% \fancyfoot[RO]{February 2017. Revised \today.}
 
-\fi
+%% \fi
 
 \citestyle{acmauthoryear}
 \author{Conal Elliott}
@@ -56,8 +42,6 @@
 
 \input{macros}
 
-\nc\compilingToCats{\ifanon Anonymous\else Elliott\fi-2017-compiling-to-categories}
-
 \bibliographystyle{plainnat}
 
 \title{Generic Functional Parallel Algorithms: Scan and FFT}
@@ -70,7 +54,7 @@ Parallel programming, whether imperative or functional, has long focused on arra
 Meanwhile, typed functional programming has explored a variety of data types, including lists and various forms of trees.
 \emph{Generic} functional programming decomposes these data types into a small set of fundamental building blocks: sum, product, composition, and their associated identities.
 Definitions over these few fundamental type constructions then automatically assemble into algorithms for an infinite variety of data types---some familiar and some new.
-This paper presents generic functional formulations for two important and well-known classes of parallel algorithms: parallel scan (generalized prefix sum) and Fast Fourier Transform (FFT).
+This paper presents generic functional formulations for two important and well-known classes of parallel algorithms: parallel scan (generalized prefix sum) and fast Fourier transform (FFT).
 Notably, arrays play no role in these formulations.
 Consequent benefits include a simpler and more compositional style, much use of common algebraic patterns\out{---such as |Functor|, |Applicative|, |Foldable|, and |Traversable|\out{ \cite{McBride:2008}}---} and freedom from possibility of run-time indexing errors.
 The functional generic style also clearly reveals deep commonality among what otherwise appears to be quite different algorithms.
@@ -161,7 +145,7 @@ In the presence of parallelism, determinacy depends on those write indices being
 
 Given these severe drawbacks, why are arrays so widely used in designing, implementing, and explaining parallel algorithms?
 One benefit is a relatively straightforward mapping from algorithm to efficient implementation primitives.
-As we will see below, however, we can instead write algorithms in an elegant, modular style using a variety of data types and the standard algebraic abstractions on those data types--such as |Functor|, |Applicative|, |Foldable|, and |Traversable| \cite{McBride:2008}---\emph{and} generate very efficient implementations.
+As we will see below, however, we can instead write algorithms in an elegant, modular style using a variety of data types and the standard algebraic abstractions on those data types---such as |Functor|, |Applicative|, |Foldable|, and |Traversable| \cite{McBride:2008}---\emph{and} generate very efficient implementations.
 Better yet, we can define such algorithms generically.
 
 Concretely, this paper makes the following contributions:
@@ -181,7 +165,7 @@ Concretely, this paper makes the following contributions:
   Compositional complexity analysis (work and depth), also based on functor combinators.
 \end{itemize}
 
-The figures in this paper are generated automatically (including optimizations) from the given Haskell code, using a compiler plugin that which also generates synthesizable descriptions in Verilog for massively parallel, hardware-based evaluation \cite{\compilingToCats}.
+The figures in this paper are generated automatically (including optimizations) from the given Haskell code, using a compiler plugin that which also generates synthesizable descriptions in Verilog for massively parallel, hardware-based evaluation \cite{Elliott-2017-compiling-to-categories}.
 
 
 \section{Some Useful Data Types}
@@ -500,7 +484,7 @@ instance Generic1 (LPow f Z) where
 \end{code}
 \end{minipage}
 
-\begin{minipage}[b]{0.51\textwidth}
+\begin{minipage}[b]{0.49\textwidth}
 \begin{code}
 instance  Generic1 (RPow f n) =>
           Generic1 (RPow f (S n)) where
@@ -535,7 +519,7 @@ As we will see below, different associations, though isomorphic, lead to differe
 
 Instead of the GADT-based definitions given above for |RVec|, |LVec|, |RPow|, and |LPow|, we can make the repeated product and repeated composition more apparent by using closed type families \cite{ClosedTypeFamilies:2014}, with instances defined inductively over type-level natural numbers:
 \\
-\begin{minipage}[b]{0.425\textwidth}
+\begin{minipage}[b]{0.5\textwidth}
 \begin{code}
 type family RVec n where
   RVec Z      = U1
@@ -552,7 +536,7 @@ type family LVec n where
 \end{code}
 \end{minipage}
 \\[-1.1ex]
-\begin{minipage}[b]{0.425\textwidth}
+\begin{minipage}[b]{0.5\textwidth}
 \begin{code}
 type family RPow h n where
   RPow h Z      = Par1
@@ -571,7 +555,7 @@ type family LPow h n where
 \\
 Note the similarity between the |RVec| and |RPow| type family instances and the following definitions of multiplication and exponentiation on Peano numbers (with RHS parentheses for emphasis):
 \\
-\begin{minipage}[b]{0.425\textwidth}
+\begin{minipage}[b]{0.5\textwidth}
 \begin{code}
 0      * a = 0
 (1+n)  * a = a + (n * a)
@@ -585,7 +569,7 @@ Note the similarity between the |RVec| and |RPow| type family instances and the 
 \end{code}
 \end{minipage}
 \\[-1.1ex]
-\begin{minipage}[b]{0.425\textwidth}
+\begin{minipage}[b]{0.5\textwidth}
 \begin{code}
 h ^ 0      = 1
 h ^ (1+n)  = h * (h ^ n)
@@ -1050,7 +1034,7 @@ u <.> v = sum (liftA2 (*) u v)
 
 \subsection{Background}
 
-The Fast Fourier Transform (FFT) algorithm computes the Discrete Fourier Transform (DFT), reducing work from $O (n^2)$ to $O (n \log n)$.
+The fast Fourier transform (FFT) algorithm computes the Discrete Fourier Transform (DFT), reducing work from $O (n^2)$ to $O (n \log n)$.
 First discovered by Gauss \cite{GaussFFTHistory}, the algorithm was rediscovered by \citet{danielson1942some}, and later by \citet{CooleyTukey}, whose work popularized the algorithm.
 
 Given a sequence of complex numbers, $x_0, \ldots, x_{N-1}$, the DFT is defined as
@@ -1267,7 +1251,7 @@ All of the work mentioned in this paragraph so far formulate scan exclusively in
 In contrast, \citet{Gibbons:1992:UDA,Gibbons:2000:GDA} generalized to other data types, including trees, and reconstructed scan as a combination of the two more general operations of upward and downward accumulations.
 \citet{Keller1999} described a distributed scan algorithm similar to some of those emerging from the generic algorithm of \secref{Parallel Scan} above, pointing out the additional scan and adjustment required to combine results of scanned segments.
 
-FFT has also been studied through a functional lens, using lists or arrays..
+FFT has also been studied through a functional lens, using lists or arrays.
 \citet{deVries:1988:FFT} developed an implementation of fast polynomial multiplication based on binary FFT.
 \citet{Hartel92arraysin} assessed the convenience and efficiency of lazy functional array programming.
 \citet{Keller10regular} gave a binary FFT implementation in terms of shape-polymorphic, parallel arrays, using index manipulations.
