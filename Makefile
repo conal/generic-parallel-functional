@@ -10,7 +10,7 @@ latex=latexmk -pdf
 dots = $(wildcard figures/*.dot)
 figures = $(addsuffix .pdf, $(basename $(dots)))
 
-%.pdf: %.tex bib.bib $(figures) Makefile acmart-tweaked.cls
+%.pdf: %.tex bib.bib $(figures) Makefile
 	$(latex) $*.tex
 
 %.tex: %.lhs macros.tex formatting.fmt $(pdfs) Makefile
