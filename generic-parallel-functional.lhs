@@ -1,10 +1,6 @@
 % -*- latex -*-
 
-\newif\ifacm
-
-\acmtrue
-
-\documentclass[acmsmall,screen]{acmart} % ,authorversion=true
+\documentclass[acmsmall,screen]{acmart} % 
 
 \setcopyright{rightsretained}
 \acmJournal{PACMPL}
@@ -15,18 +11,6 @@
 \acmMonth{9}
 \acmDOI{10.1145/3110251}
 \acmPrice{}
-
-%% \else
-%% \setcopyright{none}
-%% \acmPrice{}
-%% %% \acmJournal{PACMPL}
-%% %% % Doesn't work:
-%% %% \acmConference[ICFP]{International Conference on Functional Programming}{September, 2017}{Oxford}
-
-%% \fancyfoot[RO,LE]{February 2017. (Revised \today.) To appear at ICFP 2017.}
-%% \fancyfoot[RO]{February 2017. Revised \today.}
-
-%% \fi
 
 \citestyle{acmauthoryear}
 \author{Conal Elliott}
