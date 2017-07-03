@@ -1,6 +1,8 @@
 ## Paper: *Generic parallel functional programming*
 
-Submitted to ICFP 2017
+To appear at ICFP 2017
+
+[PDF and BibTeX](conal.net/papers/generic-parallel-functional/)
 
 ### Abstract
 
