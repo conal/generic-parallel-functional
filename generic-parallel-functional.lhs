@@ -6,7 +6,7 @@
 \acmJournal{PACMPL}
 \acmYear{2017}
 \acmVolume{1}
-\acmNumber{1}
+\acmNumber{ICFP}
 \acmArticle{7}
 \acmMonth{9}
 \acmDOI{10.1145/3110251}
@@ -764,11 +764,8 @@ W (RVec (S n))  = W (Par1 :*: RVec n) = W Par1 + W (RVec n) + ssize (RVec n) + 1
 D (RVec 0) = D U1 = 0
 D (RVec (S n)) = D (Par1 :*: RVec n) = (D Par1 `max` D (RVec n)) + 1 = D (RVec n) + O(1)
 \end{code}
-Thus
-\begin{code}
-W  (RVec n)  = O (pow n 2)
-D  (RVec n)  = O (n)
-\end{code}
+Thus, |W (RVec n) = O (pow n 2)|, and |D (RVec n) = O (n)|.
+
 In contrast, with left-associated vectors, each prefix summary (left) is used to update a single element (right), leading to linear work, as shown in \figref{lsums-lv8-no-hash-no-opt} and (optimized) \figref{lsums-lv8}.
 \figp{
 \circdef{lsums-lv8-no-hash-no-opt}{|lscan @(LVec N8)|, unoptimized}{16}{8}}{
@@ -781,13 +778,10 @@ W (LVec (S n)) = W (LVec n :*: Par1) = W (LVec n) + W Par1 + ssize Par1 + 1 = W 
 D  (RVec 0) = D U1 = 0
 D  (RVec (S n)) = D (Par1 :*: RVec n) = (D Par1 `max` D (RVec n)) + 1 = D (RVec n) + O(1)
 \end{code}
-Thus
-\begin{code}
-W  (LVec n) = O (n)
-D  (LVec n) = O (n)
-\end{code}
-% Performing a suffix/right scan on a left vector also leads to quadratic work\out{, reduced to linear by switching to right vectors}.
+Thus,
+|W (RVec n) = O (n)|, and |D (RVec n) = O (n)|.
 
+% Performing a suffix/right scan on a left vector also leads to quadratic work\out{, reduced to linear by switching to right vectors}.
 Although work is greatly reduced (from quadratic to linear), depth remains at linear, because unbalanced data types lead to unbalanced parallelism.
 Both |RVec| and |LVec| are ``parallel'' in a sense, but we only get to perform small computations in parallel with large one (especially apparent in the unoptimized \figreftwo{lsums-rv8-no-hash-no-opt}{lsums-lv8-no-hash-no-opt}), so that the result is essentially sequential.
 
