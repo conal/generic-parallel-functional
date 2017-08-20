@@ -41,7 +41,7 @@ Definitions over these few fundamental type constructions then automatically ass
 This paper presents generic functional formulations for two important and well-known classes of parallel algorithms: parallel scan (generalized prefix sum) and fast Fourier transform (FFT).
 Notably, arrays play no role in these formulations.
 Consequent benefits include a simpler and more compositional style, much use of common algebraic patterns\out{---such as |Functor|, |Applicative|, |Foldable|, and |Traversable|\out{ \cite{McBride:2008}}---} and freedom from possibility of run-time indexing errors.
-The functional generic style also clearly reveals deep commonality among what otherwise appears to be quite different algorithms.
+The functional generic style also clearly reveals deep commonality among what otherwise appear to be quite different algorithms.
 Instantiating the generic formulations\out{ to ``top-down'' and ``bottom-up'' trees as well as ``bushes''}, two well-known algorithms for each of parallel scan and FFT naturally emerge, as well as two possibly new algorithms.
 
 \end{abstract}
@@ -1289,4 +1289,3 @@ What other data types (functor assembly patterns) explain known algorithms and p
 \bibliography{bib}
 
 \end{document}
-
