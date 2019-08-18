@@ -2,7 +2,7 @@
 
 To appear at ICFP 2017
 
-[PDF and BibTeX](conal.net/papers/generic-parallel-functional/)
+[PDF and BibTeX](http://conal.net/papers/generic-parallel-functional/)
 
 ### Abstract
 
